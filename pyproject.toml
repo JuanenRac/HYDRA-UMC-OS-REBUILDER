@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hydra-umc-os-rebuilder"
+version = "0.1.5"
+description = "Builds a ready-to-flash Raspberry Pi OS image for the HYDRA-UMC CM5, pre-loaded with the most current version of every ecosystem project, with first-boot Wi-Fi/user/hostname/SSH configuration."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE.md" }
+authors = [
+    { name = "JuanenRac (Electro Hobby 3D)", email = "electrohobby3d@gmail.com" },
+]
+keywords = ["hydra-umc", "urtc", "raspberry-pi", "cm5", "image-builder", "provisioning"]
+# The CLI and its image-build/first-boot-config core stay dependency-light.
+# hydra-umc-updater is a real dependency, not vendored code: its own
+# ecosystem_catalog/github_client/project_manifest/version_parse modules
+# already implement exactly the "find every real ecosystem project on
+# GitHub and read its real published version" capability this tool needs -
+# reusing it means a fix or improvement there benefits this tool too,
+# instead of two independent, silently-drifting implementations.
+dependencies = [
+    "hydra-umc-updater @ git+https://github.com/JuanenRac/HYDRA-UMC-UPDATER.git",
+    # Real, audited SHA-512-crypt for first-boot passwords - see
+    # firstboot_config.py's own hash_password() header comment for why not
+    # the stdlib crypt module.
+    "passlib>=1.7,<2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+# paramiko is a real GUI-only dependency, not the CLI's own - only
+# qt_gui.py's remote build (RebuilderBridge._start_remote_build, real
+# SSH to a real Linux host) needs it; --cli build-image never imports it.
+gui = ["PySide6>=6.8,<7", "paramiko>=3.4,<5"]
+
+[project.urls]
+Homepage = "https://github.com/JuanenRac/HYDRA-UMC-OS-REBUILDER"
+
+[project.scripts]
+hydra-umc-os-rebuilder = "hydra_umc_os_rebuilder.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+hydra_umc_os_rebuilder = ["qml/*.qml"]
