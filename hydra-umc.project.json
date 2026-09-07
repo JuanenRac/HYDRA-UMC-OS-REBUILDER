@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0",
+  "ecosystem": "HYDRA-UMC",
+  "name": "HYDRA-UMC-OS-REBUILDER",
+  "version": "0.1.5",
+  "role": "tool",
+  "stack": "python",
+  "technologies": [
+    "Python 3.10+",
+    "PySide6",
+    "QML",
+    "Raspberry Pi OS",
+    "GitHub raw content"
+  ],
+  "deployment_target": "user-pc",
+  "maturity": "scaffolding",
+  "family": "Ecosystem Operations",
+  "parent": "HYDRA-UMC-OS",
+  "native_version": {
+    "file": "pyproject.toml",
+    "pattern": "^version\\s*=\\s*\"(\\d+)\\.(\\d+)\\.(\\d+)\""
+  },
+  "build": "Builds a ready-to-flash Raspberry Pi OS image for the CM5, pre-loaded with the most current version of every ecosystem project it can reach on GitHub, and lets the operator set first-boot Wi-Fi/user/hostname/SSH configuration before writing the image - the same customization Raspberry Pi Imager itself offers, one step earlier.",
+  "notes": "Windows/Linux desktop tool, CLI and Qt Quick GUI (reusing HYDRA-UMC-UPDATER's own visual language). Depends on hydra-umc-updater as a library for ecosystem discovery/version-checking rather than duplicating that logic. The image-build pipeline (loop-mount, chroot) is Linux-only and reports that honestly on Windows instead of pretending to run."
+}
