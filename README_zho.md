@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows 与 Linux">
 </p>
 
-> **状态：v0.1.5，脚手架阶段。** CLI、生态系统发现、首次启动配置生成器和
+> **状态：v0.1.6，脚手架阶段。** CLI、生态系统发现、首次启动配置生成器和
 > 图形界面都是真实并已测试的功能。真正的端到端镜像构建流程（下载 → 环回
 > 挂载 → chroot 安装 → 卸载）已实现，但只能在具备 root 权限的真实 Linux
 > 主机上运行 - 具体的平台边界及其存在的原因见
@@ -47,6 +47,13 @@ HYDRA-UMC-OS-REBUILDER 是一款 Windows/Linux 桌面工具 - 默认为窗口化
    使用的完全相同的真实 `firstrun.sh` 机制，因此最终生成的 SD 卡的行为与
    Raspberry Pi Imager 本身生成的完全一致。参见
    [docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md)。
+4. **在发布之前扫描自身的输出。** 在构建好的镜像被移动到最终路径之前，会
+   检查已挂载的 rootfs 中是否留有真实的 Wi-Fi 密码（存在于
+   `wpa_supplicant.conf` 或某个 NetworkManager 连接配置文件中）、真实的
+   SSH 私钥、非空的 shell 历史记录，或者遗留的 `.env` 文件——任何真实的
+   发现都会彻底阻止发布，就像清理失败时已经会做的那样。校验和验证过去只
+   覆盖了输入（基础镜像）；这是首次对构建过程本身在输出中留下了什么进行
+   检查。
 
 ```
 $ hydra-umc-os-rebuilder --cli status

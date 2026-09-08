@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows und Linux">
 </p>
 
-> **Status: v0.1.5, Grundgerüst.** Die CLI, die Ökosystem-Erkennung, der
+> **Status: v0.1.6, Grundgerüst.** Die CLI, die Ökosystem-Erkennung, der
 > Ersteinrichtungs-Generator und die GUI sind real und getestet. Der
 > echte End-to-End-Image-Build (Download → Loop-Mount →
 > Chroot-Installation → Unmount) ist implementiert, läuft aber nur auf
@@ -57,6 +57,16 @@ Es tut drei echte Dinge:
    neuer) verwendet, sodass sich die resultierende SD-Karte genau so
    verhält wie eine, die Raspberry Pi Imager selbst erzeugt hätte. Siehe
    [docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md).
+4. **Prüft die eigene Ausgabe vor der Freigabe.** Bevor das erstellte
+   Image an seinen endgültigen Pfad verschoben wird, wird das gemountete
+   Root-Dateisystem auf ein echtes, in `wpa_supplicant.conf`/einem
+   NetworkManager-Verbindungsprofil zurückgelassenes WLAN-Passwort, einen
+   echten privaten SSH-Schlüssel, eine nicht leere Shell-Historie oder
+   eine verirrte `.env`-Datei geprüft - jeder echte Fund blockiert die
+   Freigabe vollständig, genau wie es ein Bereinigungsfehler bereits tut.
+   Die Prüfsummenverifikation deckte nur den EINGANG (das Basis-Image)
+   ab; dies ist die erste Prüfung dessen, was der Build-Vorgang selbst im
+   AUSGANG hinterlässt.
 
 ```
 $ hydra-umc-os-rebuilder --cli status

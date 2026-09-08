@@ -116,6 +116,12 @@ class BuildResult:
     error: str | None = None
     platform_check: PlatformCheck | None = None
     installed: tuple[str, ...] = field(default_factory=tuple)
+    # C15: every real secret-shaped path this build found still sitting in
+    # the mounted rootfs before it was ever considered for promotion -
+    # empty on a clean build. Kept even when `ok` is True (an empty tuple)
+    # so a caller can tell "scanned and clean" from "never scanned" if
+    # this field is ever made optional later.
+    secret_findings: tuple[str, ...] = field(default_factory=tuple)
 
 
 _SHA256_HEX_RE = re.compile(r"\b([0-9a-fA-F]{64})\b")
@@ -332,6 +338,9 @@ def build_image(
             report("firstboot-config")
             _write_firstboot_config(build_boot_partition_patch(firstboot), boot_mount)
 
+        report("secret-scan")
+        secret_findings = scan_for_leaked_secrets(rootfs_mount)
+
         report("unmount")
     finally:
         # IMAGE-02 (found in an ecosystem-wide software-improvements
@@ -364,6 +373,23 @@ def build_image(
             ok=False,
             error="image build completed but cleanup failed - the image was NOT promoted: " + "; ".join(cleanup_errors),
             installed=tuple(installed),
+            secret_findings=tuple(secret_findings),
+        )
+
+    if secret_findings:
+        # C15: never promote an image with a real secret still in it -
+        # left in work_dir (not moved to output_path) for the same
+        # "an operator inspects the real state" reason cleanup failures
+        # above already use. Scanned BEFORE unmount (rootfs_mount is
+        # still a live, real mount point at that point), gated here
+        # AFTER unmount succeeds, so a real finding is reported alongside
+        # a clean unmount, not confused with a cleanup failure.
+        return BuildResult(
+            ok=False,
+            error="image build completed but leaked secret(s) were found - the image was NOT promoted: "
+            + "; ".join(secret_findings),
+            installed=tuple(installed),
+            secret_findings=tuple(secret_findings),
         )
 
     report("finalize", str(output_path))
@@ -371,6 +397,79 @@ def build_image(
     shutil.move(str(raw_image), str(output_path))
 
     return BuildResult(ok=True, output_path=output_path, installed=tuple(installed))
+
+
+_WPA_PSK_RE = re.compile(r'\bpsk\s*=\s*"')
+_NM_PSK_RE = re.compile(r"^\s*psk\s*=", re.MULTILINE)
+
+
+def _real_home_directories(rootfs_mount: Path) -> list[Path]:
+    """Every real home directory this scan checks - root's own plus
+    whatever exists under /home. A fresh, never-provisioned image
+    legitimately has neither populated, so a missing directory here is
+    never itself a finding."""
+    homes = [rootfs_mount / "root"]
+    home_dir = rootfs_mount / "home"
+    if home_dir.is_dir():
+        homes.extend(entry for entry in home_dir.iterdir() if entry.is_dir())
+    return homes
+
+
+def scan_for_leaked_secrets(rootfs_mount: Path) -> list[str]:
+    """C15 (this project's own real security gap): a real, read-only scan
+    of the mounted rootfs for secret-bearing paths that must never end up
+    in a publicly distributed image - the ONLY inventory/secret check
+    this build pipeline had before this function was integrity-of-INPUT
+    (the base image's own official checksum) - nothing ever looked at
+    what the build itself left behind in the output.
+
+    Returns a list of real, human-readable findings (an empty list is a
+    real, clean result, not "not scanned"). Deliberately narrow and
+    explicit - the same fixed-shapes-not-a-heuristic principle
+    `knowledge/redaction.py`-style modules elsewhere in this ecosystem
+    already use - never a fuzzy "looks secret enough" pattern that would
+    flag or miss the wrong things.
+    """
+    findings: list[str] = []
+
+    wpa_conf = rootfs_mount / "etc" / "wpa_supplicant" / "wpa_supplicant.conf"
+    if wpa_conf.is_file():
+        text = wpa_conf.read_text(encoding="utf-8", errors="replace")
+        if _WPA_PSK_RE.search(text):
+            findings.append(f"{wpa_conf}: a real Wi-Fi psk in wpa_supplicant.conf")
+
+    nm_connections = rootfs_mount / "etc" / "NetworkManager" / "system-connections"
+    if nm_connections.is_dir():
+        for connection_file in sorted(nm_connections.iterdir()):
+            if not connection_file.is_file():
+                continue
+            text = connection_file.read_text(encoding="utf-8", errors="replace")
+            if _NM_PSK_RE.search(text):
+                findings.append(f"{connection_file}: a real Wi-Fi psk in a NetworkManager connection profile")
+
+    for home in _real_home_directories(rootfs_mount):
+        ssh_dir = home / ".ssh"
+        if ssh_dir.is_dir():
+            for key_file in sorted(ssh_dir.iterdir()):
+                if not key_file.is_file() or key_file.suffix == ".pub":
+                    continue
+                try:
+                    head = key_file.read_bytes()[:64]
+                except OSError:
+                    continue
+                if b"PRIVATE KEY" in head:
+                    findings.append(f"{key_file}: a real private key")
+
+        for history_name in (".bash_history", ".zsh_history"):
+            history_file = home / history_name
+            if history_file.is_file() and history_file.stat().st_size > 0:
+                findings.append(f"{history_file}: a real, non-empty shell history file")
+
+        for env_file in sorted(home.rglob(".env")):
+            if env_file.is_file():
+                findings.append(f"{env_file}: a real .env file")
+
+    return findings
 
 
 def _install_one_project(entry, rootfs_mount: Path) -> str:

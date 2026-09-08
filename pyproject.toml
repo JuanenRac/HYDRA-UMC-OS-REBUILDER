@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hydra-umc-os-rebuilder"
-version = "0.1.5"
+version = "0.1.6"
 description = "Builds a ready-to-flash Raspberry Pi OS image for the HYDRA-UMC CM5, pre-loaded with the most current version of every ecosystem project, with first-boot Wi-Fi/user/hostname/SSH configuration."
 readme = "README.md"
 requires-python = ">=3.10"
