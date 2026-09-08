@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="WindowsとLinux">
 </p>
 
-> **ステータス: v0.1.6、スキャフォールディング段階。** CLI、エコシステム
+> **ステータス: v0.1.7、スキャフォールディング段階。** CLI、エコシステム
 > 検出、初回起動設定ジェネレータ、GUIはいずれも実際に動作しテスト済み
 > です。実際のエンドツーエンドのイメージビルド（ダウンロード → ループ
 > マウント → chrootインストール → アンマウント）は実装済みですが、root

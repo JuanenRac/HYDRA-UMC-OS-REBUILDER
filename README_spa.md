@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows y Linux">
 </p>
 
-> **Estado: v0.1.6, esqueleto.** La CLI, el descubrimiento del ecosistema,
+> **Estado: v0.1.7, esqueleto.** La CLI, el descubrimiento del ecosistema,
 > el generador de configuración de primer arranque y la interfaz gráfica
 > son reales y están probados. La construcción de imagen real de extremo a
 > extremo (descarga → montaje loop → instalación en chroot → desmontaje)

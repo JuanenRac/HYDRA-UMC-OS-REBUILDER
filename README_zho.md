@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows 与 Linux">
 </p>
 
-> **状态：v0.1.6，脚手架阶段。** CLI、生态系统发现、首次启动配置生成器和
+> **状态：v0.1.7，脚手架阶段。** CLI、生态系统发现、首次启动配置生成器和
 > 图形界面都是真实并已测试的功能。真正的端到端镜像构建流程（下载 → 环回
 > 挂载 → chroot 安装 → 卸载）已实现，但只能在具备 root 权限的真实 Linux
 > 主机上运行 - 具体的平台边界及其存在的原因见

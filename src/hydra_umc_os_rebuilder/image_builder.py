@@ -115,6 +115,11 @@ class BuildResult:
     output_path: Path | None = None
     error: str | None = None
     platform_check: PlatformCheck | None = None
+    # C15: "name@version#sha256:<hash>" per installed project - the hash
+    # is _hash_directory_tree()'s own real content hash of that project's
+    # real installed directory, not merely a repeat of the version string
+    # already checked by _install_one_project. See that function's own
+    # docstring for exactly what is and is not covered.
     installed: tuple[str, ...] = field(default_factory=tuple)
     # C15: every real secret-shaped path this build found still sitting in
     # the mounted rootfs before it was ever considered for promotion -
@@ -332,7 +337,12 @@ def build_image(
         for entry in plan.entries:
             report("install", entry.name)
             real_version = _install_one_project(entry, rootfs_mount)
-            installed.append(f"{entry.name}@{real_version}")
+            # C15: a real content hash of what actually landed on disk,
+            # not just the version string _install_one_project already
+            # confirmed matches the plan - see _hash_directory_tree's own
+            # docstring for exactly what this does and does not prove.
+            tree_hash = _hash_directory_tree(rootfs_mount / "opt" / "hydra-umc" / entry.name.lower())
+            installed.append(f"{entry.name}@{real_version}#sha256:{tree_hash}")
 
         if firstboot is not None:
             report("firstboot-config")
@@ -470,6 +480,53 @@ def scan_for_leaked_secrets(rootfs_mount: Path) -> list[str]:
                 findings.append(f"{env_file}: a real .env file")
 
     return findings
+
+
+def _hash_directory_tree(path: Path) -> str:
+    """C15 (private plan's own flow): real, output-side inventory hashing -
+    found completely missing (not just untested): the built image's own
+    inventory only ever recorded `name@version` as free text, with nothing
+    tying that claim to what was ACTUALLY installed on disk. A build that
+    installed the right version but a corrupted/tampered/partial copy of
+    it would report exactly the same inventory line as a clean one.
+
+    Deterministic content hash over every real file under `path`: each
+    file's own path (relative to `path`, POSIX-separated so this is stable
+    across a Linux build host regardless of directory walk order) paired
+    with its own real SHA-256, sorted by path, all concatenated into one
+    buffer that is itself SHA-256'd - two directory trees hash identically
+    if and only if they contain the exact same real files with the exact
+    same real content at the exact same real relative paths. This is a
+    real, custom hash - not `git hash-object`/tree-object compatible (no
+    git object database is involved here, and file mode bits are
+    deliberately not part of the input - a mode-only change on an
+    installed project's own build output has never been this check's real
+    concern), stated honestly rather than implied.
+
+    Symlinks are hashed by their real target string (never followed) so a
+    symlink pointing outside `path` can never pull arbitrary host content
+    into the hash, and a broken/dangling symlink never raises.
+    """
+    entries: list[tuple[str, str]] = []
+    for file_path in path.rglob("*"):
+        if file_path.is_symlink():
+            relative = file_path.relative_to(path).as_posix()
+            entries.append((relative, f"symlink:{os.readlink(file_path)}"))
+        elif file_path.is_file():
+            relative = file_path.relative_to(path).as_posix()
+            digest = hashlib.sha256()
+            with file_path.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    digest.update(chunk)
+            entries.append((relative, digest.hexdigest()))
+    entries.sort(key=lambda item: item[0])
+    tree_digest = hashlib.sha256()
+    for relative, file_hash in entries:
+        tree_digest.update(relative.encode("utf-8"))
+        tree_digest.update(b"\0")
+        tree_digest.update(file_hash.encode("utf-8"))
+        tree_digest.update(b"\n")
+    return tree_digest.hexdigest()
 
 
 def _install_one_project(entry, rootfs_mount: Path) -> str:

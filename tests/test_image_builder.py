@@ -20,6 +20,7 @@ from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlanEntry
 from hydra_umc_os_rebuilder.image_builder import (
     BaseImageSource,
     ImageBuildError,
+    _hash_directory_tree,
     _install_one_project,
     _read_real_installed_version,
     _remote_content_length,
@@ -400,3 +401,85 @@ def test_scan_for_leaked_secrets_reports_every_real_finding_not_just_the_first(t
     (ssh_dir / "id_ed25519").write_bytes(b"-----BEGIN OPENSSH PRIVATE KEY-----\nreal key material\n")
     findings = scan_for_leaked_secrets(tmp_path)
     assert len(findings) == 2
+
+
+# C15 (private plan's own flow): real output-side inventory hashing -
+# _hash_directory_tree() itself, pure and fully testable without a real
+# mount/chroot pipeline.
+def _write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
+def test_hash_directory_tree_is_stable_for_the_same_real_content(tmp_path: Path) -> None:
+    _write(tmp_path / "a.txt", "hello")
+    _write(tmp_path / "sub" / "b.txt", "world")
+    assert _hash_directory_tree(tmp_path) == _hash_directory_tree(tmp_path)
+
+
+def test_hash_directory_tree_changes_when_a_files_real_content_changes(tmp_path: Path) -> None:
+    _write(tmp_path / "a.txt", "hello")
+    before = _hash_directory_tree(tmp_path)
+    _write(tmp_path / "a.txt", "hello, but tampered with")
+    after = _hash_directory_tree(tmp_path)
+    assert before != after
+
+
+def test_hash_directory_tree_changes_when_a_file_is_added(tmp_path: Path) -> None:
+    _write(tmp_path / "a.txt", "hello")
+    before = _hash_directory_tree(tmp_path)
+    _write(tmp_path / "b.txt", "a new real file")
+    after = _hash_directory_tree(tmp_path)
+    assert before != after
+
+
+def test_hash_directory_tree_changes_when_a_file_moves_to_a_different_real_path(tmp_path: Path) -> None:
+    # Same real content, different real relative path - a real tamper that
+    # a naive "hash of all file contents, order-independent" scheme would
+    # miss entirely.
+    tree_a = tmp_path / "a"
+    _write(tree_a / "here" / "x.txt", "same content")
+    tree_b = tmp_path / "b"
+    _write(tree_b / "elsewhere" / "x.txt", "same content")
+    assert _hash_directory_tree(tree_a) != _hash_directory_tree(tree_b)
+
+
+def test_hash_directory_tree_is_independent_of_real_filesystem_walk_order(tmp_path: Path) -> None:
+    tree_a = tmp_path / "a"
+    _write(tree_a / "zzz.txt", "1")
+    _write(tree_a / "aaa.txt", "2")
+    _write(tree_a / "mmm" / "nested.txt", "3")
+    tree_b = tmp_path / "b"
+    _write(tree_b / "aaa.txt", "2")
+    _write(tree_b / "mmm" / "nested.txt", "3")
+    _write(tree_b / "zzz.txt", "1")
+    assert _hash_directory_tree(tree_a) == _hash_directory_tree(tree_b)
+
+
+def test_hash_directory_tree_of_an_empty_directory_is_a_real_stable_value(tmp_path: Path) -> None:
+    empty = tmp_path / "empty"
+    empty.mkdir()
+    assert _hash_directory_tree(empty) == hashlib.sha256(b"").hexdigest()
+
+
+def test_hash_directory_tree_hashes_a_symlink_by_its_own_real_target_never_following_it(tmp_path: Path) -> None:
+    outside_secret = tmp_path.parent / "outside-the-tree-secret.txt"
+    outside_secret.write_text("must never be pulled into the hash", encoding="utf-8")
+    tree = tmp_path / "tree"
+    tree.mkdir()
+    link = tree / "link.txt"
+    link.symlink_to(outside_secret)
+    # Must not raise, and must not depend on outside_secret's own content -
+    # changing that content must never change this tree's own hash.
+    first = _hash_directory_tree(tree)
+    outside_secret.write_text("changed - must still not matter", encoding="utf-8")
+    second = _hash_directory_tree(tree)
+    assert first == second
+
+
+def test_hash_directory_tree_never_raises_on_a_real_dangling_symlink(tmp_path: Path) -> None:
+    tree = tmp_path / "tree"
+    tree.mkdir()
+    (tree / "broken.txt").symlink_to(tmp_path / "does-not-exist.txt")
+    # Must complete, not raise FileNotFoundError trying to read through it.
+    _hash_directory_tree(tree)

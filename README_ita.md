@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows e Linux">
 </p>
 
-> **Stato: v0.1.6, scheletro.** La CLI, la scoperta dell'ecosistema, il
+> **Stato: v0.1.7, scheletro.** La CLI, la scoperta dell'ecosistema, il
 > generatore di configurazione del primo avvio e la GUI sono reali e
 > testati. La costruzione reale dell'immagine end-to-end (download →
 > montaggio loop → installazione in chroot → smontaggio) è implementata
