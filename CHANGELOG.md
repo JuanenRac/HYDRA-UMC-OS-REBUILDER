@@ -21,6 +21,28 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.1.7] - C15: a real content hash of what actually landed in the image, not just its version string
+
+The built image's own inventory (`BuildResult.installed`) only ever
+recorded `name@version` as free text - a build that installed the right
+VERSION but a corrupted/tampered/partial copy of it would report exactly
+the same inventory line as a clean one, since nothing tied that claim to
+what was actually on disk.
+
+New `_hash_directory_tree()`: a real, deterministic SHA-256 over every
+file's own real path and content under a project's installed directory
+(sorted for determinism, so it never depends on filesystem walk order) -
+now appended to every real installed-project line as
+`name@version#sha256:<hash>`. A symlink is hashed by its own real target
+string, never followed (never pulls arbitrary host content into the hash
+and never raises on a dangling one). Not git-tree-compatible - a real,
+custom hash, stated honestly rather than implied.
+
+Verified: full pytest suite (67/67, 8 new - stability, content/path/
+addition sensitivity, walk-order independence, empty-directory, real
+symlink handling), `tools/ci_validate.py` PASS (incl. a 6-language
+README version-string fix this surfaced).
+
 ## [0.1.6] - C15: scan the built image's own output for a leaked secret
 
 Input integrity (the official base image's own checksum, commit-SHA
