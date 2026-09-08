@@ -21,6 +21,35 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.1.6] - C15: scan the built image's own output for a leaked secret
+
+Input integrity (the official base image's own checksum, commit-SHA
+pinning for every installed project) was already real and tested - but
+nothing ever looked at what the build itself leaves behind in the
+OUTPUT. A real Wi-Fi password, an SSH private key, a shell history or a
+stray `.env` file left in the mounted rootfs would have shipped straight
+into a publicly distributable image.
+
+- New `scan_for_leaked_secrets()` in `image_builder.py` - a real,
+  read-only scan of the mounted rootfs (never a network image
+  introspection tool, just plain file reads on an already-mounted
+  filesystem) for: a real `psk=` in `wpa_supplicant.conf` or a
+  NetworkManager connection profile, a real PEM-format private key under
+  any home directory's `.ssh/` (never flagging the matching `.pub`), a
+  real non-empty `.bash_history`/`.zsh_history`, and a real `.env` file
+  anywhere under a home directory. A fixed, explicit list of real secret
+  shapes - never a fuzzy heuristic.
+- `build_image()` now runs this scan right before unmounting (while the
+  rootfs is still a real, live mount point) and refuses to promote the
+  image if anything real is found - the raw image is left in `work_dir`
+  for inspection, the exact same "never promote what couldn't be
+  confirmed clean" policy an unmount/cleanup failure already enforces.
+- 9 new real tests in `tests/test_image_builder.py` - no real loop-mount
+  needed, since the function only ever reads from a plain directory
+  tree. 59/59 tests pass.
+- README + all 6 translations - documents this as a 4th real pipeline
+  step, alongside download/build/first-boot-config.
+
 ## [0.1.5] - V07-013: a normal incremental build.sh could never actually finish an install
 
 REV-018 (an earlier independent revalidation audit) correctly found that

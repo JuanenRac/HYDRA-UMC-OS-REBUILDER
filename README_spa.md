@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows y Linux">
 </p>
 
-> **Estado: v0.1.5, esqueleto.** La CLI, el descubrimiento del ecosistema,
+> **Estado: v0.1.6, esqueleto.** La CLI, el descubrimiento del ecosistema,
 > el generador de configuración de primer arranque y la interfaz gráfica
 > son reales y están probados. La construcción de imagen real de extremo a
 > extremo (descarga → montaje loop → instalación en chroot → desmontaje)
@@ -56,6 +56,15 @@ Hace tres cosas reales:
    resultante se comporta exactamente igual que una que hubiera producido
    el propio Raspberry Pi Imager. Ver
    [docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md).
+4. **Escanea su propia salida antes de publicarla.** Antes de que la
+   imagen construida se mueva a su ruta final, se comprueba el rootfs
+   montado en busca de una contraseña Wi-Fi real dejada en
+   `wpa_supplicant.conf`/un perfil de conexión de NetworkManager, una
+   clave SSH privada real, un historial de shell no vacío, o un fichero
+   `.env` suelto - cualquier hallazgo real bloquea la publicación por
+   completo, igual que ya hace un fallo de limpieza. La verificación de
+   checksum solo cubría la ENTRADA (la imagen base); esta es la primera
+   comprobación de lo que la propia construcción deja en la SALIDA.
 
 ```
 $ hydra-umc-os-rebuilder --cli status

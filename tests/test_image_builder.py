@@ -27,6 +27,7 @@ from hydra_umc_os_rebuilder.image_builder import (
     _xz_uncompressed_size,
     fetch_base_image,
     fetch_reference_sha256,
+    scan_for_leaked_secrets,
 )
 
 
@@ -310,3 +311,92 @@ def test_fetch_base_image_refuses_to_start_a_download_with_no_real_room_for_it(
     # Must fail BEFORE ever downloading anything, not partway through.
     assert not (tmp_path / "image.img").exists()
     assert not (tmp_path / "image.img.part").exists()
+
+
+# C15: scan_for_leaked_secrets() real tests. No real loop-mount needed -
+# the function only ever reads from a plain directory tree, so a real
+# tmp_path standing in for a mounted rootfs exercises the real logic
+# end-to-end without any Linux-only privilege.
+
+
+def test_scan_for_leaked_secrets_is_clean_on_a_fresh_rootfs_with_nothing_provisioned(tmp_path: Path) -> None:
+    (tmp_path / "etc").mkdir()
+    (tmp_path / "root").mkdir()
+    assert scan_for_leaked_secrets(tmp_path) == []
+
+
+def test_scan_for_leaked_secrets_finds_a_real_wpa_supplicant_psk(tmp_path: Path) -> None:
+    wpa_dir = tmp_path / "etc" / "wpa_supplicant"
+    wpa_dir.mkdir(parents=True)
+    (wpa_dir / "wpa_supplicant.conf").write_text(
+        'network={\n    ssid="HomeWifi"\n    psk="a real password, never this"\n}\n', encoding="utf-8"
+    )
+    findings = scan_for_leaked_secrets(tmp_path)
+    assert len(findings) == 1
+    assert "wpa_supplicant.conf" in findings[0]
+
+
+def test_scan_for_leaked_secrets_finds_a_real_networkmanager_psk(tmp_path: Path) -> None:
+    nm_dir = tmp_path / "etc" / "NetworkManager" / "system-connections"
+    nm_dir.mkdir(parents=True)
+    (nm_dir / "HomeWifi.nmconnection").write_text(
+        "[wifi-security]\nkey-mgmt=wpa-psk\npsk=a-real-password\n", encoding="utf-8"
+    )
+    findings = scan_for_leaked_secrets(tmp_path)
+    assert len(findings) == 1
+    assert "HomeWifi.nmconnection" in findings[0]
+
+
+def test_scan_for_leaked_secrets_finds_a_real_private_ssh_key_but_not_the_public_half(tmp_path: Path) -> None:
+    ssh_dir = tmp_path / "root" / ".ssh"
+    ssh_dir.mkdir(parents=True)
+    (ssh_dir / "id_ed25519").write_bytes(b"-----BEGIN OPENSSH PRIVATE KEY-----\nreal key material\n")
+    (ssh_dir / "id_ed25519.pub").write_bytes(b"ssh-ed25519 AAAAC3Nz... user@host\n")
+    findings = scan_for_leaked_secrets(tmp_path)
+    assert len(findings) == 1
+    assert "id_ed25519" in findings[0] and "id_ed25519.pub" not in findings[0]
+
+
+def test_scan_for_leaked_secrets_finds_a_real_populated_home_users_ssh_key_too(tmp_path: Path) -> None:
+    ssh_dir = tmp_path / "home" / "pi" / ".ssh"
+    ssh_dir.mkdir(parents=True)
+    (ssh_dir / "id_rsa").write_bytes(b"-----BEGIN RSA PRIVATE KEY-----\nreal key material\n")
+    findings = scan_for_leaked_secrets(tmp_path)
+    assert len(findings) == 1
+    assert str(Path("home") / "pi" / ".ssh" / "id_rsa") in findings[0]
+
+
+def test_scan_for_leaked_secrets_finds_a_real_nonempty_shell_history(tmp_path: Path) -> None:
+    root_home = tmp_path / "root"
+    root_home.mkdir()
+    (root_home / ".bash_history").write_text("curl -u admin:real-password https://example.test\n", encoding="utf-8")
+    findings = scan_for_leaked_secrets(tmp_path)
+    assert len(findings) == 1
+    assert ".bash_history" in findings[0]
+
+
+def test_scan_for_leaked_secrets_ignores_a_real_but_empty_shell_history(tmp_path: Path) -> None:
+    root_home = tmp_path / "root"
+    root_home.mkdir()
+    (root_home / ".bash_history").write_text("", encoding="utf-8")
+    assert scan_for_leaked_secrets(tmp_path) == []
+
+
+def test_scan_for_leaked_secrets_finds_a_real_env_file_anywhere_under_a_home_directory(tmp_path: Path) -> None:
+    project_dir = tmp_path / "home" / "pi" / "some-project"
+    project_dir.mkdir(parents=True)
+    (project_dir / ".env").write_text("API_KEY=a-real-secret-value\n", encoding="utf-8")
+    findings = scan_for_leaked_secrets(tmp_path)
+    assert len(findings) == 1
+    assert ".env" in findings[0]
+
+
+def test_scan_for_leaked_secrets_reports_every_real_finding_not_just_the_first(tmp_path: Path) -> None:
+    root_home = tmp_path / "root"
+    root_home.mkdir()
+    (root_home / ".bash_history").write_text("a real command\n", encoding="utf-8")
+    ssh_dir = root_home / ".ssh"
+    ssh_dir.mkdir()
+    (ssh_dir / "id_ed25519").write_bytes(b"-----BEGIN OPENSSH PRIVATE KEY-----\nreal key material\n")
+    findings = scan_for_leaked_secrets(tmp_path)
+    assert len(findings) == 2
