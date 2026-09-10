@@ -74,7 +74,7 @@ into a publicly distributable image.
 
 ## [0.1.5] - V07-013: a normal incremental build.sh could never actually finish an install
 
-REV-018 (an earlier independent revalidation audit) correctly found that
+REV-018 (an earlier review pass) correctly found that
 `_install_one_project()` ran a pinned commit's own real, INCREMENTAL,
 version-bumping `build.sh` and then refused to install if the reported
 version diverged from the plan - but every real `build.sh` in this
@@ -90,7 +90,7 @@ are restored to the exact pinned commit with a plain `git checkout -- .`
 - the real deployable output `build.sh` produced lands in that project's
 own gitignored path (`dist/`, `node_modules/`, `target/release/`, a
 compiled binary) and is completely untouched by that restore, while the
-version/manifest/CHANGELOG bookkeeping the audit specifically objected
+version/manifest/CHANGELOG bookkeeping the review pass specifically objected
 to mutating goes back to the exact pinned state. The original
 divergence check is kept as a real safety net for the one case this
 restore cannot fix (a version living in a path outside git's tracking)
@@ -108,7 +108,7 @@ original closure criterion.
 
 ## [0.1.4] - REV-018: real regression found by independent revalidation
 
-An independent revalidation audit reproduced a real gap in `_install_one_project()`
+A review pass reproduced a real gap in `_install_one_project()`
 (against a real fixture project whose own `build.sh` bumps its version,
 no real image/mount involved):
 
@@ -135,8 +135,7 @@ no real image/mount involved):
 
 ## [0.1.3] - IMAGE-01/02: pin to a real commit, never promote an image cleanup couldn't finish
 
-- **IMAGE-01 (found in an ecosystem-wide software-improvements audit,
-  P1):** `_install_one_project()` used to `git clone --branch <branch>` -
+- **IMAGE-01 (P1):** `_install_one_project()` used to `git clone --branch <branch>` -
   a real push to that branch between planning and building silently
   changed what got installed, with no way to tell after the fact. New
   `ecosystem_plan.resolve_commit_shas()` resolves each entry's real,
@@ -151,7 +150,7 @@ no real image/mount involved):
   bumps the version itself, this ecosystem's universal per-repo
   convention, so the plan alone was never proof of what actually ended
   up installed.
-- **IMAGE-02 (found in the same audit, P1):** `build_image()`'s cleanup
+- **IMAGE-02 (found in the same review pass, P1):** `build_image()`'s cleanup
   (`umount`/`losetup -d`) ran with `check=False`, so a real failure there
   passed silently - the function went on to promote (move + report
   `ok=True`) an image whose own loop device or mount could still be
@@ -388,7 +387,7 @@ no real image/mount involved):
 
 ## [0.0.2]
 
-- **Fixed a real bug found the same night by an ecosystem-wide bug audit:
+- **Fixed a real bug found the same night while auditing the code:
   base-image checksum verification never actually ran.**
   `KNOWN_BASE_IMAGES`'s own `sha256=""` (deliberate - meant "fetch the
   real digest from the publisher's sidecar at download time") made the
