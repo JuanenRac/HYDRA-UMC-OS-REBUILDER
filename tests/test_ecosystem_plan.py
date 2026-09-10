@@ -97,7 +97,7 @@ def test_plan_is_sorted_by_name_case_insensitively() -> None:
 
 
 # =============================================================================
-# IMAGE-01 (found in an ecosystem-wide software-improvements audit, P1):
+# IMAGE-01 (P1):
 # resolve_commit_shas() real network pass - a real local fixture HTTP
 # server standing in for GitHub's own `/repos/:owner/:repo/commits/:branch`
 # endpoint, no network mocking of the request/response machinery itself.

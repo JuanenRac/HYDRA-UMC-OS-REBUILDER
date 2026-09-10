@@ -170,7 +170,7 @@ def test_xz_uncompressed_size_returns_none_for_a_file_that_is_not_real_xz(tmp_pa
 
 
 # =============================================================================
-# IMAGE-01 (found in an ecosystem-wide software-improvements audit, P1):
+# IMAGE-01 (P1):
 # _install_one_project() must refuse an unpinned entry, clone+checkout by
 # real commit SHA (not a mutable branch), and report the REAL post-build
 # version from the rootfs's own manifest - never the plan's stale one.
@@ -250,7 +250,7 @@ def test_install_one_project_clones_and_checks_out_the_real_pinned_sha_when_the_
 def test_install_one_project_restores_the_planned_version_after_a_real_incremental_build_regression_for_v07_013(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # V07-013 (found in an independent revalidation audit, P1 - closing
+    # V07-013 (P1 - closing
     # REV-018's own documented "real, separate future work" gap): build.sh
     # is this ecosystem's own real, INCREMENTAL, version-bumping build
     # script - it ALWAYS advances the version as its own first real
