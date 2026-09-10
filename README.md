@@ -127,7 +127,7 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── qt_gui.py             # Qt Quick bridge over the real CLI-facing modules above
 │   ├── qml/Main.qml          # Themed desktop shell: Ecosystem Status / Build Image / First-Boot Config
 │   └── main.py                # Dispatch: GUI by default, --cli for status/config/build-image
-├── tests/                    # Real tests: firstboot_config, ecosystem_plan, i18n
+├── tests/                    # Real tests: firstboot_config, ecosystem_plan, image_builder, i18n, main
 ├── docs/
 │   ├── CLI_REFERENCE.md       # Command reference
 │   └── FIRST_BOOT_CONFIG.md   # The real firstrun.sh mechanism this tool reproduces, and why

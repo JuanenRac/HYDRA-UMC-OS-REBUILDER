@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows et Linux">
 </p>
 
-> **Statut : v0.1.6, squelette.** La CLI, la découverte de l'écosystème, le
+> **Statut : v0.1.7, squelette.** La CLI, la découverte de l'écosystème, le
 > générateur de configuration de premier démarrage et l'interface
 > graphique sont réels et testés. La construction d'image réelle de bout
 > en bout (téléchargement → montage loop → installation en chroot →
@@ -135,7 +135,7 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── qt_gui.py             # Pont Qt Quick sur les modules réels ci-dessus, les mêmes qu'utilise la CLI
 │   ├── qml/Main.qml          # Interface de bureau thématique : État de l'Écosystème / Créer l'Image / Configuration du Premier Démarrage
 │   └── main.py                # Répartition : GUI par défaut, --cli pour status/config/build-image
-├── tests/                    # Tests réels : firstboot_config, ecosystem_plan, i18n
+├── tests/                    # Tests réels : firstboot_config, ecosystem_plan, image_builder, i18n, main
 ├── docs/
 │   ├── CLI_REFERENCE.md       # Référence des commandes
 │   └── FIRST_BOOT_CONFIG.md   # Le mécanisme réel firstrun.sh reproduit par cet outil, et pourquoi

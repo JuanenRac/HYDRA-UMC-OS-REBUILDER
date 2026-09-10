@@ -109,7 +109,7 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── qt_gui.py             # 覆盖在上述真实模块之上的 Qt Quick 桥接，与 CLI 使用的完全相同
 │   ├── qml/Main.qml          # 主题化的桌面界面：生态系统状态 / 构建镜像 / 首次启动配置
 │   └── main.py                # 分派：默认图形界面，--cli 用于 status/config/build-image
-├── tests/                    # 真实测试：firstboot_config、ecosystem_plan、i18n
+├── tests/                    # 真实测试：firstboot_config、ecosystem_plan、image_builder、i18n、main
 ├── docs/
 │   ├── CLI_REFERENCE.md       # 命令参考
 │   └── FIRST_BOOT_CONFIG.md   # 本工具复现的真实 firstrun.sh 机制，以及原因
