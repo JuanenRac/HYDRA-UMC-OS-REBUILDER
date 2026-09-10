@@ -36,8 +36,7 @@ class EcosystemPlanEntry:
     stack: str
     git_url: str
     branch: str = "main"
-    # IMAGE-01 (found in an ecosystem-wide software-improvements audit,
-    # P1): `branch` alone is a mutable pointer - a real push to `main`
+    # IMAGE-01 (P1): `branch` alone is a mutable pointer - a real push to `main`
     # between this plan being built and an image actually being built
     # from it silently changes what gets installed. `commit_sha` is the
     # real, immutable identity `_install_one_project` now clones and

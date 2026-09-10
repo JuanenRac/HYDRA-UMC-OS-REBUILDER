@@ -235,7 +235,7 @@ def fetch_base_image(source: BaseImageSource, dest_dir: Path, *, chunk_size: int
     (see `_require_free_space`'s own docstring for the real incident this
     was found from).
 
-    Real bug fixed here, found by an ecosystem-wide audit: `source.sha256`
+    Real bug fixed here, found while auditing the code: `source.sha256`
     being the empty string (the real, intentional value every entry in
     `KNOWN_BASE_IMAGES` carries - see that list's own comment) made the
     old `if source.sha256 and actual != source.sha256` check silently
@@ -353,8 +353,7 @@ def build_image(
 
         report("unmount")
     finally:
-        # IMAGE-02 (found in an ecosystem-wide software-improvements
-        # audit, P1): `check=False` here used to let a real umount/
+        # IMAGE-02 (P1): `check=False` here used to let a real umount/
         # losetup failure pass silently - the function went on to
         # promote (move + report ok=True) an image whose own loop device
         # or mount could still be active. Every real exit code and
@@ -538,8 +537,7 @@ def _install_one_project(entry, rootfs_mount: Path) -> str:
     abstraction, since there is exactly one real caller and no second
     implementation to share it with yet.
 
-    IMAGE-01 (found in an ecosystem-wide software-improvements audit,
-    P1): this used to `git clone --branch <mutable branch name>` - a
+    IMAGE-01 (P1): this used to `git clone --branch <mutable branch name>` - a
     real push to that branch between planning and building silently
     changed what got installed, with no way to tell after the fact.
     `entry.commit_sha` (see ecosystem_plan.resolve_commit_shas) is now
@@ -565,7 +563,7 @@ def _install_one_project(entry, rootfs_mount: Path) -> str:
         raise ImageBuildError(f"{entry.name}: no build.sh found - cannot install into the image")
     relative = build_script.relative_to(rootfs_mount)
     _run("chroot", str(rootfs_mount), "/bin/bash", f"/{relative.as_posix()}")
-    # V07-013 (found in an independent revalidation audit, P1 - closing
+    # V07-013 (P1 - closing
     # REV-018's own documented "real, separate future work" gap): this
     # pinned commit's own build.sh is this ecosystem's real, INCREMENTAL,
     # version-bumping build script (the same one a human release runs),
