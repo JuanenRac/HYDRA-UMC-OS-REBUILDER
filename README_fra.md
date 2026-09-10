@@ -201,6 +201,7 @@ Ce projet fait partie de l'écosystème robotique HYDRA-UMC du même auteur (Jua
 - **[HYDRA-UMC-OS](https://github.com/JuanenRac/HYDRA-UMC-OS)** — la couche produit reproductible Raspberry Pi OS dont cet outil construit réellement une image : agent en lecture seule, configuration/profils validés, approvisionnement Wi-Fi de premier contact.
 - **[HYDRA-UMC-UPDATER](https://github.com/JuanenRac/HYDRA-UMC-UPDATER)** — l'outil frère d'opérations de l'écosystème dont celui-ci dépend comme véritable bibliothèque pour la découverte GitHub - détecte, installe et met à jour manuellement tout l'écosystème sur une machine déjà en service, là où cet outil en construit une nouvelle depuis zéro.
 - **[HYDRA-UMC-OPS-AGENT](https://github.com/JuanenRac/HYDRA-UMC-OPS-AGENT)** — coordinateur d'incidents de maintenance : un rôle edge à faible privilège collecte un instantané d'inventaire/santé assaini, un rôle control-plane le rend en lecture seule et demande à un fournisseur d'IA de suggérer un diagnostic - n'applique jamais de correctif ni ne déploie rien.
+- **[HYDRA-UMC-DEV-SERVER](https://github.com/JuanenRac/HYDRA-UMC-DEV-SERVER)** — hôte de développement reproductible (Raspberry Pi 5 / CM5) qui héberge le code source de l'écosystème et exécute des tâches de compilation/test délimitées via une file d'attente durable ; un rôle de développement dédié, explicitement distinct d'un CM5 opérationnel.
 
 **Également Partie de l'Écosystème**
 

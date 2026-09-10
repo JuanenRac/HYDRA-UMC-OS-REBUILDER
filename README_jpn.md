@@ -193,6 +193,7 @@ Windowsの場合：`build.bat` を実行後、`run.bat`（GUI）/
 - **[HYDRA-UMC-OS](https://github.com/JuanenRac/HYDRA-UMC-OS)** — このツールが実際にイメージを構築する対象である、再現可能なRaspberry Pi OS製品レイヤー：読み取り専用エージェント、検証済みの設定/プロファイル、Wi-Fi初回接続プロビジョニング。
 - **[HYDRA-UMC-UPDATER](https://github.com/JuanenRac/HYDRA-UMC-UPDATER)** — このツールがGitHub検出のために実際のライブラリとして依存している姉妹的なエコシステム運用ツール - すでに稼働中のマシン上でエコシステム全体を検出・インストール・手動更新するのに対し、このツールはゼロから新しいものを構築します。
 - **[HYDRA-UMC-OPS-AGENT](https://github.com/JuanenRac/HYDRA-UMC-OPS-AGENT)** — 保守インシデントコーディネーター: 低権限のエッジ役割がサニタイズされたインベントリ/ヘルスのスナップショットを収集し、コントロールプレーン役割がそれを読み取り専用でレンダリングして AI プロバイダーに診断の提案を依頼します - パッチを適用することも、何かをデプロイすることも決してありません。
+- **[HYDRA-UMC-DEV-SERVER](https://github.com/JuanenRac/HYDRA-UMC-DEV-SERVER)** — 再現可能な開発ホスト（Raspberry Pi 5 / CM5）。エコシステムのソースコードを保管し、永続キューのもとで境界の明確なビルド/テストタスクを実行する。運用中の CM5 とは明確に異なる、開発専用の役割。
 
 **エコシステムの他の一部**
 
