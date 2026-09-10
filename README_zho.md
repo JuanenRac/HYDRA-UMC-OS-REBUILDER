@@ -171,6 +171,7 @@ chmod +x build.sh   # 仅需一次
 - **[HYDRA-UMC-OS](https://github.com/JuanenRac/HYDRA-UMC-OS)** — 本工具真正构建其镜像的可复现 Raspberry Pi OS 产品层：只读代理、经过验证的配置/配置文件、Wi-Fi 首次接触配置。
 - **[HYDRA-UMC-UPDATER](https://github.com/JuanenRac/HYDRA-UMC-UPDATER)** — 本工具作为真实库依赖以进行 GitHub 发现的姊妹生态系统运维工具 - 在已运行的机器上检测、安装并手动更新整个生态系统，而本工具则是从零构建一台全新的。
 - **[HYDRA-UMC-OPS-AGENT](https://github.com/JuanenRac/HYDRA-UMC-OPS-AGENT)** — 维护事件协调器：一个低权限的边缘角色采集经过脱敏的库存/健康快照，一个控制面角色以只读方式渲染它，并请求某个 AI 提供方给出诊断建议——从不应用补丁，也从不部署任何内容。
+- **[HYDRA-UMC-DEV-SERVER](https://github.com/JuanenRac/HYDRA-UMC-DEV-SERVER)** — 可复现的开发主机（Raspberry Pi 5 / CM5），保存整个生态系统的源代码，并在持久队列下运行有界的构建/测试任务；这是专用的开发角色，明确区别于运行中的 CM5。
 
 **同样属于生态系统的项目**
 
