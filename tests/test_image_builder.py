@@ -403,7 +403,7 @@ def test_scan_for_leaked_secrets_reports_every_real_finding_not_just_the_first(t
     assert len(findings) == 2
 
 
-# C15 (private plan's own flow): real output-side inventory hashing -
+# C15: real output-side inventory hashing -
 # _hash_directory_tree() itself, pure and fully testable without a real
 # mount/chroot pipeline.
 def _write(path: Path, content: str) -> None:
