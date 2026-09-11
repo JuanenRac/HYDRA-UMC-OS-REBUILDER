@@ -21,6 +21,8 @@
 > 主机上运行 - 具体的平台边界及其存在的原因见
 > [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)。
 
+**诚实核查——今天真正能跑起来的部分：** CLI（`main.py`）、复用 `hydra_umc_updater` 自己的 GitHub 客户端而不是再实现一份的动态生态系统发现（`ecosystem_plan.py`）、没有任何文件系统访问的纯 `firstrun.sh`/`cmdline.txt` 生成器（`firstboot_config.py`）、7 种语言的 GUI 翻译（`i18n.py`），以及 Qt Quick 桌面外壳（`qt_gui.py`、`qml/Main.qml`）都是真实且经过测试的（67 个测试，`pytest`）。`image_builder.py` 的下载/校验和验证/环回挂载/chroot 安装/卸载流水线、它对每个项目实际落盘内容的哈希计算，以及它在提升镜像前对泄露的 Wi-Fi 密码/私有 SSH 密钥/shell 历史记录/`.env` 文件的扫描都是真实代码，由 `check_build_platform()` 把关——它们只在具备 root 权限、且 `PATH` 中有 `losetup`/`chroot` 的真实 Linux 主机上执行，在本环境中从未针对真实的 CM5 SD 卡/eMMC 写入完整跑通过端到端流程；在 Windows 上或非 root 的 Linux 用户下，`build-image` 会立即以 `BUILD_BLOCKED reason=...` 退出，而不是假装成功。`status`/`config` 则已经针对真实的 GitHub 在线发现做过验证。已交付的具体内容见 `CHANGELOG.md`，尚未完成的部分见下面的 ROADMAP。
+
 ---
 
 ## 1. 🛠️ 技术概览

@@ -23,6 +23,8 @@
 > [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) per il limite esatto di
 > piattaforma e il perché esiste.
 
+**Verifica di onestà - cosa funziona davvero oggi:** la CLI (`main.py`), la scoperta dinamica dell'ecosistema che riusa il client GitHub di `hydra_umc_updater` invece di duplicarlo (`ecosystem_plan.py`), il generatore puro di `firstrun.sh`/`cmdline.txt` senza accesso al filesystem (`firstboot_config.py`), le traduzioni della GUI in 7 lingue (`i18n.py`) e la shell desktop Qt Quick (`qt_gui.py`, `qml/Main.qml`) sono reali e testati (67 test, `pytest`). La pipeline di `image_builder.py` (download/verifica checksum/montaggio loop/installazione in chroot/smontaggio), il suo hash del contenuto per ogni progetto di ciò che è realmente finito sul disco, e la sua scansione pre-promozione alla ricerca di una password Wi-Fi trapelata/una chiave SSH privata/una cronologia di shell/un file `.env` sono codice reale, protetto da `check_build_platform()` - vengono eseguiti solo su un vero host Linux con permessi root e `losetup`/`chroot` nel `PATH`, e non sono mai stati eseguiti end-to-end contro una vera scrittura di SD/eMMC di una CM5 in questo ambiente; su Windows o con un utente Linux non root, `build-image` termina subito con `BUILD_BLOCKED reason=...` invece di simulare un successo. `status`/`config` sono stati invece testati davvero contro la scoperta GitHub dal vivo. Vedi `CHANGELOG.md` per ciò che è stato consegnato finora esattamente, e la ROADMAP più sotto per ciò che resta aperto.
+
 ---
 
 ## 1. 🛠️ PANORAMICA TECNICA

@@ -22,6 +22,8 @@
 > see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) for the exact
 > platform boundary and why it exists.
 
+**Honesty check - what actually runs today:** the CLI (`main.py`), the dynamic ecosystem discovery that reuses `hydra_umc_updater`'s own GitHub client instead of a second copy of it (`ecosystem_plan.py`), the pure `firstrun.sh`/`cmdline.txt` first-boot config generator with no filesystem access (`firstboot_config.py`), the 7-language GUI translations (`i18n.py`) and the Qt Quick desktop shell (`qt_gui.py`, `qml/Main.qml`) are real and tested (67 tests, `pytest`). `image_builder.py`'s download/checksum-verify/loop-mount/chroot-install/unmount pipeline, its per-project content-hashing of what actually landed on disk, and its pre-promotion scan for a leaked Wi-Fi password/private SSH key/shell history/`.env` file are real code, gated behind `check_build_platform()` - they only execute on a real Linux host with root and `losetup`/`chroot` on `PATH`, and have not been run end-to-end against a real CM5 SD card/eMMC write in this environment; on Windows or a non-root Linux user, `build-image` exits early with `BUILD_BLOCKED reason=...` rather than pretending to succeed. `status`/`config` have been exercised for real against live GitHub discovery. See `CHANGELOG.md` for exactly what has shipped so far, and the ROADMAP below for what remains open.
+
 ---
 
 ## 1. 🛠️ TECHNICAL OVERVIEW

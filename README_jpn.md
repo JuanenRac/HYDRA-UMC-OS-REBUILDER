@@ -23,6 +23,8 @@
 > の境界とその理由については
 > [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) を参照してください。
 
+**正直な現状確認 - 実際に今動くもの:** CLI（`main.py`）、`hydra_umc_updater` 自身のGitHubクライアントを再利用し二重実装を避けている動的なエコシステム検出（`ecosystem_plan.py`）、ファイルシステムに一切アクセスしない純粋な `firstrun.sh`/`cmdline.txt` ジェネレータ（`firstboot_config.py`）、7言語対応のGUI翻訳（`i18n.py`）、そしてQt Quickデスクトップシェル（`qt_gui.py`、`qml/Main.qml`）は本物であり、テスト済みです（67件のテスト、`pytest`）。`image_builder.py` のダウンロード／チェックサム検証／ループマウント／chrootインストール／アンマウントのパイプライン、実際にディスクに書き込まれた内容に対するプロジェクトごとのコンテンツハッシュ、そして昇格前に漏洩したWi-Fiパスワード／秘密のSSH鍵／シェル履歴／`.env`ファイルを検出するスキャンは本物のコードであり、`check_build_platform()` によってゲートされています - これらはroot権限を持つ実際のLinuxホストで、かつ `losetup`/`chroot` が `PATH` 上にある場合にのみ実行され、この環境では実際のCM5のSD/eMMC書き込みに対してエンドツーエンドで実行されたことはありません。WindowsまたはrootではないLinuxユーザーでは、`build-image` は成功したふりをする代わりに即座に `BUILD_BLOCKED reason=...` で終了します。`status`/`config` は実際のライブGitHub検出に対して本当にテストされています。これまでに実際に出荷されたものの詳細は `CHANGELOG.md` を、残っている未完了事項は下記のROADMAPを参照してください。
+
 ---
 
 ## 1. 🛠️ 技術概要
