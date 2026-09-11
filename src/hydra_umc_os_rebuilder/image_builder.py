@@ -482,7 +482,7 @@ def scan_for_leaked_secrets(rootfs_mount: Path) -> list[str]:
 
 
 def _hash_directory_tree(path: Path) -> str:
-    """C15 (private plan's own flow): real, output-side inventory hashing -
+    """C15: real, output-side inventory hashing -
     found completely missing (not just untested): the built image's own
     inventory only ever recorded `name@version` as free text, with nothing
     tying that claim to what was ACTUALLY installed on disk. A build that
