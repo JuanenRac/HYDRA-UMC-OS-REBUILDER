@@ -49,6 +49,16 @@ Only `--out` is required; every other field is optional and independently
 skipped when absent (no hostname change, no user created, no Wi-Fi
 configured, SSH enabled by default unless `--no-ssh` is given).
 
+**Recovery-procedure guard:** `--no-ssh` without `--username` is refused
+(`FirstBootConfigError`) - on this tool's own official base images (no
+default user on Bookworm and later) that combination leaves the unit
+with no login path at all, remote or physical. Pass
+`--acknowledge-no-remote-access` to opt in when another way in is
+certain. A `--ssh-key` given without both `--username` and `--password`
+is refused outright (no acknowledgment override) - it would otherwise be
+silently dropped from the generated script, since `firstboot_config.py`
+only ever installs a key for the account it is itself creating.
+
 ## `build-image`
 
 Builds a complete, ready-to-flash `.img`: downloads the pinned base
@@ -66,3 +76,42 @@ cannot be meaningfully emulated on Windows. Run it from a real Linux
 machine, or WSL2 configured for real loop-device access. On any other
 platform this command exits with `BUILD_BLOCKED reason=...` explaining
 exactly what is missing, rather than silently doing nothing.
+
+Accepts the same optional `--hostname`/`--username`/`--password`/
+`--no-ssh`/`--acknowledge-no-remote-access`/`--ssh-key`/`--wifi-*`/
+`--timezone`/`--keyboard`/`--locale` flags as `config` above, threaded
+straight into the real build.
+
+## `profile-freeze` / `profile-diff` / `profile-update` / `profile-build`
+
+D05 ("versions and compatibility across the set"): `status` above always
+answers "what is current on GitHub right now" - a live, moving target.
+These four commands let a candidate combination be pinned, inspected and
+built from without ever silently picking up whatever "latest" has become
+since it was frozen.
+
+```
+# Pin the current live ecosystem plan into a named, persisted manifest
+hydra-umc-os-rebuilder --cli profile-freeze --name cm5-production --out profiles/cm5-production.json
+
+# Compare a previously frozen profile against the current live ecosystem,
+# per project - never a single pass/fail boolean
+hydra-umc-os-rebuilder --cli profile-diff --manifest profiles/cm5-production.json
+
+# Refreeze ONLY the named project(s) - every other one stays pinned
+# exactly as it was tested before, even if it also changed upstream
+hydra-umc-os-rebuilder --cli profile-update --manifest profiles/cm5-production.json --project HYDRA-UMC-SERVER
+
+# Build a real .img from EXACTLY the frozen manifest's own commit SHAs -
+# never re-resolves "latest" mid-build. Same real Linux/root/tool
+# requirements as build-image above; folds real post-build content
+# hashes back into the manifest on disk once it succeeds.
+hydra-umc-os-rebuilder --cli profile-build --manifest profiles/cm5-production.json --out hydra-umc-cm5.img
+```
+
+`profile-diff`'s findings are per-project and typed (`UPDATED`,
+`ROLE_CHANGED`, `STACK_CHANGED`, `ADDED`, `DROPPED_FROM_CM5`) rather than
+a single yes/no answer - this ecosystem's own version numbers are a
+base-10 odometer with no semantic-versioning meaning (see this repo's
+own `CHANGELOG.md`, "Versioning scheme"), so a version diff alone was
+never going to be an honest compatibility signal by itself.

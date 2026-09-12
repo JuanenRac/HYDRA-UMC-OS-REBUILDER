@@ -63,6 +63,12 @@ class FirstBootConfig:
     timezone: str | None = None  # IANA name, e.g. "Europe/Madrid" - passed through verbatim, not validated against a fixed list
     keyboard_layout: str | None = None  # e.g. "us", "es" - same reasoning as timezone
     locale: str | None = None  # e.g. "en_US.UTF-8"
+    # D04 (recovery procedure): explicit, opt-in override for the one
+    # real lockout shape this module can actually detect on its own - see
+    # the check in _validate() below. Left False by default so the tool
+    # refuses that config, rather than silently building an image nobody
+    # can get into, remotely or physically.
+    acknowledge_no_remote_access: bool = False
 
 
 def _validate(config: FirstBootConfig) -> None:
@@ -72,11 +78,41 @@ def _validate(config: FirstBootConfig) -> None:
         raise FirstBootConfigError(f"invalid username: {config.username!r}")
     if config.username is not None and config.password is None:
         raise FirstBootConfigError("a username was set without a password")
+    if config.ssh_authorized_key and not (config.username and config.password):
+        # Real bug this check exists to prevent, not a style preference:
+        # build_firstrun_script()'s own ssh_authorized_key block only ever
+        # runs INSIDE the `if config.username and config.password:` branch
+        # below - a key set without both would be silently dropped from
+        # the generated script with no error and no trace, leaving the
+        # operator believing key-based login was configured when it never
+        # was (D04's own "recovery procedure" concern, one step earlier
+        # than the network-access check below).
+        raise FirstBootConfigError(
+            "ssh_authorized_key requires both username and password to be set - it is only ever installed for "
+            "the newly-configured account and would otherwise be silently dropped from the generated script"
+        )
     if config.wifi is not None:
         if not config.wifi.ssid:
             raise FirstBootConfigError("wifi.ssid cannot be empty")
         if not config.wifi.country or not _COUNTRY_RE.fullmatch(config.wifi.country):
             raise FirstBootConfigError(f"invalid Wi-Fi country code: {config.wifi.country!r}")
+    if not config.enable_ssh and config.username is None and not config.acknowledge_no_remote_access:
+        # D04: "cambiar identidad o acceso remoto debe preservar un
+        # procedimiento de recuperacion; no dejar al operador fuera del
+        # equipo durante la instalacion." The official Raspberry Pi OS
+        # base images this tool builds from (see image_builder.py's
+        # KNOWN_BASE_IMAGES) ship with NO default account on Bookworm and
+        # later - if SSH is also explicitly disabled and no account is
+        # being configured here either, the resulting unit has no login
+        # path at all, remote or physical. A config that only leaves
+        # things as the base image shipped them (SSH left at its default
+        # enabled, or an account being configured) never trips this.
+        raise FirstBootConfigError(
+            "SSH is disabled and no account is being configured - on this tool's own official base images "
+            "(no default user) that would leave the unit with no login path at all, remote or local. Set "
+            "acknowledge_no_remote_access=True only when another way in is certain (an existing account on "
+            "the base image, or planned physical re-provisioning)."
+        )
 
 
 def hash_password(plaintext: str) -> str:
@@ -199,6 +235,41 @@ def cmdline_run_directive(script_path: str = "/boot/firmware/firstrun.sh") -> st
     boot targets start - real syntax `systemd`'s own kernel-command-line
     parsing understands natively, not a hack."""
     return f" systemd.run={script_path} systemd.run_success_action=reboot systemd.unit=kernel-command-line.target"
+
+
+def describe_recovery_procedure(config: FirstBootConfig) -> str:
+    """D04's own recovery procedure, made concrete: a plain-text note for
+    the OPERATOR to keep off the image itself (this module never writes
+    it onto the boot partition - a recovery note about how to reach a
+    unit does not belong inside that same unit). States exactly what
+    login path `config` leaves open, and the real, official Raspberry Pi
+    OS mechanism to recover if that path ever stops working - not an
+    invented one: dropping an empty `ssh` file onto the boot partition is
+    the actual documented way `raspi-config`'s own ecosystem re-enables
+    SSH after the fact, the same real interface this whole module already
+    builds on."""
+    _validate(config)
+    lines = ["HYDRA-UMC-OS-REBUILDER - first-boot recovery note", ""]
+    if config.username and config.password:
+        lines.append(f"- Account configured by this tool: username {config.username!r} (password set, not repeated here).")
+        if config.ssh_authorized_key:
+            lines.append("- SSH key-based login is also authorized for this account.")
+    else:
+        lines.append("- No account was configured by this tool - the base image's own existing account (if any) is unchanged.")
+    if config.enable_ssh:
+        lines.append("- SSH is enabled.")
+    else:
+        lines.append(
+            "- SSH is DISABLED. Real recovery path if remote access is ever needed: mount this unit's boot "
+            "partition on another machine and create an empty file named 'ssh' at its root - this is the "
+            "real, official Raspberry Pi OS first-boot mechanism that re-enables SSH from that file alone, "
+            "no other change required."
+        )
+    lines.append(
+        "- Physical fallback: a display and keyboard connected directly to the unit can always log in locally "
+        "with the same account this note describes, independent of the network/SSH state above."
+    )
+    return "\n".join(lines)
 
 
 @dataclass(frozen=True)

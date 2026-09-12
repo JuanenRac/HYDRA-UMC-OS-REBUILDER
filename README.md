@@ -15,14 +15,14 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows and Linux">
 </p>
 
-> **Status: v0.1.7, scaffolding.** The CLI, the ecosystem discovery, the
+> **Status: v0.1.8, scaffolding.** The CLI, the ecosystem discovery, the
 > first-boot config generator and the GUI shell are real and tested. The
 > real end-to-end image build (download → loop-mount → chroot-install →
 > unmount) is implemented but only runs on a real Linux host with root -
 > see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) for the exact
 > platform boundary and why it exists.
 
-**Honesty check - what actually runs today:** the CLI (`main.py`), the dynamic ecosystem discovery that reuses `hydra_umc_updater`'s own GitHub client instead of a second copy of it (`ecosystem_plan.py`), the pure `firstrun.sh`/`cmdline.txt` first-boot config generator with no filesystem access (`firstboot_config.py`), the 7-language GUI translations (`i18n.py`) and the Qt Quick desktop shell (`qt_gui.py`, `qml/Main.qml`) are real and tested (67 tests, `pytest`). `image_builder.py`'s download/checksum-verify/loop-mount/chroot-install/unmount pipeline, its per-project content-hashing of what actually landed on disk, and its pre-promotion scan for a leaked Wi-Fi password/private SSH key/shell history/`.env` file are real code, gated behind `check_build_platform()` - they only execute on a real Linux host with root and `losetup`/`chroot` on `PATH`, and have not been run end-to-end against a real CM5 SD card/eMMC write in this environment; on Windows or a non-root Linux user, `build-image` exits early with `BUILD_BLOCKED reason=...` rather than pretending to succeed. `status`/`config` have been exercised for real against live GitHub discovery. See `CHANGELOG.md` for exactly what has shipped so far, and the ROADMAP below for what remains open.
+**Honesty check - what actually runs today:** the CLI (`main.py`), the dynamic ecosystem discovery that reuses `hydra_umc_updater`'s own GitHub client instead of a second copy of it (`ecosystem_plan.py`), the pure `firstrun.sh`/`cmdline.txt` first-boot config generator with no filesystem access and its own recovery-procedure guard (`firstboot_config.py`), frozen per-profile version manifests - freeze/diff/selectively-update a tested combination of components instead of always rebuilding from whatever is currently latest (`profile_manifest.py`), the 7-language GUI translations (`i18n.py`) and the Qt Quick desktop shell (`qt_gui.py`, `qml/Main.qml`) are real and tested (99 tests, `pytest`). `image_builder.py`'s download/checksum-verify/loop-mount/chroot-install/unmount pipeline, its per-project content-hashing of what actually landed on disk, and its pre-promotion scan for a leaked Wi-Fi password/private SSH key/shell history/`.env` file are real code, gated behind `check_build_platform()` - they only execute on a real Linux host with root and `losetup`/`chroot` on `PATH`, and have not been run end-to-end against a real CM5 SD card/eMMC write in this environment; on Windows or a non-root Linux user, `build-image`/`profile-build` exit early with `BUILD_BLOCKED reason=...` rather than pretending to succeed. `status`/`config`/`profile-freeze`/`profile-diff` have been exercised for real against live GitHub discovery. See `CHANGELOG.md` for exactly what has shipped so far, and the ROADMAP below for what remains open.
 
 ---
 
@@ -111,6 +111,21 @@ Status, Build Image, and First-Boot Config.
   filesystem itself, so it stays trivially testable without root or a
   real image. `image_builder.py` alone is responsible for actually
   writing that content onto a real boot partition.
+- **A firstboot config that would lock the operator out is refused, not
+  built.** Disabling SSH while no account is being configured either
+  leaves this tool's own official base images (no default user on
+  Bookworm and later) with no login path at all - refused unless
+  `acknowledge_no_remote_access=True` explicitly opts in.
+  `describe_recovery_procedure()` states the real recovery path for
+  whatever the config does leave open.
+- **A frozen profile is a real, persisted recipe, never re-fetched.**
+  `profile_manifest.py`'s `freeze_profile()`/`profile-build` pin every
+  project to the exact commit SHA it was tested at - a later build never
+  silently substitutes whatever GitHub currently calls "latest".
+  `diff_profile()` compares a frozen profile against the live ecosystem
+  per project (not as a single boolean), since this ecosystem's own
+  version numbers are a base-10 odometer with no semantic-versioning
+  meaning and can never be an honest compatibility signal by themselves.
 - **Real SHA-512-crypt password hashing, not the stdlib `crypt` module.**
   `crypt` only wraps the *host's own* libc call (Unix-only, and removed
   outright in Python 3.13) - `passlib` produces the byte-identical real
@@ -123,13 +138,14 @@ Status, Build Image, and First-Boot Config.
 HYDRA-UMC-OS-REBUILDER/
 ├── src/hydra_umc_os_rebuilder/
 │   ├── ecosystem_plan.py    # Real CM5 project/version plan, built on hydra_umc_updater's own discovery
-│   ├── firstboot_config.py  # Pure firstrun.sh/cmdline.txt generator - no filesystem access
+│   ├── firstboot_config.py  # Pure firstrun.sh/cmdline.txt generator - no filesystem access; recovery-procedure guard
+│   ├── profile_manifest.py  # Frozen per-profile version manifests: freeze/diff/selectively update, never "latest" mid-trial
 │   ├── image_builder.py     # Real download/loop-mount/chroot-install pipeline, Linux/root-gated
 │   ├── i18n.py               # Real, complete GUI translations (7 languages)
 │   ├── qt_gui.py             # Qt Quick bridge over the real CLI-facing modules above
 │   ├── qml/Main.qml          # Themed desktop shell: Ecosystem Status / Build Image / First-Boot Config
 │   └── main.py                # Dispatch: GUI by default, --cli for status/config/build-image
-├── tests/                    # Real tests: firstboot_config, ecosystem_plan, image_builder, i18n, main
+├── tests/                    # Real tests: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
 ├── docs/
 │   ├── CLI_REFERENCE.md       # Command reference
 │   └── FIRST_BOOT_CONFIG.md   # The real firstrun.sh mechanism this tool reproduces, and why
@@ -153,6 +169,10 @@ chmod +x build.sh   # one-time
 ./run.sh --cli status                   # every ecosystem project's latest real GitHub version
 ./run.sh --cli config --out ./boot ...  # write first-boot config (see docs/CLI_REFERENCE.md for every flag)
 ./run.sh --cli build-image --out FILE   # build a ready-to-flash .img (Linux/root only)
+./run.sh --cli profile-freeze --name cm5-production --out profiles/cm5-production.json  # D05: pin a real tested combination
+./run.sh --cli profile-diff --manifest profiles/cm5-production.json                     # what changed since it was frozen
+./run.sh --cli profile-update --manifest profiles/cm5-production.json --project X       # refreeze only X, leave the rest pinned
+./run.sh --cli profile-build --manifest profiles/cm5-production.json --out FILE         # build from EXACTLY that frozen profile
 ```
 
 On Windows: `build.bat`, then `run.bat` (GUI) / `run.bat --cli status` /
@@ -167,6 +187,14 @@ with root either way - see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md).
 - `--cli config` raises a validation error: the hostname/username/Wi-Fi
   country code you gave does not match the real, narrow shape those
   fields require - see `firstboot_config.py`'s own validation.
+- `--cli config`/`build-image` refuses with "no login path at all": SSH
+  was disabled without configuring an account either - either configure
+  one, or pass `acknowledge_no_remote_access=True` (GUI/API) if another
+  way in is certain. See `describe_recovery_procedure()`.
+- `profile-build` refuses a project with "no real, resolved commit SHA":
+  the frozen manifest predates a repository being renamed or made
+  private - refreeze the profile (`profile-freeze`) against the current
+  live ecosystem instead.
 - The GUI's Ecosystem Status tab stays empty: check your network - this
   tool needs a real connection to `github.com`/`raw.githubusercontent.com`
   for `status`/discovery, same as `hydra-umc-updater` itself.
@@ -182,6 +210,12 @@ with root either way - see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md).
 - Packaged standalone GUI executable (PyInstaller), matching
   HYDRA-UMC-SUITE's own `build_exe.bat`/`.sh` convention, for a
   double-click install with no `pip`/venv step.
+- A GUI checkbox for `acknowledge_no_remote_access` - today the GUI
+  surfaces `FirstBootConfigError`'s real message honestly (no crash, no
+  silent no-op) but has no dedicated control to opt in, only the CLI/API
+  do.
+- A GUI panel over `profile_manifest.py` (freeze/diff/update from the
+  desktop shell, not just the CLI).
 
 ## 🔗 Related Projects
 

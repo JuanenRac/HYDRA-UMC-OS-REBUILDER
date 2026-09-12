@@ -58,4 +58,30 @@ tool runs on.
   username, or missing password for a requested user raises a real,
   specific `FirstBootConfigError` instead of writing a broken script.
 - SSH key injection (`--ssh-key`) only *adds* an `authorized_keys` entry;
-  it never disables password authentication on its own.
+  it never disables password authentication on its own. It also requires
+  both `--username` and `--password` to be given - `firstrun.sh`'s own
+  `authorized_keys` block only exists inside that same account-creation
+  branch, so a key given without both would otherwise be silently
+  dropped from the generated script with no error and no trace.
+
+## Recovery procedure (D04)
+
+"Changing identity or remote access must preserve a way back in - the
+installation must never leave the operator locked out." This tool
+enforces the one shape of that it can actually detect on its own:
+disabling SSH (`--no-ssh`) while no account is being configured either is
+refused outright, because this tool's own official base images ship with
+no default user on Bookworm and later - that combination would leave the
+unit with no login path at all, remote or physical. Pass
+`--acknowledge-no-remote-access` to opt in when another way in is
+certain (the base image already has a working account, or physical
+re-provisioning is planned).
+
+`firstboot_config.describe_recovery_procedure(config)` returns a real,
+plain-text note - kept OFF the image itself, since a note about how to
+reach a unit does not belong inside that same unit - stating exactly
+what login path a given config leaves open, and the real, official
+Raspberry Pi OS recovery mechanism if that path ever stops working:
+mounting the boot partition on another machine and dropping an empty
+file named `ssh` at its root re-enables SSH from that file alone, the
+same real first-boot mechanism this whole tool already builds on.
