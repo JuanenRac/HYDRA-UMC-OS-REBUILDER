@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows und Linux">
 </p>
 
-> **Status: v0.1.7, Grundgerüst.** Die CLI, die Ökosystem-Erkennung, der
+> **Status: v0.1.8, Grundgerüst.** Die CLI, die Ökosystem-Erkennung, der
 > Ersteinrichtungs-Generator und die GUI sind real und getestet. Der
 > echte End-to-End-Image-Build (Download → Loop-Mount →
 > Chroot-Installation → Unmount) ist implementiert, läuft aber nur auf
@@ -23,7 +23,7 @@
 > [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) für die genaue
 > Plattformgrenze und warum sie existiert.
 
-**Ehrlichkeitscheck - was heute wirklich läuft:** die CLI (`main.py`), die dynamische Ökosystem-Erkennung, die den eigenen GitHub-Client von `hydra_umc_updater` wiederverwendet statt ihn ein zweites Mal zu implementieren (`ecosystem_plan.py`), der reine `firstrun.sh`/`cmdline.txt`-Generator ohne Dateisystemzugriff (`firstboot_config.py`), die GUI-Übersetzungen in 7 Sprachen (`i18n.py`) und die Qt-Quick-Desktop-Oberfläche (`qt_gui.py`, `qml/Main.qml`) sind real und getestet (67 Tests, `pytest`). Die Pipeline von `image_builder.py` (Download/Prüfsummenverifikation/Loop-Mount/Chroot-Installation/Unmount), ihr Inhalts-Hash pro Projekt für das, was tatsächlich auf der Platte gelandet ist, und ihr Scan vor der Freigabe auf ein durchgesickertes WLAN-Passwort/einen privaten SSH-Schlüssel/eine Shell-Historie/eine `.env`-Datei sind echter Code, abgesichert durch `check_build_platform()` - sie laufen nur auf einem echten Linux-Host mit Root-Rechten und `losetup`/`chroot` im `PATH` und wurden in dieser Umgebung noch nie end-to-end gegen einen echten SD-/eMMC-Schreibvorgang einer CM5 ausgeführt; unter Windows oder mit einem Nicht-Root-Linux-Benutzer bricht `build-image` sofort mit `BUILD_BLOCKED reason=...` ab, statt einen Erfolg vorzutäuschen. `status`/`config` wurden dagegen echt gegen die Live-GitHub-Erkennung getestet. Siehe `CHANGELOG.md` für genau das, was bisher ausgeliefert wurde, und die ROADMAP weiter unten für das, was noch offen ist.
+**Ehrlichkeitscheck - was heute wirklich läuft:** die CLI (`main.py`), die dynamische Ökosystem-Erkennung, die den eigenen GitHub-Client von `hydra_umc_updater` wiederverwendet statt ihn ein zweites Mal zu implementieren (`ecosystem_plan.py`), der reine `firstrun.sh`/`cmdline.txt`-Generator ohne Dateisystemzugriff und mit einer eigenen Absicherung gegen das Aussperren des Betreibers (`firstboot_config.py`), die eingefrorenen Profil-Versionsmanifeste - eine bereits getestete Komponentenkombination einfrieren/vergleichen/selektiv aktualisieren statt immer aus dem aktuell Neuesten neu zu bauen (`profile_manifest.py`), die GUI-Übersetzungen in 7 Sprachen (`i18n.py`) und die Qt-Quick-Desktop-Oberfläche (`qt_gui.py`, `qml/Main.qml`) sind real und getestet (99 Tests, `pytest`). Die Pipeline von `image_builder.py` (Download/Prüfsummenverifikation/Loop-Mount/Chroot-Installation/Unmount), ihr Inhalts-Hash pro Projekt für das, was tatsächlich auf der Platte gelandet ist, und ihr Scan vor der Freigabe auf ein durchgesickertes WLAN-Passwort/einen privaten SSH-Schlüssel/eine Shell-Historie/eine `.env`-Datei sind echter Code, abgesichert durch `check_build_platform()` - sie laufen nur auf einem echten Linux-Host mit Root-Rechten und `losetup`/`chroot` im `PATH` und wurden in dieser Umgebung noch nie end-to-end gegen einen echten SD-/eMMC-Schreibvorgang einer CM5 ausgeführt; unter Windows oder mit einem Nicht-Root-Linux-Benutzer bricht `build-image` sofort mit `BUILD_BLOCKED reason=...` ab, statt einen Erfolg vorzutäuschen. `status`/`config` wurden dagegen echt gegen die Live-GitHub-Erkennung getestet. Siehe `CHANGELOG.md` für genau das, was bisher ausgeliefert wurde, und die ROADMAP weiter unten für das, was noch offen ist.
 
 ---
 
@@ -129,13 +129,14 @@ Ersteinrichtung.
 HYDRA-UMC-OS-REBUILDER/
 ├── src/hydra_umc_os_rebuilder/
 │   ├── ecosystem_plan.py    # Echter CM5-Projekt-/Versionsplan, aufgebaut auf der eigenen Erkennung von hydra_umc_updater
-│   ├── firstboot_config.py  # Reiner firstrun.sh/cmdline.txt-Generator - kein Dateisystemzugriff
+│   ├── firstboot_config.py  # Reiner firstrun.sh/cmdline.txt-Generator - kein Dateisystemzugriff; Absicherung gegen Aussperrung
+│   ├── profile_manifest.py  # Eingefrorene Profil-Versionsmanifeste: einfrieren/vergleichen/selektiv aktualisieren, nie "das Neueste" mitten im Test
 │   ├── image_builder.py     # Echte Download-/Loop-Mount-/Chroot-Installations-Pipeline, auf Linux/Root beschränkt
 │   ├── i18n.py               # Echte, vollständige GUI-Übersetzungen (7 Sprachen)
 │   ├── qt_gui.py             # Qt-Quick-Brücke über die echten CLI-seitigen Module oben
 │   ├── qml/Main.qml          # Themenbasierte Desktop-Oberfläche: Ökosystem-Status / Image erstellen / Ersteinrichtung
 │   └── main.py                # Dispatch: GUI standardmäßig, --cli für status/config/build-image
-├── tests/                    # Echte Tests: firstboot_config, ecosystem_plan, image_builder, i18n, main
+├── tests/                    # Echte Tests: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
 ├── docs/
 │   ├── CLI_REFERENCE.md       # Befehlsreferenz
 │   └── FIRST_BOOT_CONFIG.md   # Der echte firstrun.sh-Mechanismus, den dieses Tool nachbildet, und warum

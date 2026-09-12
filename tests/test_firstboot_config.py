@@ -13,6 +13,7 @@ from hydra_umc_os_rebuilder.firstboot_config import (
     WifiConfig,
     build_firstrun_script,
     cmdline_run_directive,
+    describe_recovery_procedure,
     hash_password,
 )
 
@@ -27,7 +28,10 @@ def test_empty_config_produces_a_minimal_valid_script() -> None:
 
 
 def test_no_ssh_flag_omits_the_do_ssh_call() -> None:
-    script = build_firstrun_script(FirstBootConfig(enable_ssh=False))
+    # D04's recovery-procedure guard (see the tests further down) refuses
+    # this exact shape (SSH off, no account) unless acknowledged - this
+    # test is about the do_ssh omission itself, not that guard.
+    script = build_firstrun_script(FirstBootConfig(enable_ssh=False, acknowledge_no_remote_access=True))
     assert "do_ssh" not in script
 
 
@@ -125,3 +129,60 @@ def test_hash_password_produces_a_real_verifiable_sha512_crypt_hash() -> None:
     assert hashed.startswith("$6$")
     assert passlib_hash.sha512_crypt.verify("correct horse battery staple", hashed)
     assert not passlib_hash.sha512_crypt.verify("wrong password", hashed)
+
+
+# --- D04: recovery-procedure guard --------------------------------------
+
+
+def test_ssh_key_without_username_or_password_is_rejected() -> None:
+    # Real bug this guards against: build_firstrun_script()'s own
+    # ssh_authorized_key block only runs inside the username+password
+    # branch - without this check, the key would be silently dropped
+    # from the generated script with no error at all.
+    with pytest.raises(FirstBootConfigError):
+        build_firstrun_script(FirstBootConfig(ssh_authorized_key="ssh-ed25519 AAAA... test@host"))
+
+
+def test_ssh_key_with_username_but_no_password_is_still_rejected() -> None:
+    with pytest.raises(FirstBootConfigError):
+        build_firstrun_script(FirstBootConfig(username="hydra_umc", ssh_authorized_key="ssh-ed25519 AAAA... test@host"))
+
+
+def test_disabling_ssh_with_no_account_configured_is_rejected_by_default() -> None:
+    with pytest.raises(FirstBootConfigError):
+        build_firstrun_script(FirstBootConfig(enable_ssh=False))
+
+
+def test_disabling_ssh_with_no_account_is_allowed_once_acknowledged() -> None:
+    script = build_firstrun_script(FirstBootConfig(enable_ssh=False, acknowledge_no_remote_access=True))
+    assert "do_ssh" not in script
+
+
+def test_disabling_ssh_is_fine_when_an_account_is_also_being_configured() -> None:
+    # The narrow guard only fires when BOTH SSH is off AND no account is
+    # set - configuring a real account is itself a valid local-login path.
+    script = build_firstrun_script(FirstBootConfig(enable_ssh=False, username="hydra_umc", password="x"))
+    assert "do_ssh" not in script
+
+
+def test_default_config_never_trips_the_recovery_guard() -> None:
+    # SSH stays enabled by default - build_firstrun_script(FirstBootConfig())
+    # must keep working exactly as before, with no acknowledgment needed.
+    build_firstrun_script(FirstBootConfig())
+
+
+def test_recovery_note_mentions_the_real_official_ssh_recovery_file() -> None:
+    note = describe_recovery_procedure(FirstBootConfig(enable_ssh=False, acknowledge_no_remote_access=True))
+    assert "ssh" in note
+    assert "boot partition" in note
+
+
+def test_recovery_note_describes_the_configured_account() -> None:
+    note = describe_recovery_procedure(FirstBootConfig(username="hydra_umc", password="x"))
+    assert "hydra_umc" in note
+    assert "x" not in note.replace("hydra_umc", "")  # the plaintext password itself must never appear
+
+
+def test_recovery_note_still_validates_the_config_first() -> None:
+    with pytest.raises(FirstBootConfigError):
+        describe_recovery_procedure(FirstBootConfig(username="hydra_umc"))  # no password

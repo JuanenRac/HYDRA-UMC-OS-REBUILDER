@@ -10,6 +10,7 @@ import json
 from hydra_umc_os_rebuilder import main as main_module
 from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlan, EcosystemPlanEntry
 from hydra_umc_os_rebuilder.main import build_parser
+from hydra_umc_os_rebuilder.profile_manifest import freeze_profile, load_profile_manifest, save_profile_manifest
 
 
 def test_status_command_parses() -> None:
@@ -59,6 +60,13 @@ def test_config_command_requires_out() -> None:
     assert args.out == "./boot"
     assert args.hostname == "cm5"
     assert args.no_ssh is False
+    assert args.acknowledge_no_remote_access is False
+
+
+def test_config_command_parses_the_recovery_acknowledgment_flag() -> None:
+    args = build_parser().parse_args(["--cli", "config", "--out", "./boot", "--no-ssh", "--acknowledge-no-remote-access"])
+    assert args.no_ssh is True
+    assert args.acknowledge_no_remote_access is True
 
 
 def test_build_image_command_parses_with_defaults() -> None:
@@ -70,3 +78,78 @@ def test_build_image_command_parses_with_defaults() -> None:
 def test_custom_owner_is_threaded_through() -> None:
     args = build_parser().parse_args(["--owner", "SomeoneElse", "--cli", "status"])
     assert args.owner == "SomeoneElse"
+
+
+# --- D05: profile-freeze / profile-diff / profile-update ----------------
+
+
+def _fake_plan(*names_and_shas: tuple[str, str]) -> EcosystemPlan:
+    return EcosystemPlan(
+        entries=tuple(
+            EcosystemPlanEntry(name=n, version="0.1.0", role="service", stack="python", git_url=f"https://github.com/JuanenRac/{n}.git", commit_sha=sha)
+            for n, sha in names_and_shas
+        ),
+        discovery_errors=(),
+    )
+
+
+def test_profile_freeze_writes_a_real_manifest_file(monkeypatch, tmp_path, capsys) -> None:
+    plan = _fake_plan(("HYDRA-UMC-SERVER", "a" * 40))
+    monkeypatch.setattr(main_module, "fetch_ecosystem_plan", lambda owner: plan)
+    out_path = tmp_path / "cm5-production.json"
+
+    exit_code = main_module.main(["--cli", "profile-freeze", "--name", "cm5-production", "--out", str(out_path)])
+
+    assert exit_code == 0
+    assert "PROFILE_FROZEN" in capsys.readouterr().out
+    manifest = load_profile_manifest(out_path)
+    assert manifest.profile_name == "cm5-production"
+    assert manifest.entry("HYDRA-UMC-SERVER").commit_sha == "a" * 40
+
+
+def test_profile_diff_reports_an_updated_project(monkeypatch, tmp_path, capsys) -> None:
+    frozen = freeze_profile(_fake_plan(("A", "a" * 40)), profile_name="p")
+    manifest_path = tmp_path / "p.json"
+    save_profile_manifest(frozen, manifest_path)
+    live = _fake_plan(("A", "b" * 40))
+    monkeypatch.setattr(main_module, "fetch_ecosystem_plan", lambda owner: live)
+
+    exit_code = main_module.main(["--cli", "profile-diff", "--manifest", str(manifest_path)])
+
+    assert exit_code == 0
+    assert "UPDATED A" in capsys.readouterr().out
+
+
+def test_profile_diff_reports_no_changes_for_an_identical_profile(monkeypatch, tmp_path, capsys) -> None:
+    plan = _fake_plan(("A", "a" * 40))
+    frozen = freeze_profile(plan, profile_name="p")
+    manifest_path = tmp_path / "p.json"
+    save_profile_manifest(frozen, manifest_path)
+    monkeypatch.setattr(main_module, "fetch_ecosystem_plan", lambda owner: plan)
+
+    exit_code = main_module.main(["--cli", "profile-diff", "--manifest", str(manifest_path)])
+
+    assert exit_code == 0
+    assert "PROFILE_UNCHANGED" in capsys.readouterr().out
+
+
+def test_profile_update_pins_unselected_projects_and_writes_to_out(monkeypatch, tmp_path, capsys) -> None:
+    frozen = freeze_profile(_fake_plan(("A", "a" * 40), ("B", "b" * 40)), profile_name="p")
+    manifest_path = tmp_path / "p.json"
+    save_profile_manifest(frozen, manifest_path)
+    live = _fake_plan(("A", "c" * 40), ("B", "d" * 40))
+    monkeypatch.setattr(main_module, "fetch_ecosystem_plan", lambda owner: live)
+    out_path = tmp_path / "p-updated.json"
+
+    exit_code = main_module.main(["--cli", "profile-update", "--manifest", str(manifest_path), "--project", "A", "--out", str(out_path)])
+
+    assert exit_code == 0
+    updated = load_profile_manifest(out_path)
+    assert updated.entry("A").commit_sha == "c" * 40
+    assert updated.entry("B").commit_sha == "b" * 40  # not selected - stays pinned
+
+
+def test_profile_build_command_parses_with_defaults() -> None:
+    args = build_parser().parse_args(["--cli", "profile-build", "--manifest", "p.json", "--out", "x.img"])
+    assert args.command == "profile-build"
+    assert args.work_dir == "work"

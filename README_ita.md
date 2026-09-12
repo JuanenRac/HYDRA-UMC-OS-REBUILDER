@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows e Linux">
 </p>
 
-> **Stato: v0.1.7, scheletro.** La CLI, la scoperta dell'ecosistema, il
+> **Stato: v0.1.8, scheletro.** La CLI, la scoperta dell'ecosistema, il
 > generatore di configurazione del primo avvio e la GUI sono reali e
 > testati. La costruzione reale dell'immagine end-to-end (download →
 > montaggio loop → installazione in chroot → smontaggio) è implementata
@@ -23,7 +23,7 @@
 > [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) per il limite esatto di
 > piattaforma e il perché esiste.
 
-**Verifica di onestà - cosa funziona davvero oggi:** la CLI (`main.py`), la scoperta dinamica dell'ecosistema che riusa il client GitHub di `hydra_umc_updater` invece di duplicarlo (`ecosystem_plan.py`), il generatore puro di `firstrun.sh`/`cmdline.txt` senza accesso al filesystem (`firstboot_config.py`), le traduzioni della GUI in 7 lingue (`i18n.py`) e la shell desktop Qt Quick (`qt_gui.py`, `qml/Main.qml`) sono reali e testati (67 test, `pytest`). La pipeline di `image_builder.py` (download/verifica checksum/montaggio loop/installazione in chroot/smontaggio), il suo hash del contenuto per ogni progetto di ciò che è realmente finito sul disco, e la sua scansione pre-promozione alla ricerca di una password Wi-Fi trapelata/una chiave SSH privata/una cronologia di shell/un file `.env` sono codice reale, protetto da `check_build_platform()` - vengono eseguiti solo su un vero host Linux con permessi root e `losetup`/`chroot` nel `PATH`, e non sono mai stati eseguiti end-to-end contro una vera scrittura di SD/eMMC di una CM5 in questo ambiente; su Windows o con un utente Linux non root, `build-image` termina subito con `BUILD_BLOCKED reason=...` invece di simulare un successo. `status`/`config` sono stati invece testati davvero contro la scoperta GitHub dal vivo. Vedi `CHANGELOG.md` per ciò che è stato consegnato finora esattamente, e la ROADMAP più sotto per ciò che resta aperto.
+**Verifica di onestà - cosa funziona davvero oggi:** la CLI (`main.py`), la scoperta dinamica dell'ecosistema che riusa il client GitHub di `hydra_umc_updater` invece di duplicarlo (`ecosystem_plan.py`), il generatore puro di `firstrun.sh`/`cmdline.txt` senza accesso al filesystem e con una propria protezione contro il blocco fuori dell'operatore (`firstboot_config.py`), i manifest di profilo di versione congelati - congelare/confrontare/aggiornare selettivamente una combinazione di componenti già testata invece di ricostruire sempre dall'ultima disponibile (`profile_manifest.py`), le traduzioni della GUI in 7 lingue (`i18n.py`) e la shell desktop Qt Quick (`qt_gui.py`, `qml/Main.qml`) sono reali e testati (99 test, `pytest`). La pipeline di `image_builder.py` (download/verifica checksum/montaggio loop/installazione in chroot/smontaggio), il suo hash del contenuto per ogni progetto di ciò che è realmente finito sul disco, e la sua scansione pre-promozione alla ricerca di una password Wi-Fi trapelata/una chiave SSH privata/una cronologia di shell/un file `.env` sono codice reale, protetto da `check_build_platform()` - vengono eseguiti solo su un vero host Linux con permessi root e `losetup`/`chroot` nel `PATH`, e non sono mai stati eseguiti end-to-end contro una vera scrittura di SD/eMMC di una CM5 in questo ambiente; su Windows o con un utente Linux non root, `build-image` termina subito con `BUILD_BLOCKED reason=...` invece di simulare un successo. `status`/`config` sono stati invece testati davvero contro la scoperta GitHub dal vivo. Vedi `CHANGELOG.md` per ciò che è stato consegnato finora esattamente, e la ROADMAP più sotto per ciò che resta aperto.
 
 ---
 
@@ -130,13 +130,14 @@ Primo Avvio.
 HYDRA-UMC-OS-REBUILDER/
 ├── src/hydra_umc_os_rebuilder/
 │   ├── ecosystem_plan.py    # Piano reale progetti/versioni CM5, costruito sulla scoperta propria di hydra_umc_updater
-│   ├── firstboot_config.py  # Generatore puro firstrun.sh/cmdline.txt - nessun accesso al filesystem
+│   ├── firstboot_config.py  # Generatore puro firstrun.sh/cmdline.txt - nessun accesso al filesystem; protezione di recupero
+│   ├── profile_manifest.py  # Manifest di profilo di versione congelati: congelare/confrontare/aggiornare selettivamente, mai "l'ultima versione" a metà prova
 │   ├── image_builder.py     # Pipeline reale download/montaggio loop/installazione chroot, limitata a Linux/root
 │   ├── i18n.py               # Traduzioni reali e complete della GUI (7 lingue)
 │   ├── qt_gui.py             # Bridge Qt Quick sui moduli reali sopra, gli stessi usati dalla CLI
 │   ├── qml/Main.qml          # Shell desktop a tema: Stato dell'Ecosistema / Crea Immagine / Configurazione Primo Avvio
 │   └── main.py                # Dispatch: GUI predefinita, --cli per status/config/build-image
-├── tests/                    # Test reali: firstboot_config, ecosystem_plan, image_builder, i18n, main
+├── tests/                    # Test reali: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
 ├── docs/
 │   ├── CLI_REFERENCE.md       # Riferimento comandi
 │   └── FIRST_BOOT_CONFIG.md   # Il meccanismo reale firstrun.sh riprodotto da questo strumento, e perché

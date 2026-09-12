@@ -21,6 +21,50 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.1.8] - D04/D05: a recovery-procedure guard, and frozen per-profile version manifests
+
+**D04 (first-time provisioning)** - `firstboot_config.py` used to let two
+real lockout shapes through silently:
+
+- `ssh_authorized_key` was only ever installed inside the
+  `username`+`password` branch of the generated script - setting a key
+  without both silently dropped it, with no error and no trace, leaving
+  the operator believing key-based login was configured when it never
+  was. Now rejected up front.
+- A config that disabled SSH while also not configuring any account left
+  the unit with no login path at all, remote or physical, on this tool's
+  own official base images (no default user on Bookworm and later). Now
+  rejected unless the new `acknowledge_no_remote_access=True` explicitly
+  opts in - a config that only leaves things as the base image shipped
+  them never trips this.
+- New `describe_recovery_procedure()`: a real, plain-text note (never
+  written onto the image itself) stating exactly what login path a given
+  config leaves open, and the real, official Raspberry Pi OS recovery
+  mechanism (an empty `ssh` file dropped onto the boot partition) if that
+  path ever stops working.
+
+**D05 (versions and compatibility across the set)** - new
+`profile_manifest.py` and four new CLI subcommands
+(`profile-freeze`/`profile-diff`/`profile-update`/`profile-build`):
+`ecosystem_plan.py` already answers "what is current, right now" - a
+live, always-moving answer with no way to freeze one specific tested
+combination or build from it later without silently picking up whatever
+moved on GitHub since. `freeze_profile()` turns one such live plan into a
+named, persisted manifest (real commit SHAs, never a mutable branch
+name); `profile-build` builds from EXACTLY that frozen manifest, never
+re-resolving "latest" mid-trial, and folds the real post-build content
+hashes back into it. `diff_profile()` compares a frozen profile against
+the current live ecosystem per project - a real commit update, a role or
+stack change, a project no longer targeting cm5 at all - never a single
+pass/fail boolean (this ecosystem's own version numbers are a base-10
+odometer with no semantic-versioning meaning, so a version diff alone
+was never going to be an honest compatibility signal). `refreeze_selected()`
+updates only the named projects in a profile, leaving every other one
+pinned exactly as it was tested - updating one client no longer forces
+refreezing the whole set.
+
+Verified: full pytest suite (99/99, 32 new), `tools/ci_validate.py` PASS.
+
 ## [0.1.7] - C15: a real content hash of what actually landed in the image, not just its version string
 
 The built image's own inventory (`BuildResult.installed`) only ever
