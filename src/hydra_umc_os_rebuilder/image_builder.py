@@ -528,6 +528,29 @@ def _hash_directory_tree(path: Path) -> str:
     return tree_digest.hexdigest()
 
 
+def verify_installed_resources(project_root: Path, required_resources: tuple[str, ...]) -> tuple[str, ...]:
+    """I12 ("Verificacion del contenido distribuido fuera del checkout"):
+    a real, minimal check that every resource a human curated as required
+    for THIS profile (profile_manifest.set_required_resources()) actually
+    exists on disk under `project_root` - a project's own build.sh runs
+    fresh inside the target rootfs on every build, so a UI asset or
+    runtime module it silently stopped producing is otherwise invisible
+    until something tries to use it on real hardware, image already
+    flashed. Returns the tuple of MISSING relative paths (empty tuple
+    means every declared resource is present) - never raises itself, so
+    a caller can decide how to report a real gap (see _install_one_project's
+    own real ImageBuildError below).
+
+    Deliberately just `Path.exists()` per declared relative path, nothing
+    heavier: I12's own real point is catching an OMITTED resource, not
+    validating its content (that's what _hash_directory_tree's own C15
+    tree hash already covers, over whatever DID get installed)."""
+    missing = tuple(
+        resource for resource in required_resources if not (project_root / resource).exists()
+    )
+    return missing
+
+
 def _install_one_project(entry, rootfs_mount: Path) -> str:
     """Clone `entry`'s own repository at its own real, immutable pinned
     commit and run its own `build.sh` chrooted into the target rootfs -
@@ -612,6 +635,17 @@ def _install_one_project(entry, rootfs_mount: Path) -> str:
             f"but reports {installed_version!r} after build.sh ran and the tracked checkout was restored - "
             "refusing to install a diverged, unplanned version into the image"
         )
+    if entry.required_resources:
+        # I12: checked against the real post-build tree, AFTER build.sh
+        # ran - a resource this project's own build script was supposed
+        # to produce but silently stopped producing is exactly what this
+        # catches, before the image is ever promoted.
+        missing = verify_installed_resources(target, entry.required_resources)
+        if missing:
+            raise ImageBuildError(
+                f"{entry.name}: missing {len(missing)} required resource(s) declared for this profile after "
+                f"build.sh ran: {', '.join(missing)} - refusing to install an incomplete build into the image"
+            )
     return installed_version
 
 

@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="WindowsとLinux">
 </p>
 
-> **ステータス: v0.1.8、スキャフォールディング段階。** CLI、エコシステム
+> **ステータス: v0.1.9、スキャフォールディング段階。** CLI、エコシステム
 > 検出、初回起動設定ジェネレータ、GUIはいずれも実際に動作しテスト済み
 > です。実際のエンドツーエンドのイメージビルド（ダウンロード → ループ
 > マウント → chrootインストール → アンマウント）は実装済みですが、root
@@ -23,7 +23,7 @@
 > の境界とその理由については
 > [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) を参照してください。
 
-**正直な現状確認 - 実際に今動くもの:** CLI（`main.py`）、`hydra_umc_updater` 自身のGitHubクライアントを再利用し二重実装を避けている動的なエコシステム検出（`ecosystem_plan.py`）、ファイルシステムに一切アクセスせず、操作者を締め出さないための独自の保護機構を備えた純粋な `firstrun.sh`/`cmdline.txt` ジェネレータ（`firstboot_config.py`）、既にテスト済みのコンポーネントの組み合わせを凍結/比較/選択的に更新する、凍結されたプロファイルバージョンマニフェスト - 常に最新版から再構築するのではなく（`profile_manifest.py`）、7言語対応のGUI翻訳（`i18n.py`）、そしてQt Quickデスクトップシェル（`qt_gui.py`、`qml/Main.qml`）は本物であり、テスト済みです（99件のテスト、`pytest`）。`image_builder.py` のダウンロード／チェックサム検証／ループマウント／chrootインストール／アンマウントのパイプライン、実際にディスクに書き込まれた内容に対するプロジェクトごとのコンテンツハッシュ、そして昇格前に漏洩したWi-Fiパスワード／秘密のSSH鍵／シェル履歴／`.env`ファイルを検出するスキャンは本物のコードであり、`check_build_platform()` によってゲートされています - これらはroot権限を持つ実際のLinuxホストで、かつ `losetup`/`chroot` が `PATH` 上にある場合にのみ実行され、この環境では実際のCM5のSD/eMMC書き込みに対してエンドツーエンドで実行されたことはありません。WindowsまたはrootではないLinuxユーザーでは、`build-image` は成功したふりをする代わりに即座に `BUILD_BLOCKED reason=...` で終了します。`status`/`config` は実際のライブGitHub検出に対して本当にテストされています。これまでに実際に出荷されたものの詳細は `CHANGELOG.md` を、残っている未完了事項は下記のROADMAPを参照してください。
+**正直な現状確認 - 実際に今動くもの:** CLI（`main.py`）、`hydra_umc_updater` 自身のGitHubクライアントを再利用し二重実装を避けている動的なエコシステム検出（`ecosystem_plan.py`）、ファイルシステムに一切アクセスせず、操作者を締め出さないための独自の保護機構を備えた純粋な `firstrun.sh`/`cmdline.txt` ジェネレータ（`firstboot_config.py`）、既にテスト済みのコンポーネントの組み合わせを凍結/比較/選択的に更新する、凍結されたプロファイルバージョンマニフェスト - 常に最新版から再構築するのではなく（`profile_manifest.py`）、7言語対応のGUI翻訳（`i18n.py`）、そしてQt Quickデスクトップシェル（`qt_gui.py`、`qml/Main.qml`）は本物であり、テスト済みです（112件のテスト、`pytest`）。`image_builder.py` のダウンロード／チェックサム検証／ループマウント／chrootインストール／アンマウントのパイプライン、実際にディスクに書き込まれた内容に対するプロジェクトごとのコンテンツハッシュ、そして昇格前に漏洩したWi-Fiパスワード／秘密のSSH鍵／シェル履歴／`.env`ファイルを検出するスキャンは本物のコードであり、`check_build_platform()` によってゲートされています - これらはroot権限を持つ実際のLinuxホストで、かつ `losetup`/`chroot` が `PATH` 上にある場合にのみ実行され、この環境では実際のCM5のSD/eMMC書き込みに対してエンドツーエンドで実行されたことはありません。WindowsまたはrootではないLinuxユーザーでは、`build-image` は成功したふりをする代わりに即座に `BUILD_BLOCKED reason=...` で終了します。`status`/`config` は実際のライブGitHub検出に対して本当にテストされています。これまでに実際に出荷されたものの詳細は `CHANGELOG.md` を、残っている未完了事項は下記のROADMAPを参照してください。
 
 ---
 

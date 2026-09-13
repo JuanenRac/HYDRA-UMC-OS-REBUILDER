@@ -29,6 +29,7 @@ from hydra_umc_os_rebuilder.image_builder import (
     fetch_base_image,
     fetch_reference_sha256,
     scan_for_leaked_secrets,
+    verify_installed_resources,
 )
 
 
@@ -286,6 +287,68 @@ def test_install_one_project_still_refuses_when_the_version_stays_diverged_after
 
     with pytest.raises(ImageBuildError, match="diverged"):
         _install_one_project(_entry(commit_sha="c" * 40, version="0.4.8"), tmp_path)
+
+
+# =============================================================================
+# I12 ("Verificacion del contenido distribuido fuera del checkout"): a
+# real, human-curated resource inventory per profile, checked against the
+# actual post-build tree - never rescued by a residual file elsewhere.
+# =============================================================================
+
+
+def test_verify_installed_resources_reports_nothing_missing_when_everything_is_present(tmp_path: Path) -> None:
+    (tmp_path / "dist").mkdir()
+    (tmp_path / "dist" / "index.html").write_text("<html></html>", encoding="utf-8")
+    missing = verify_installed_resources(tmp_path, ("dist/index.html",))
+    assert missing == ()
+
+
+def test_verify_installed_resources_reports_every_real_missing_path(tmp_path: Path) -> None:
+    (tmp_path / "dist").mkdir()
+    (tmp_path / "dist" / "index.html").write_text("<html></html>", encoding="utf-8")
+    missing = verify_installed_resources(tmp_path, ("dist/index.html", "dist/bundle.js", "server/main.py"))
+    assert missing == ("dist/bundle.js", "server/main.py")
+
+
+def test_verify_installed_resources_with_no_declared_resources_reports_nothing(tmp_path: Path) -> None:
+    assert verify_installed_resources(tmp_path, ()) == ()
+
+
+def test_install_one_project_refuses_to_install_a_build_missing_a_declared_required_resource(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # I12's own literal acceptance test: build.sh ran and reported the
+    # right version, but silently never produced the UI resource this
+    # profile curated as required - must be caught here, before the image
+    # is ever promoted, not discovered later on real hardware.
+    fake_run, _calls, target = _fake_run_for_install(tmp_path, pre_build_version="0.4.8", post_build_version="0.4.8")
+    monkeypatch.setattr(image_builder_module, "_run", fake_run)
+
+    with pytest.raises(ImageBuildError, match="missing 1 required resource"):
+        _install_one_project(
+            _entry(commit_sha="c" * 40, version="0.4.8", required_resources=("dist/index.html",)), tmp_path
+        )
+    assert not (target / "dist" / "index.html").exists(), "the fixture itself never created this - proves the check is real, not vacuous"
+
+
+def test_install_one_project_succeeds_when_every_declared_required_resource_is_present(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    fake_run, _calls, target = _fake_run_for_install(tmp_path, pre_build_version="0.4.8", post_build_version="0.4.8")
+
+    def fake_run_with_dist(*command, **kwargs):
+        result = fake_run(*command, **kwargs)
+        if command[0] == "chroot":
+            (target / "dist").mkdir(parents=True, exist_ok=True)
+            (target / "dist" / "index.html").write_text("<html></html>", encoding="utf-8")
+        return result
+
+    monkeypatch.setattr(image_builder_module, "_run", fake_run_with_dist)
+
+    real_version = _install_one_project(
+        _entry(commit_sha="c" * 40, version="0.4.8", required_resources=("dist/index.html",)), tmp_path
+    )
+    assert real_version == "0.4.8"
 
 
 def test_read_real_installed_version_returns_the_real_manifest_value(tmp_path: Path) -> None:

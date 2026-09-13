@@ -44,6 +44,18 @@ class EcosystemPlanEntry:
     # gets filled in. `None` here means "not yet resolved" (the shape
     # `build_plan()` itself, a pure/offline function, produces).
     commit_sha: str | None = None
+    # I12 ("Verificacion del contenido distribuido fuera del checkout"):
+    # relative paths (POSIX-style, relative to this project's own
+    # installed root) a human profile author has curated as genuinely
+    # required for this project to actually work once installed - e.g. a
+    # UI's compiled index.html, a service's real entry point. Empty by
+    # default (live discovery alone has no way to know this); a frozen
+    # ProfileManifestEntry is where a human actually declares it (see
+    # profile_manifest.py's set_required_resources()), carried onto this
+    # dataclass by manifest_to_ecosystem_plan() so build_image() can
+    # verify it for real, in the one place that actually installs
+    # anything. Never invented or guessed here.
+    required_resources: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

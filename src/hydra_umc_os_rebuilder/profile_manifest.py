@@ -56,6 +56,12 @@ class ProfileManifestEntry:
     # already produces (see record_build_result() below) - None until a
     # real build has actually happened. Never guessed or pre-filled.
     content_hash: str | None = None
+    # I12: relative paths a human has curated, for THIS profile, as
+    # genuinely required for this entry to work once installed - see
+    # set_required_resources() below and ecosystem_plan.EcosystemPlanEntry's
+    # own docstring for how this reaches build_image(). Empty by default:
+    # freeze_profile() below never invents this from live discovery alone.
+    required_resources: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -104,7 +110,10 @@ def manifest_to_ecosystem_plan(manifest: ProfileManifest) -> EcosystemPlan:
     frozen. `branch` is left at its default: _install_one_project() only
     ever clones by commit_sha (IMAGE-01), branch is dead weight here."""
     entries = tuple(
-        EcosystemPlanEntry(name=e.name, version=e.version, role=e.role, stack=e.stack, git_url=e.git_url, commit_sha=e.commit_sha)
+        EcosystemPlanEntry(
+            name=e.name, version=e.version, role=e.role, stack=e.stack, git_url=e.git_url, commit_sha=e.commit_sha,
+            required_resources=e.required_resources,
+        )
         for e in manifest.entries
     )
     return EcosystemPlan(entries=entries, discovery_errors=())
@@ -122,6 +131,7 @@ def to_json(manifest: ProfileManifest) -> dict:
                 "git_url": e.git_url,
                 "commit_sha": e.commit_sha,
                 "content_hash": e.content_hash,
+                "required_resources": list(e.required_resources),
             }
             for e in manifest.entries
         ],
@@ -146,6 +156,7 @@ def from_json(data: dict) -> ProfileManifest:
                     git_url=raw["git_url"],
                     commit_sha=raw["commit_sha"],
                     content_hash=raw.get("content_hash"),
+                    required_resources=tuple(raw.get("required_resources", ())),
                 )
             )
         except KeyError as exc:
@@ -317,3 +328,25 @@ def refreeze_selected(frozen: ProfileManifest, live: EcosystemPlan, names: set[s
         )
     updated.sort(key=lambda e: e.name.casefold())
     return ProfileManifest(profile_name=frozen.profile_name, entries=tuple(updated))
+
+
+def set_required_resources(manifest: ProfileManifest, name: str, required_resources: tuple[str, ...]) -> ProfileManifest:
+    """I12: the one place a human actually curates 'the real inventory of
+    resources this project needs, for this profile' - image_builder.py's
+    own build_image() verifies every one of these actually exists on disk
+    right after that entry's build.sh runs, before promoting the image
+    (see verify_installed_resources()). Deliberately per-profile, not a
+    global per-project list: what counts as a required resource for a
+    minimal headless profile can differ from a full UI-carrying one.
+
+    Raises rather than silently no-op'ing on a name this manifest never
+    froze - curating requirements for a project that isn't actually part
+    of this profile is a real mistake to catch immediately, not build a
+    frozen manifest around."""
+    if manifest.entry(name) is None:
+        raise ProfileManifestError(f"{name}: not part of profile {manifest.profile_name!r} - freeze it first")
+    updated = tuple(
+        replace(e, required_resources=tuple(required_resources)) if e.name == name else e
+        for e in manifest.entries
+    )
+    return ProfileManifest(profile_name=manifest.profile_name, entries=updated)

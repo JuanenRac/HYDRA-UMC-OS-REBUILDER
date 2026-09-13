@@ -149,6 +149,36 @@ def test_profile_update_pins_unselected_projects_and_writes_to_out(monkeypatch, 
     assert updated.entry("B").commit_sha == "b" * 40  # not selected - stays pinned
 
 
+def test_profile_set_required_resources_writes_the_real_inventory(monkeypatch, tmp_path, capsys) -> None:
+    frozen = freeze_profile(_fake_plan(("A", "a" * 40)), profile_name="p")
+    manifest_path = tmp_path / "p.json"
+    save_profile_manifest(frozen, manifest_path)
+
+    exit_code = main_module.main([
+        "--cli", "profile-set-required-resources", "--manifest", str(manifest_path),
+        "--project", "A", "--resource", "dist/index.html", "--resource", "server/main.py",
+    ])
+
+    assert exit_code == 0
+    assert "PROFILE_RESOURCES_SET" in capsys.readouterr().out
+    updated = load_profile_manifest(manifest_path)
+    assert updated.entry("A").required_resources == ("dist/index.html", "server/main.py")
+
+
+def test_profile_set_required_resources_rejects_an_unfrozen_project(tmp_path, capsys) -> None:
+    frozen = freeze_profile(_fake_plan(("A", "a" * 40)), profile_name="p")
+    manifest_path = tmp_path / "p.json"
+    save_profile_manifest(frozen, manifest_path)
+
+    exit_code = main_module.main([
+        "--cli", "profile-set-required-resources", "--manifest", str(manifest_path),
+        "--project", "NOT-FROZEN", "--resource", "dist/index.html",
+    ])
+
+    assert exit_code == 1
+    assert "PROFILE_RESOURCES_FAILED" in capsys.readouterr().err
+
+
 def test_profile_build_command_parses_with_defaults() -> None:
     args = build_parser().parse_args(["--cli", "profile-build", "--manifest", "p.json", "--out", "x.img"])
     assert args.command == "profile-build"

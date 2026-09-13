@@ -21,6 +21,39 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.1.9] - I12: a real, human-curated resource inventory per profile
+
+I12 ("Verificación del contenido distribuido fuera del checkout"): C15
+already gave every installed project a real content hash of what
+actually landed on disk, but a hash only proves "the same bytes as last
+time" - it says nothing about whether a project's own `build.sh` ever
+produced the resources that project actually needs in the first place.
+A UI's compiled `index.html`, a service's real entry point - if
+`build.sh` silently stopped producing one, the previous pipeline would
+still hash whatever WAS there and promote the image, with the gap only
+discovered later, on real hardware.
+
+New `required_resources` on `ProfileManifestEntry` (and, carried
+through, on `EcosystemPlanEntry` - see `manifest_to_ecosystem_plan()`):
+relative paths a human curates, per profile, as genuinely required for
+one project's installed tree. New `profile-set-required-resources` CLI
+subcommand edits one entry's inventory in an already-frozen manifest,
+leaving every other entry untouched (same "edit one, pin the rest"
+pattern `profile-update` already established). New
+`verify_installed_resources()` in `image_builder.py`, wired into
+`_install_one_project()` right after `build.sh` runs and the tracked
+checkout is restored: any declared resource missing from the real
+post-build tree now raises `ImageBuildError` naming every missing path,
+refusing to install an incomplete build into the image - never rescued
+by a residual file elsewhere, since the check runs against the actual
+freshly-cloned, freshly-built tree, not the development checkout.
+Deliberately per-profile, not a global per-project list: a minimal
+headless profile and a full UI-carrying one can require different
+resources from the exact same project.
+
+13 new tests (`test_profile_manifest.py`, `test_image_builder.py`,
+`test_main.py`), 112 total. `docs/CLI_REFERENCE.md` + README x7 synced.
+
 ## [0.1.8] - D04/D05: a recovery-procedure guard, and frozen per-profile version manifests
 
 **D04 (first-time provisioning)** - `firstboot_config.py` used to let two
