@@ -20,6 +20,7 @@ from . import __version__
 from .ecosystem_plan import fetch_ecosystem_plan, plan_summary_lines
 from .firstboot_config import FirstBootConfig, WifiConfig, build_boot_partition_patch
 from .profile_manifest import (
+    ProfileManifestError,
     diff_profile,
     freeze_profile,
     load_profile_manifest,
@@ -27,6 +28,7 @@ from .profile_manifest import (
     record_build_result,
     refreeze_selected,
     save_profile_manifest,
+    set_required_resources,
 )
 
 
@@ -168,6 +170,19 @@ def _cmd_profile_update(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_profile_set_required_resources(args: argparse.Namespace) -> int:
+    manifest_path = Path(args.manifest)
+    manifest = load_profile_manifest(manifest_path)
+    try:
+        updated = set_required_resources(manifest, args.project, tuple(args.resource))
+    except ProfileManifestError as exc:
+        print(f"PROFILE_RESOURCES_FAILED error={exc}", file=sys.stderr)
+        return 1
+    save_profile_manifest(updated, manifest_path)
+    print(f"PROFILE_RESOURCES_SET name={updated.profile_name} project={args.project} resources={len(args.resource)}")
+    return 0
+
+
 def _cmd_profile_build(args: argparse.Namespace) -> int:
     from .image_builder import build_image, check_build_platform
 
@@ -284,6 +299,18 @@ def build_parser() -> argparse.ArgumentParser:
     update_parser.add_argument("--project", required=True, action="append", help="project name to update to its current live version (repeatable)")
     update_parser.add_argument("--out", help="write the updated manifest here instead of overwriting --manifest in place")
 
+    resources_parser = sub.add_parser(
+        "profile-set-required-resources",
+        help="I12: curate the real inventory of resources (relative paths) a project's own installed tree "
+             "must contain for this profile - profile-build refuses to promote an image missing any of them",
+    )
+    resources_parser.add_argument("--manifest", required=True, help="path to an existing profile manifest JSON (edited in place)")
+    resources_parser.add_argument("--project", required=True, help="project name already frozen into this manifest")
+    resources_parser.add_argument(
+        "--resource", required=True, action="append",
+        help="relative path (POSIX-style, relative to this project's own installed root) that must exist after a real build (repeatable)",
+    )
+
     profile_build_parser = sub.add_parser("profile-build", help="build a real .img from EXACTLY a frozen profile manifest (Linux/root only)")
     profile_build_parser.add_argument("--manifest", required=True, help="path to an existing profile manifest JSON")
     profile_build_parser.add_argument("--out", required=True, help="output .img path")
@@ -324,6 +351,7 @@ def main(argv: list[str] | None = None) -> int:
         "profile-freeze": _cmd_profile_freeze,
         "profile-diff": _cmd_profile_diff,
         "profile-update": _cmd_profile_update,
+        "profile-set-required-resources": _cmd_profile_set_required_resources,
         "profile-build": _cmd_profile_build,
     }
     return handlers[args.command](args)

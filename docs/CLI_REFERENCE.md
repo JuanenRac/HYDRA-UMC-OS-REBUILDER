@@ -82,13 +82,13 @@ Accepts the same optional `--hostname`/`--username`/`--password`/
 `--timezone`/`--keyboard`/`--locale` flags as `config` above, threaded
 straight into the real build.
 
-## `profile-freeze` / `profile-diff` / `profile-update` / `profile-build`
+## `profile-freeze` / `profile-diff` / `profile-update` / `profile-set-required-resources` / `profile-build`
 
 D05 ("versions and compatibility across the set"): `status` above always
 answers "what is current on GitHub right now" - a live, moving target.
-These four commands let a candidate combination be pinned, inspected and
-built from without ever silently picking up whatever "latest" has become
-since it was frozen.
+These five commands let a candidate combination be pinned, inspected,
+curated and built from without ever silently picking up whatever
+"latest" has become since it was frozen.
 
 ```
 # Pin the current live ecosystem plan into a named, persisted manifest
@@ -102,10 +102,18 @@ hydra-umc-os-rebuilder --cli profile-diff --manifest profiles/cm5-production.jso
 # exactly as it was tested before, even if it also changed upstream
 hydra-umc-os-rebuilder --cli profile-update --manifest profiles/cm5-production.json --project HYDRA-UMC-SERVER
 
+# I12: curate the real inventory of resources (relative paths inside a
+# project's own installed tree) profile-build refuses to promote an
+# image without - repeatable --resource, edits the manifest in place
+hydra-umc-os-rebuilder --cli profile-set-required-resources --manifest profiles/cm5-production.json --project HYDRA-UMC-STUDIO --resource dist/index.html
+
 # Build a real .img from EXACTLY the frozen manifest's own commit SHAs -
 # never re-resolves "latest" mid-build. Same real Linux/root/tool
 # requirements as build-image above; folds real post-build content
-# hashes back into the manifest on disk once it succeeds.
+# hashes back into the manifest on disk once it succeeds. Refuses to
+# install (and therefore never promotes the image) if any project with
+# curated required_resources is missing one of them after its own
+# build.sh ran.
 hydra-umc-os-rebuilder --cli profile-build --manifest profiles/cm5-production.json --out hydra-umc-cm5.img
 ```
 
@@ -115,3 +123,13 @@ a single yes/no answer - this ecosystem's own version numbers are a
 base-10 odometer with no semantic-versioning meaning (see this repo's
 own `CHANGELOG.md`, "Versioning scheme"), so a version diff alone was
 never going to be an honest compatibility signal by itself.
+
+`profile-set-required-resources` (I12, "Verificación del contenido
+distribuido fuera del checkout") is deliberately per-profile, not a
+global per-project list: a minimal headless profile and a full
+UI-carrying one can require different resources from the same project.
+Nothing here is invented from the project's own repository - a human
+curates this list once per profile, and `profile-build` checks it for
+real against the actual post-build tree, catching a UI asset or runtime
+module a project's own `build.sh` silently stopped producing, before an
+incomplete image is ever promoted.

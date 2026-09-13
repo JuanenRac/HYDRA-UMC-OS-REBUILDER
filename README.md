@@ -15,14 +15,14 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows and Linux">
 </p>
 
-> **Status: v0.1.8, scaffolding.** The CLI, the ecosystem discovery, the
+> **Status: v0.1.9, scaffolding.** The CLI, the ecosystem discovery, the
 > first-boot config generator and the GUI shell are real and tested. The
 > real end-to-end image build (download → loop-mount → chroot-install →
 > unmount) is implemented but only runs on a real Linux host with root -
 > see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) for the exact
 > platform boundary and why it exists.
 
-**Honesty check - what actually runs today:** the CLI (`main.py`), the dynamic ecosystem discovery that reuses `hydra_umc_updater`'s own GitHub client instead of a second copy of it (`ecosystem_plan.py`), the pure `firstrun.sh`/`cmdline.txt` first-boot config generator with no filesystem access and its own recovery-procedure guard (`firstboot_config.py`), frozen per-profile version manifests - freeze/diff/selectively-update a tested combination of components instead of always rebuilding from whatever is currently latest (`profile_manifest.py`), the 7-language GUI translations (`i18n.py`) and the Qt Quick desktop shell (`qt_gui.py`, `qml/Main.qml`) are real and tested (99 tests, `pytest`). `image_builder.py`'s download/checksum-verify/loop-mount/chroot-install/unmount pipeline, its per-project content-hashing of what actually landed on disk, and its pre-promotion scan for a leaked Wi-Fi password/private SSH key/shell history/`.env` file are real code, gated behind `check_build_platform()` - they only execute on a real Linux host with root and `losetup`/`chroot` on `PATH`, and have not been run end-to-end against a real CM5 SD card/eMMC write in this environment; on Windows or a non-root Linux user, `build-image`/`profile-build` exit early with `BUILD_BLOCKED reason=...` rather than pretending to succeed. `status`/`config`/`profile-freeze`/`profile-diff` have been exercised for real against live GitHub discovery. See `CHANGELOG.md` for exactly what has shipped so far, and the ROADMAP below for what remains open.
+**Honesty check - what actually runs today:** the CLI (`main.py`), the dynamic ecosystem discovery that reuses `hydra_umc_updater`'s own GitHub client instead of a second copy of it (`ecosystem_plan.py`), the pure `firstrun.sh`/`cmdline.txt` first-boot config generator with no filesystem access and its own recovery-procedure guard (`firstboot_config.py`), frozen per-profile version manifests - freeze/diff/selectively-update a tested combination of components instead of always rebuilding from whatever is currently latest (`profile_manifest.py`), the 7-language GUI translations (`i18n.py`) and the Qt Quick desktop shell (`qt_gui.py`, `qml/Main.qml`) are real and tested (112 tests, `pytest`). `image_builder.py`'s download/checksum-verify/loop-mount/chroot-install/unmount pipeline, its per-project content-hashing of what actually landed on disk, and its pre-promotion scan for a leaked Wi-Fi password/private SSH key/shell history/`.env` file are real code, gated behind `check_build_platform()` - they only execute on a real Linux host with root and `losetup`/`chroot` on `PATH`, and have not been run end-to-end against a real CM5 SD card/eMMC write in this environment; on Windows or a non-root Linux user, `build-image`/`profile-build` exit early with `BUILD_BLOCKED reason=...` rather than pretending to succeed. `status`/`config`/`profile-freeze`/`profile-diff` have been exercised for real against live GitHub discovery. See `CHANGELOG.md` for exactly what has shipped so far, and the ROADMAP below for what remains open.
 
 ---
 
@@ -172,6 +172,7 @@ chmod +x build.sh   # one-time
 ./run.sh --cli profile-freeze --name cm5-production --out profiles/cm5-production.json  # D05: pin a real tested combination
 ./run.sh --cli profile-diff --manifest profiles/cm5-production.json                     # what changed since it was frozen
 ./run.sh --cli profile-update --manifest profiles/cm5-production.json --project X       # refreeze only X, leave the rest pinned
+./run.sh --cli profile-set-required-resources --manifest profiles/cm5-production.json --project X --resource dist/index.html  # I12: curate what X must produce
 ./run.sh --cli profile-build --manifest profiles/cm5-production.json --out FILE         # build from EXACTLY that frozen profile
 ```
 
@@ -195,6 +196,11 @@ with root either way - see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md).
   the frozen manifest predates a repository being renamed or made
   private - refreeze the profile (`profile-freeze`) against the current
   live ecosystem instead.
+- `profile-build` refuses with "missing N required resource(s)": a
+  project curated with `profile-set-required-resources` (I12) had its own
+  `build.sh` run, but a declared relative path still doesn't exist on
+  disk afterward - a real, incomplete build, never rescued by a
+  leftover file elsewhere; the image is not promoted.
 - The GUI's Ecosystem Status tab stays empty: check your network - this
   tool needs a real connection to `github.com`/`raw.githubusercontent.com`
   for `status`/discovery, same as `hydra-umc-updater` itself.

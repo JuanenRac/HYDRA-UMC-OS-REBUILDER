@@ -20,6 +20,7 @@ from hydra_umc_os_rebuilder.profile_manifest import (
     record_build_result,
     refreeze_selected,
     save_profile_manifest,
+    set_required_resources,
 )
 
 
@@ -166,3 +167,42 @@ def test_refreeze_selected_requires_at_least_one_name() -> None:
     manifest = freeze_profile(_plan(_entry("A")), profile_name="p")
     with pytest.raises(ProfileManifestError):
         refreeze_selected(manifest, _plan(_entry("A")), set())
+
+
+# =============================================================================
+# I12: set_required_resources() - the one real place a human curates
+# "the real inventory of resources this project needs, for this profile".
+# =============================================================================
+
+
+def test_set_required_resources_updates_only_the_named_entry() -> None:
+    manifest = freeze_profile(_plan(_entry("A"), _entry("B")), profile_name="p")
+    updated = set_required_resources(manifest, "A", ("dist/index.html", "dist/bundle.js"))
+    assert updated.entry("A").required_resources == ("dist/index.html", "dist/bundle.js")
+    assert updated.entry("B").required_resources == ()
+
+
+def test_set_required_resources_rejects_a_project_not_in_the_manifest() -> None:
+    manifest = freeze_profile(_plan(_entry("A")), profile_name="p")
+    with pytest.raises(ProfileManifestError):
+        set_required_resources(manifest, "NOT-FROZEN", ("dist/index.html",))
+
+
+def test_freeze_profile_never_invents_required_resources() -> None:
+    manifest = freeze_profile(_plan(_entry("A")), profile_name="p")
+    assert manifest.entry("A").required_resources == ()
+
+
+def test_required_resources_round_trip_through_json_on_disk(tmp_path: Path) -> None:
+    manifest = set_required_resources(freeze_profile(_plan(_entry("A")), profile_name="p"), "A", ("dist/index.html",))
+    path = tmp_path / "profile.json"
+    save_profile_manifest(manifest, path)
+    reloaded = load_profile_manifest(path)
+    assert reloaded.entry("A").required_resources == ("dist/index.html",)
+
+
+def test_manifest_to_ecosystem_plan_carries_required_resources_through_to_build_image(tmp_path: Path) -> None:
+    manifest = set_required_resources(freeze_profile(_plan(_entry("A")), profile_name="p"), "A", ("dist/index.html",))
+    plan = manifest_to_ecosystem_plan(manifest)
+    entry = next(e for e in plan.entries if e.name == "A")
+    assert entry.required_resources == ("dist/index.html",)
