@@ -21,6 +21,20 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.2.1] - H026: an empty password silently dropped the whole user/SSH-key setup
+
+`_validate()`'s own check (`config.password is None`) let an empty
+string (`""`) through as if it were a real password - `build_firstrun_
+script()`'s own user-creation block (and the `ssh_authorized_key`
+check right after this one) gates on the truthy `if config.username and
+config.password:`, under which `""` is exactly as falsy as `None`. A
+username configured with `password=""` used to pass validation cleanly,
+then have its entire user account (and any SSH key) silently dropped
+from the generated firstboot script at build time - the operator
+believing an account was configured when none was created at all.
+Fixed: the check is now `not config.password`, catching both `None` and
+`""`. 1 new regression test.
+
 ## [0.2.0] - Real bug: repeated GitHub refreshes silently listed fewer and fewer projects
 
 Live report: clicking "refresh" on the Ecosystem Status tab repeatedly

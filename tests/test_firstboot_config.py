@@ -50,6 +50,16 @@ def test_username_without_password_is_rejected() -> None:
         build_firstrun_script(FirstBootConfig(username="hydra_umc"))
 
 
+def test_username_with_an_empty_string_password_is_rejected() -> None:
+    # H026: `password is None` alone let "" through - build_firstrun_
+    # script()'s own user-creation block gates on the truthy `if
+    # username and password:`, under which "" is just as falsy as None,
+    # so this used to pass validation and then have its entire user
+    # setup silently dropped from the generated script at build time.
+    with pytest.raises(FirstBootConfigError):
+        build_firstrun_script(FirstBootConfig(username="hydra_umc", password=""))
+
+
 def test_user_password_block_uses_a_real_sha512_crypt_hash() -> None:
     script = build_firstrun_script(FirstBootConfig(username="hydra_umc", password="correct horse battery staple"))
     assert "correct horse battery staple" not in script  # the plaintext must never appear

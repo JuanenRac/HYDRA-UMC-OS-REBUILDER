@@ -76,8 +76,17 @@ def _validate(config: FirstBootConfig) -> None:
         raise FirstBootConfigError(f"invalid hostname: {config.hostname!r}")
     if config.username is not None and not _USERNAME_RE.fullmatch(config.username):
         raise FirstBootConfigError(f"invalid username: {config.username!r}")
-    if config.username is not None and config.password is None:
-        raise FirstBootConfigError("a username was set without a password")
+    # H026: `is None` alone let an EMPTY string ("") through as if it
+    # were a real password - build_firstrun_script()'s own user-creation
+    # block (below, and the ssh_authorized_key check right after this
+    # one) gates on the truthy `if config.username and config.password:`,
+    # under which an empty string is just as falsy as None. A username
+    # set with password="" used to pass validation cleanly, then have
+    # its entire user/SSH-key setup silently dropped from the generated
+    # script at build time - the operator believing an account (however
+    # weakly protected) was configured when none was created at all.
+    if config.username is not None and not config.password:
+        raise FirstBootConfigError("a username was set without a real (non-empty) password")
     if config.ssh_authorized_key and not (config.username and config.password):
         # Real bug this check exists to prevent, not a style preference:
         # build_firstrun_script()'s own ssh_authorized_key block only ever
