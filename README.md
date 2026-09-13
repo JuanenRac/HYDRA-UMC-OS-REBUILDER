@@ -15,14 +15,14 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows and Linux">
 </p>
 
-> **Status: v0.1.9, scaffolding.** The CLI, the ecosystem discovery, the
+> **Status: v0.2.0, scaffolding.** The CLI, the ecosystem discovery, the
 > first-boot config generator and the GUI shell are real and tested. The
 > real end-to-end image build (download → loop-mount → chroot-install →
 > unmount) is implemented but only runs on a real Linux host with root -
 > see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) for the exact
 > platform boundary and why it exists.
 
-**Honesty check - what actually runs today:** the CLI (`main.py`), the dynamic ecosystem discovery that reuses `hydra_umc_updater`'s own GitHub client instead of a second copy of it (`ecosystem_plan.py`), the pure `firstrun.sh`/`cmdline.txt` first-boot config generator with no filesystem access and its own recovery-procedure guard (`firstboot_config.py`), frozen per-profile version manifests - freeze/diff/selectively-update a tested combination of components instead of always rebuilding from whatever is currently latest (`profile_manifest.py`), the 7-language GUI translations (`i18n.py`) and the Qt Quick desktop shell (`qt_gui.py`, `qml/Main.qml`) are real and tested (112 tests, `pytest`). `image_builder.py`'s download/checksum-verify/loop-mount/chroot-install/unmount pipeline, its per-project content-hashing of what actually landed on disk, and its pre-promotion scan for a leaked Wi-Fi password/private SSH key/shell history/`.env` file are real code, gated behind `check_build_platform()` - they only execute on a real Linux host with root and `losetup`/`chroot` on `PATH`, and have not been run end-to-end against a real CM5 SD card/eMMC write in this environment; on Windows or a non-root Linux user, `build-image`/`profile-build` exit early with `BUILD_BLOCKED reason=...` rather than pretending to succeed. `status`/`config`/`profile-freeze`/`profile-diff` have been exercised for real against live GitHub discovery. See `CHANGELOG.md` for exactly what has shipped so far, and the ROADMAP below for what remains open.
+**Honesty check - what actually runs today:** the CLI (`main.py`), the dynamic ecosystem discovery that reuses `hydra_umc_updater`'s own GitHub client instead of a second copy of it (`ecosystem_plan.py` - now stopping cleanly and reporting a real, actionable message the instant GitHub's own hourly rate limit is hit, rather than silently listing fewer projects per commit-SHA lookup that fails), the pure `firstrun.sh`/`cmdline.txt` first-boot config generator with no filesystem access and its own recovery-procedure guard (`firstboot_config.py`), frozen per-profile version manifests - freeze/diff/selectively-update a tested combination of components instead of always rebuilding from whatever is currently latest (`profile_manifest.py`), the 7-language GUI translations (`i18n.py`) and the Qt Quick desktop shell (`qt_gui.py`, `qml/Main.qml`, now surfacing real discovery errors instead of only a shrinking project count) are real and tested (116 tests, `pytest`). `image_builder.py`'s download/checksum-verify/loop-mount/chroot-install/unmount pipeline, its per-project content-hashing of what actually landed on disk, and its pre-promotion scan for a leaked Wi-Fi password/private SSH key/shell history/`.env` file are real code, gated behind `check_build_platform()` - they only execute on a real Linux host with root and `losetup`/`chroot` on `PATH`, and have not been run end-to-end against a real CM5 SD card/eMMC write in this environment; on Windows or a non-root Linux user, `build-image`/`profile-build` exit early with `BUILD_BLOCKED reason=...` rather than pretending to succeed. `status`/`config`/`profile-freeze`/`profile-diff` have been exercised for real against live GitHub discovery. See `CHANGELOG.md` for exactly what has shipped so far, and the ROADMAP below for what remains open.
 
 ---
 
@@ -204,6 +204,22 @@ with root either way - see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md).
 - The GUI's Ecosystem Status tab stays empty: check your network - this
   tool needs a real connection to `github.com`/`raw.githubusercontent.com`
   for `status`/discovery, same as `hydra-umc-updater` itself.
+- **The project count keeps shrinking on repeated refreshes (e.g. 42 ->
+  9 -> 0), even after restarting the app** - a real, previously
+  unreported bug: resolving each project's real commit SHA spends one
+  `api.github.com` call PER PROJECT, on an *unauthenticated* budget of
+  60 requests PER HOUR shared with everything else this tool (and
+  `hydra-umc-updater`) does - with 50+ real ecosystem projects, a single
+  refresh can exhaust it, and GitHub's own hourly window (not this app's
+  own state) is what has to reset, not something a restart fixes. Fixed
+  to report this honestly instead of silently listing fewer projects:
+  the amber banner under the project list now names exactly how many
+  projects were resolved before the wall and when GitHub's limit resets
+  (see `ecosystem_plan.GitHubRateLimitedError`). Set a `GITHUB_TOKEN`
+  environment variable (a plain GitHub personal access token, no scopes
+  needed for public repos) before launching this tool to raise the
+  budget to 5000/hour - both the repo listing and the per-project
+  commit-SHA resolution now honor it consistently.
 
 ## 🚀 ROADMAP
 

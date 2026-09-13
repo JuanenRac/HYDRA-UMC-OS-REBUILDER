@@ -19,13 +19,37 @@
 from __future__ import annotations
 
 import json
+import os
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, replace
 
-from hydra_umc_updater.github_client import RemoteDiscovery, RemoteStatus, discover_remote_projects
+from hydra_umc_updater.github_client import (
+    RemoteDiscovery,
+    RemoteStatus,
+    describe_http_error,
+    discover_remote_projects,
+    is_primary_rate_limited,
+)
 
 GITHUB_API_BASE = "https://api.github.com"
+
+
+class GitHubRateLimitedError(RuntimeError):
+    """Real bug found from a live report: repeated GitHub refreshes
+    silently listed fewer and fewer projects (42 -> 9 -> 0), staying at 0
+    even after restarting the app. Root cause: `resolve_commit_shas()`
+    below spends one `api.github.com` call PER PROJECT to resolve a real
+    commit SHA, on an unauthenticated 60-requests-PER-HOUR budget shared
+    with the repo-listing call - with ~50+ real ecosystem projects, a
+    SINGLE refresh can exhaust the whole hourly budget, and every
+    following click (before the real GitHub-side hour window resets, not
+    an app-restartable state) has less and less of it left. `_fetch_commit_sha`
+    used to catch this exactly like a 404 (silently return `None`,
+    "excluded from this build") - this dedicated exception lets
+    `resolve_commit_shas()` tell the two apart and stop immediately
+    instead of burning the rest of an already-dead budget one doomed
+    request at a time."""
 
 
 @dataclass(frozen=True)
@@ -106,10 +130,18 @@ def _fetch_commit_sha(owner: str, name: str, branch: str, *, token: str | None, 
     `branch`, via GitHub's own real REST API (never guessed, never
     derived from the raw-content fetch discovery already does - that
     endpoint doesn't expose a commit identity at all). Returns `None` on
-    ANY failure (network, 404, rate limit, a malformed response) rather
-    than raising or fabricating one - `resolve_commit_shas()` treats that
+    an ordinary failure (network, 404, a malformed response) rather than
+    raising or fabricating one - `resolve_commit_shas()` treats that
     exactly like discovery already treats an unreadable manifest: the
-    project is excluded from this build, never guessed at."""
+    project is excluded from this build, never guessed at.
+
+    Raises `GitHubRateLimitedError` instead of returning `None` when the
+    failure is specifically GitHub's real PRIMARY rate limit - a
+    genuinely different situation from "this one repo/branch has a
+    problem": every remaining call in this same batch is doomed too, so
+    the caller needs to know to stop, not keep excluding one project at
+    a time until none are left.
+    """
     url = f"{GITHUB_API_BASE}/repos/{owner}/{name}/commits/{branch}"
     headers = {
         "User-Agent": "hydra-umc-os-rebuilder",
@@ -122,6 +154,10 @@ def _fetch_commit_sha(owner: str, name: str, branch: str, *, token: str | None, 
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             payload = json.loads(response.read().decode("utf-8", errors="replace"))
+    except urllib.error.HTTPError as exc:
+        if is_primary_rate_limited(exc):
+            raise GitHubRateLimitedError(describe_http_error(exc)) from exc
+        return None
     except (urllib.error.URLError, TimeoutError, OSError, ValueError):
         return None
     sha = payload.get("sha") if isinstance(payload, dict) else None
@@ -137,11 +173,34 @@ def resolve_commit_shas(plan: EcosystemPlan, *, owner: str = "JuanenRac", token:
     is EXCLUDED from the returned plan (recorded in `discovery_errors`
     instead, the same channel a manifest failure already uses) - this
     real fix must never fall back to silently building from an unpinned
-    branch just because one lookup failed."""
+    branch just because one lookup failed.
+
+    Real fix for a live report of repeated refreshes silently listing
+    fewer and fewer projects (42 -> 9 -> 0, still 0 after restarting the
+    app): once GitHub's real PRIMARY rate limit is hit, every remaining
+    entry in this loop would fail the exact same way - this stops
+    immediately instead of spending the rest of the loop finding that
+    out one doomed request at a time, and reports ONE clear, real error
+    naming how many entries were actually resolved before the wall, how
+    many are excluded because of it, and (via `describe_http_error()`)
+    exactly when GitHub's own limit resets.
+    """
     resolved: list[EcosystemPlanEntry] = []
     errors = list(plan.discovery_errors)
-    for entry in plan.entries:
-        sha = _fetch_commit_sha(owner, entry.name, entry.branch, token=token)
+    for index, entry in enumerate(plan.entries):
+        try:
+            sha = _fetch_commit_sha(owner, entry.name, entry.branch, token=token)
+        except GitHubRateLimitedError as exc:
+            # `index` itself is the entry that just hit the limit (a real
+            # attempt, not a skipped one) - counted together with every
+            # entry after it under "excluded", since neither ever made it
+            # into `resolved` either way.
+            excluded = len(plan.entries) - len(resolved)
+            errors.append(
+                f"GitHub commit-SHA resolution stopped after {len(resolved)} of {len(plan.entries)} project(s) resolved - "
+                f"{exc} - {excluded} project(s) (including the one that hit the limit) are excluded from this build"
+            )
+            break
         if sha is None:
             errors.append(
                 f"{entry.name}: could not resolve a real commit SHA for branch {entry.branch!r} - excluded from this build"
@@ -153,10 +212,22 @@ def resolve_commit_shas(plan: EcosystemPlan, *, owner: str = "JuanenRac", token:
 
 def fetch_ecosystem_plan(*, owner: str = "JuanenRac", token: str | None = None) -> EcosystemPlan:
     """Real network entry point - a thin wrapper so main.py/qt_gui.py never
-    need to import hydra_umc_updater's own discovery internals directly."""
-    discovery = discover_remote_projects(owner=owner, token=token)
+    need to import hydra_umc_updater's own discovery internals directly.
+
+    Real fix for a token-fallback inconsistency found while diagnosing the
+    rate-limit bug above: `discover_remote_projects()` already falls back
+    to the real `GITHUB_TOKEN` environment variable when `token` is
+    `None`, but `resolve_commit_shas()` never did the same - a user
+    relying on that env var (rather than passing a token explicitly to
+    THIS function) got an authenticated repo listing but a fully
+    unauthenticated, 60/hour-capped commit-SHA resolution pass right
+    after it, in the exact same call. The fallback is resolved once,
+    here, and threaded through both calls identically.
+    """
+    resolved_token = token if token is not None else os.environ.get("GITHUB_TOKEN") or None
+    discovery = discover_remote_projects(owner=owner, token=resolved_token)
     plan = build_plan(discovery, owner=owner)
-    return resolve_commit_shas(plan, owner=owner, token=token)
+    return resolve_commit_shas(plan, owner=owner, token=resolved_token)
 
 
 def plan_summary_lines(plan: EcosystemPlan) -> list[str]:

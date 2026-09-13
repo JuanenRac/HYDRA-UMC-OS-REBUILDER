@@ -168,6 +168,26 @@ class RebuilderBridge(QObject):
     def projectCount(self) -> int:
         return len(self._projects)
 
+    # Real bug fix: `_discoveryErrors` was already being collected on
+    # every refresh but never exposed to QML at all - a user watching the
+    # project count silently shrink refresh after refresh (42 -> 9 -> 0)
+    # had no way to see WHY, even though the real reason (e.g. GitHub's
+    # own rate limit, with the exact reset time) was sitting right here.
+    @Property(list, notify=projectsChanged)
+    def discoveryErrors(self) -> list:
+        return list(self._discoveryErrors)
+
+    @Property(int, notify=projectsChanged)
+    def discoveryErrorCount(self) -> int:
+        return len(self._discoveryErrors)
+
+    @Property(str, notify=projectsChanged)
+    def discoveryErrorsSummary(self) -> str:
+        # Formatted here (not in QML) for the same reason lbl_projects_found
+        # already is: i18n.text()'s real {count} substitution takes
+        # keyword args a QML Slot signature can't pass through.
+        return i18n.text(self._lang, "lbl_discovery_errors", count=len(self._discoveryErrors))
+
     @Slot()
     def refresh(self) -> None:
         if self._busy:
