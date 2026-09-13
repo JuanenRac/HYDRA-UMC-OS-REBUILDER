@@ -21,6 +21,53 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.2.0] - Real bug: repeated GitHub refreshes silently listed fewer and fewer projects
+
+Live report: clicking "refresh" on the Ecosystem Status tab repeatedly
+listed FEWER projects each time (42 -> 9 -> 0), staying at 0 even after
+restarting the app entirely.
+
+Root cause: `resolve_commit_shas()` spends one `api.github.com` call PER
+PROJECT to resolve a real, immutable commit SHA, on an *unauthenticated*
+budget of 60 requests PER HOUR shared with the repo-listing call - with
+50+ real ecosystem projects, a single refresh can exhaust the whole
+budget by itself. `_fetch_commit_sha()` used to catch GitHub's own
+PRIMARY rate limit exactly like a 404 ("this repo/branch doesn't
+exist"), silently excluding one more project per doomed request instead
+of recognizing that every REMAINING request in the same batch was
+doomed too - and GitHub's own hourly window, not this app's state, is
+what has to pass before it recovers, which a restart does nothing for.
+
+Real fix:
+- New `GitHubRateLimitedError`; `_fetch_commit_sha()` now distinguishes
+  GitHub's real PRIMARY rate limit (via `hydra_umc_updater.github_client`'s
+  new `is_primary_rate_limited()`) from an ordinary per-repo failure.
+  `resolve_commit_shas()` stops immediately on the first one instead of
+  burning the rest of an already-dead budget, and reports ONE clear
+  error naming how many projects were actually resolved, how many are
+  excluded because of it, and (via `describe_http_error()`) exactly when
+  GitHub's limit resets.
+- Fixed a related token-fallback inconsistency: `discover_remote_projects()`
+  already fell back to the real `GITHUB_TOKEN` environment variable, but
+  `resolve_commit_shas()` never did in the same call - a user relying on
+  that env var got an authenticated repo listing and then a fully
+  unauthenticated commit-SHA pass right after it. Both now resolve the
+  same token once, in `fetch_ecosystem_plan()`.
+- The GUI's `discoveryErrors`/`discoveryErrorCount`/`discoveryErrorsSummary`
+  (already being collected, never exposed) are now real QML properties -
+  an amber banner under the project list names exactly what went wrong
+  instead of leaving a shrinking, unexplained count. New
+  `lbl_discovery_errors` i18n key in all 7 languages.
+- Needs `hydra-umc-updater` >= 0.3.7 (this fix's own root-cause half
+  lives there) - `pip install --upgrade` this project's dependencies to
+  pick it up.
+
+Set `GITHUB_TOKEN` (a plain personal access token, no scopes needed for
+public repos) before launching this tool to raise the budget to
+5000/hour - see the README's own Troubleshooting section.
+
+4 new tests (`test_ecosystem_plan.py`), 116 total, `ci_validate.py` PASS.
+
 ## [0.1.9] - I12: a real, human-curated resource inventory per profile
 
 I12 ("Verificación del contenido distribuido fuera del checkout"): C15

@@ -15,7 +15,14 @@ from hydra_umc_updater.github_client import RemoteDiscovery, RemoteStatus
 from hydra_umc_updater.project_manifest import ProjectManifest
 from hydra_umc_updater.registry import ProjectEntry
 from hydra_umc_os_rebuilder import ecosystem_plan as ecosystem_plan_module
-from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlan, EcosystemPlanEntry, build_plan, plan_summary_lines, resolve_commit_shas
+from hydra_umc_os_rebuilder.ecosystem_plan import (
+    EcosystemPlan,
+    EcosystemPlanEntry,
+    build_plan,
+    fetch_ecosystem_plan,
+    plan_summary_lines,
+    resolve_commit_shas,
+)
 
 
 def _manifest(name: str, version: str, deployment_target: str, role: str = "service", stack: str = "python") -> ProjectManifest:
@@ -107,6 +114,11 @@ def test_plan_is_sorted_by_name_case_insensitively() -> None:
 class _FakeGitHubCommitsHandler(http.server.BaseHTTPRequestHandler):
     # {"owner/repo/branch": sha, or None to mean "respond 404"}
     shas: dict[str, str | None] = {}
+    # Real bug reproduction: keys listed here get a real GitHub PRIMARY
+    # rate-limit response (403, X-RateLimit-Remaining: 0) instead of the
+    # ordinary 404/200 path above.
+    rate_limited: set[str] = set()
+    requested_keys: list[str] = []
 
     def do_GET(self) -> None:  # noqa: N802 - stdlib method name
         # Real path shape: /repos/{owner}/{name}/commits/{branch}
@@ -114,6 +126,15 @@ class _FakeGitHubCommitsHandler(http.server.BaseHTTPRequestHandler):
         key = None
         if len(parts) == 5 and parts[0] == "repos" and parts[3] == "commits":
             key = f"{parts[1]}/{parts[2]}/{parts[4]}"
+        type(self).requested_keys.append(key or self.path)
+        if key is not None and key in self.rate_limited:
+            self.send_response(403)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("X-RateLimit-Remaining", "0")
+            self.send_header("X-RateLimit-Reset", "1700000000")
+            self.end_headers()
+            self.wfile.write(b'{"message": "rate limit exceeded"}')
+            return
         sha = self.shas.get(key) if key is not None else None
         if sha is None:
             self.send_response(404)
@@ -132,6 +153,8 @@ class _FakeGitHubCommitsHandler(http.server.BaseHTTPRequestHandler):
 @pytest.fixture()
 def fake_github_commits(monkeypatch: pytest.MonkeyPatch):
     _FakeGitHubCommitsHandler.shas = {}
+    _FakeGitHubCommitsHandler.rate_limited = set()
+    _FakeGitHubCommitsHandler.requested_keys = []
     server = http.server.HTTPServer(("127.0.0.1", 0), _FakeGitHubCommitsHandler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -205,6 +228,104 @@ def test_resolve_commit_shas_never_fabricates_a_sha_for_one_entry_just_because_a
     assert resolved.entries[0].commit_sha == "b" * 40
     assert len(resolved.discovery_errors) == 1
     assert "HYDRA-UMC-GHOST" in resolved.discovery_errors[0]
+
+
+# =============================================================================
+# Real bug reproduction: repeated GitHub refreshes silently listed fewer
+# and fewer projects (42 -> 9 -> 0), still 0 after restarting the app -
+# root cause was resolve_commit_shas() spending one api.github.com call
+# PER PROJECT on an unauthenticated, 60-per-hour budget, with a rate
+# limit hit silently treated exactly like "this one repo doesn't exist".
+# =============================================================================
+
+
+def test_resolve_commit_shas_stops_immediately_on_a_real_rate_limit(fake_github_commits) -> None:
+    fake_github_commits.shas = {
+        "JuanenRac/HYDRA-UMC-A/main": "a" * 40,
+        "JuanenRac/HYDRA-UMC-B/main": "b" * 40,
+        "JuanenRac/HYDRA-UMC-D/main": "d" * 40,
+    }
+    fake_github_commits.rate_limited = {"JuanenRac/HYDRA-UMC-C/main"}
+    plan = _plan(
+        EcosystemPlanEntry(name="HYDRA-UMC-A", version="0.0.1", role="api", stack="node", git_url="https://github.com/JuanenRac/HYDRA-UMC-A.git"),
+        EcosystemPlanEntry(name="HYDRA-UMC-B", version="0.0.1", role="api", stack="node", git_url="https://github.com/JuanenRac/HYDRA-UMC-B.git"),
+        EcosystemPlanEntry(name="HYDRA-UMC-C", version="0.0.1", role="api", stack="node", git_url="https://github.com/JuanenRac/HYDRA-UMC-C.git"),
+        EcosystemPlanEntry(name="HYDRA-UMC-D", version="0.0.1", role="api", stack="node", git_url="https://github.com/JuanenRac/HYDRA-UMC-D.git"),
+    )
+
+    resolved = resolve_commit_shas(plan)
+
+    # The two entries resolved BEFORE the rate limit hit are kept for
+    # real - a rate limit must never retroactively discard already-good
+    # work.
+    assert [entry.name for entry in resolved.entries] == ["HYDRA-UMC-A", "HYDRA-UMC-B"]
+    # D was never even attempted - the real point of stopping early.
+    assert "HYDRA-UMC-D" not in fake_github_commits.requested_keys
+    assert len(resolved.discovery_errors) == 1
+    message = resolved.discovery_errors[0]
+    assert "2 of 4" in message
+    assert "2 project(s)" in message
+    assert "rate limited by GitHub" in message
+    assert "GITHUB_TOKEN" in message
+
+
+def test_resolve_commit_shas_reports_zero_resolved_honestly_when_rate_limited_from_the_start(fake_github_commits) -> None:
+    fake_github_commits.rate_limited = {"JuanenRac/HYDRA-UMC-A/main"}
+    plan = _plan(
+        EcosystemPlanEntry(name="HYDRA-UMC-A", version="0.0.1", role="api", stack="node", git_url="https://github.com/JuanenRac/HYDRA-UMC-A.git"),
+    )
+
+    resolved = resolve_commit_shas(plan)
+
+    assert resolved.entries == ()
+    assert "0 of 1" in resolved.discovery_errors[0]
+
+
+def test_fetch_ecosystem_plan_resolves_the_github_token_env_var_once_for_both_real_calls(monkeypatch: pytest.MonkeyPatch) -> None:
+    # Real bug found alongside the rate-limit one: discover_remote_projects()
+    # already falls back to GITHUB_TOKEN when no token is passed
+    # explicitly, but resolve_commit_shas() never did - a user relying on
+    # the env var got an authenticated repo listing and then a fully
+    # unauthenticated (60/hour) commit-SHA pass in the very same refresh.
+    monkeypatch.setenv("GITHUB_TOKEN", "env-token-123")
+    seen_tokens: dict[str, str | None] = {}
+
+    def fake_discover(owner, *, token=None):
+        seen_tokens["discover"] = token
+        return RemoteDiscovery(projects=(), errors=())
+
+    def fake_resolve(plan, *, owner="JuanenRac", token=None):
+        seen_tokens["resolve"] = token
+        return plan
+
+    monkeypatch.setattr(ecosystem_plan_module, "discover_remote_projects", fake_discover)
+    monkeypatch.setattr(ecosystem_plan_module, "resolve_commit_shas", fake_resolve)
+
+    fetch_ecosystem_plan()
+
+    assert seen_tokens["discover"] == "env-token-123"
+    assert seen_tokens["resolve"] == "env-token-123"
+
+
+def test_fetch_ecosystem_plan_prefers_an_explicitly_passed_token_over_the_env_var(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GITHUB_TOKEN", "env-token-should-not-be-used")
+    seen_tokens: dict[str, str | None] = {}
+
+    def fake_discover(owner, *, token=None):
+        seen_tokens["discover"] = token
+        return RemoteDiscovery(projects=(), errors=())
+
+    def fake_resolve(plan, *, owner="JuanenRac", token=None):
+        seen_tokens["resolve"] = token
+        return plan
+
+    monkeypatch.setattr(ecosystem_plan_module, "discover_remote_projects", fake_discover)
+    monkeypatch.setattr(ecosystem_plan_module, "resolve_commit_shas", fake_resolve)
+
+    fetch_ecosystem_plan(token="explicit-token")
+
+    assert seen_tokens["discover"] == "explicit-token"
+    assert seen_tokens["resolve"] == "explicit-token"
 
 
 def test_plan_summary_lines_include_a_total_and_error_count() -> None:

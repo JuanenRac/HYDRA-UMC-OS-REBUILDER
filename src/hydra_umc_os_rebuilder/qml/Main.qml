@@ -606,6 +606,46 @@ ApplicationWindow {
                             }
                         }
                     }
+                    // Real bug fix: discovery errors (most commonly
+                    // GitHub's own rate limit - see ecosystem_plan.py's
+                    // GitHubRateLimitedError) were already being
+                    // collected on every refresh but never shown - a
+                    // shrinking project count with zero explanation.
+                    // Only takes real layout space when there is
+                    // something real to say.
+                    Rectangle {
+                        visible: backend.discoveryErrorCount > 0
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: visible ? Math.min(140, 44 + errorList.contentHeight) : 0
+                        radius: 8
+                        color: Qt.rgba(window.amber.r, window.amber.g, window.amber.b, 0.12)
+                        border.width: 1; border.color: window.amber
+                        ColumnLayout {
+                            anchors.fill: parent
+                            anchors.margins: 8
+                            spacing: 4
+                            LabelText {
+                                text: backend.discoveryErrorsSummary
+                                color: window.amber; font.pixelSize: 10; font.bold: true
+                                wrapMode: Text.WordWrap; Layout.fillWidth: true
+                            }
+                            ListView {
+                                id: errorList
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                clip: true
+                                model: backend.discoveryErrors
+                                ScrollBar.vertical: ScrollBar { }
+                                delegate: LabelText {
+                                    required property var modelData
+                                    width: ListView.view.width
+                                    text: "• " + modelData
+                                    color: window.amber; font.pixelSize: 9
+                                    wrapMode: Text.WordWrap
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
