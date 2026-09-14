@@ -285,6 +285,15 @@ def build_image(
     BuildProgress at each real phase transition - never a fake percentage,
     just the phase this call has actually reached.
 
+    PROM-IMG-F03: this function always returns a real `BuildResult`, never
+    raises `ImageBuildError` past itself - a per-project install failure
+    (a missing commit SHA, a diverged version, a missing required
+    resource) is caught here and reported as `ok=False`, the same as a
+    cleanup failure or a leaked secret already were. The real
+    umount/losetup cleanup still runs unconditionally either way (see the
+    `finally` block below); only promotion (moving the finished raw image
+    to `output_path`) is ever skipped on a real failure.
+
     Each ecosystem project in `plan` is cloned at its own real pinned
     version tag/commit and built by running ITS OWN build.sh with the
     target rootfs's own real interpreter (chrooted) - this function never
@@ -333,10 +342,43 @@ def build_image(
         _run("mount", f"{loop_dev}p2", str(rootfs_mount))
 
         installed: list[str] = []
+        install_error: str | None = None
+        secret_findings: list[str] = []
         report("install", f"{len(plan)} ecosystem project(s)")
         for entry in plan.entries:
             report("install", entry.name)
-            real_version = _install_one_project(entry, rootfs_mount)
+            # PROM-IMG-F03: `_install_one_project()` raising
+            # `ImageBuildError` (a missing commit SHA, a diverged
+            # version, a missing required resource - every one a REAL,
+            # already-tested refusal) used to propagate straight past
+            # this whole function - the `finally` block's own real
+            # umount/losetup cleanup still ran, but `build_image()`
+            # itself never returned the documented `BuildResult` its own
+            # signature promises; it raised instead, past every real
+            # caller. `main.py`'s own CLI command had no try/except
+            # around this call at all, so a mid-build failure (or an
+            # equivalent cancellation raised from inside `progress()`)
+            # crashed the whole CLI with a raw traceback instead of the
+            # documented `BUILD_FAILED error=...` exit-1 path -
+            # `qt_gui.py`'s own worker thread already caught this
+            # defensively, which is what surfaced the CLI never did.
+            # Caught here now, same as a cleanup failure or a leaked
+            # secret already were: reported as a real, honest
+            # `BuildResult(ok=False, ...)`, installed(so-far)
+            # preserved, the raw image never promoted - and the loop
+            # stops, so the `finally` block's own cleanup still runs
+            # exactly as before.
+            try:
+                real_version = _install_one_project(entry, rootfs_mount)
+            except (ImageBuildError, subprocess.CalledProcessError) as exc:
+                # A real, unrelated subprocess failure (git over a flaky
+                # connection, chroot hitting a disk-full host) is just as
+                # real a reason to stop here as one of
+                # _install_one_project's own explicit refusals - `_run()`
+                # itself raises `subprocess.CalledProcessError` for that
+                # (`check=True`), never `ImageBuildError`.
+                install_error = f"{entry.name}: {exc}"
+                break
             # C15: a real content hash of what actually landed on disk,
             # not just the version string _install_one_project already
             # confirmed matches the plan - see _hash_directory_tree's own
@@ -344,12 +386,13 @@ def build_image(
             tree_hash = _hash_directory_tree(rootfs_mount / "opt" / "hydra-umc" / entry.name.lower())
             installed.append(f"{entry.name}@{real_version}#sha256:{tree_hash}")
 
-        if firstboot is not None:
-            report("firstboot-config")
-            _write_firstboot_config(build_boot_partition_patch(firstboot), boot_mount)
+        if install_error is None:
+            if firstboot is not None:
+                report("firstboot-config")
+                _write_firstboot_config(build_boot_partition_patch(firstboot), boot_mount)
 
-        report("secret-scan")
-        secret_findings = scan_for_leaked_secrets(rootfs_mount)
+            report("secret-scan")
+            secret_findings = scan_for_leaked_secrets(rootfs_mount)
 
         report("unmount")
     finally:
@@ -383,6 +426,19 @@ def build_image(
             error="image build completed but cleanup failed - the image was NOT promoted: " + "; ".join(cleanup_errors),
             installed=tuple(installed),
             secret_findings=tuple(secret_findings),
+        )
+
+    if install_error is not None:
+        # PROM-IMG-F03: same real "never promote, report what genuinely
+        # finished" contract as a cleanup failure or a leaked secret -
+        # the loop/mount are already known-clean at this point (the
+        # `finally` block above already ran and reported no
+        # cleanup_errors), only the install itself stopped partway
+        # through.
+        return BuildResult(
+            ok=False,
+            error=f"image build failed and was NOT promoted: {install_error}",
+            installed=tuple(installed),
         )
 
     if secret_findings:

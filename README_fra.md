@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows et Linux">
 </p>
 
-> **Statut : v0.2.1, squelette.** La CLI, la découverte de l'écosystème, le
+> **Statut : v0.2.2, squelette.** La CLI, la découverte de l'écosystème, le
 > générateur de configuration de premier démarrage et l'interface
 > graphique sont réels et testés. La construction d'image réelle de bout
 > en bout (téléchargement → montage loop → installation en chroot →

@@ -21,6 +21,39 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.2.2] - PROM-IMG-F03: build_image() used to RAISE past itself on a mid-build failure instead of returning BuildResult(ok=False)
+
+A per-project install failure (`_install_one_project()`'s own
+`ImageBuildError` - a missing commit SHA, a diverged version, a missing
+required resource - or a real `subprocess.CalledProcessError` from `_run()`,
+e.g. a git clone failing over a flaky connection) used to propagate
+straight past `build_image()` - the `finally` block's own real
+umount/losetup cleanup still ran, but the function never returned the
+`BuildResult` its own signature promises; it raised instead. `main.py`'s
+own CLI command (`profile-build` and the direct `build-image` path) had
+no `try`/`except` around this call at all, so a real mid-build failure
+(or an equivalent cancellation) would have crashed the whole CLI with a
+raw traceback instead of the documented `BUILD_FAILED error=...` exit-1
+path - `qt_gui.py`'s own worker thread already caught this defensively,
+which is what surfaced the CLI never did.
+
+Fixed at the source: `build_image()` now catches both exception types
+from its own install loop and returns `BuildResult(ok=False, error=...,
+installed=<projects that finished before the stop>)`, same real
+"never promote, report what genuinely finished" contract a cleanup
+failure or a leaked secret already used. Real umount/losetup cleanup
+still runs unconditionally either way.
+
+3 new, real end-to-end tests exercising `build_image()` stopping
+partway through an install (a validation refusal, a real subprocess
+failure, and a platform-check failure) - `_run`/`subprocess.run`
+monkeypatched (this dev host has no real Linux root to loop-mount/chroot
+with, same honest platform boundary this module has always declared),
+but this project's own pipeline logic - the stop, the cleanup, the
+never-promote - is exercised for real, not merely asserted.
+
+3 new tests (120 passed).
+
 ## [0.2.1] - H026: an empty password silently dropped the whole user/SSH-key setup
 
 `_validate()`'s own check (`config.password is None`) let an empty

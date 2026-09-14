@@ -16,16 +16,19 @@ from pathlib import Path
 import pytest
 
 from hydra_umc_os_rebuilder import image_builder as image_builder_module
-from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlanEntry
+from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlan, EcosystemPlanEntry
 from hydra_umc_os_rebuilder.image_builder import (
     BaseImageSource,
+    BuildProgress,
     ImageBuildError,
+    PlatformCheck,
     _hash_directory_tree,
     _install_one_project,
     _read_real_installed_version,
     _remote_content_length,
     _require_free_space,
     _xz_uncompressed_size,
+    build_image,
     fetch_base_image,
     fetch_reference_sha256,
     scan_for_leaked_secrets,
@@ -546,3 +549,183 @@ def test_hash_directory_tree_never_raises_on_a_real_dangling_symlink(tmp_path: P
     (tree / "broken.txt").symlink_to(tmp_path / "does-not-exist.txt")
     # Must complete, not raise FileNotFoundError trying to read through it.
     _hash_directory_tree(tree)
+
+
+# ---------------------------------------------------------------------------
+# PROM-IMG-F03: a real, dedicated end-to-end test of build_image() stopping
+# partway through - a per-project install failure raised from inside the
+# real install loop (the same real code path a real mid-build cancellation
+# or crash exercises: the `finally` block's own real cleanup, and never
+# promoting the raw image). check_build_platform() and every real
+# subprocess call (_run, and the finally block's own direct subprocess.run
+# calls) are monkeypatched - this asserts this project's OWN pipeline logic
+# for real, not a real loop-mount/chroot, which needs actual Linux root
+# this dev environment does not have (see this module's own HONEST
+# PLATFORM BOUNDARY comment).
+# ---------------------------------------------------------------------------
+
+
+def _fake_subprocess_run(calls: list[list[str]]):
+    class _FakeCompleted:
+        returncode = 0
+        stdout = ""
+        stderr = ""
+
+    def fake(command, **kwargs):
+        calls.append(list(command))
+        return _FakeCompleted()
+
+    return fake
+
+
+def _install_pipeline_fake_run(succeeding_target: Path):
+    """Real git clone/chroot/checkout sequence for ONE succeeding
+    project, plus the losetup/mount calls `build_image()` itself makes -
+    everything BEFORE `_install_one_project()` ever gets called for a
+    second, deliberately-broken entry (which raises before making any
+    `_run` call of its own - see `_entry(commit_sha=None)`)."""
+    calls: list[list[str]] = []
+
+    def fake_run(*command: str, **kwargs):
+        calls.append(list(command))
+        if command[:2] == ("losetup", "--find"):
+            class _Completed:
+                stdout = "/dev/loop0\n"
+
+            return _Completed()
+        if command[0] == "mount":
+            return None
+        if command[:2] == ("git", "clone"):
+            succeeding_target.mkdir(parents=True)
+            (succeeding_target / "build.sh").write_text("#!/bin/bash\n", encoding="utf-8")
+            (succeeding_target / "hydra-umc.project.json").write_text(json.dumps({"version": "1.0.0"}), encoding="utf-8")
+            return None
+        if command[0] == "chroot":
+            return None
+        if command[:4] == ("git", "-C", str(succeeding_target), "checkout") and command[-2:] == ("--", "."):
+            return None
+        return None
+
+    return fake_run, calls
+
+
+def test_build_image_stopping_mid_install_still_cleans_up_and_never_promotes(
+    fixture_server: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(image_builder_module, "check_build_platform", lambda: PlatformCheck(True))
+
+    succeeding_target = tmp_path / "work" / "mnt" / "rootfs" / "opt" / "hydra-umc" / "hydra-umc-server"
+    fake_run, run_calls = _install_pipeline_fake_run(succeeding_target)
+    monkeypatch.setattr(image_builder_module, "_run", fake_run)
+
+    subprocess_calls: list[list[str]] = []
+    monkeypatch.setattr(image_builder_module.subprocess, "run", _fake_subprocess_run(subprocess_calls))
+
+    plan = EcosystemPlan(
+        entries=(
+            _entry(name="HYDRA-UMC-SERVER", version="1.0.0", commit_sha="c" * 40),
+            # No real, resolved commit SHA - _install_one_project refuses
+            # immediately, before this entry ever makes an _run call of
+            # its own. Models a real mid-build stop exactly as honestly
+            # as an external cancellation would: the loop already
+            # installed one real project, then stopped.
+            _entry(name="HYDRA-UMC-BROKEN", commit_sha=None),
+        ),
+        discovery_errors=(),
+    )
+    output_path = tmp_path / "out" / "hydra-umc-cm5.img"
+    progress_phases: list[str] = []
+
+    result = build_image(
+        source=BaseImageSource(label="fixture", url=f"{fixture_server}/image.img", sha256=""),
+        plan=plan,
+        firstboot=None,
+        work_dir=tmp_path / "work",
+        output_path=output_path,
+        progress=lambda update: progress_phases.append(update.phase),
+    )
+
+    assert result.ok is False
+    assert "HYDRA-UMC-BROKEN" in result.error
+    assert "no real, resolved commit SHA" in result.error
+    # The one project that genuinely finished before the stop is still
+    # honestly reported.
+    assert len(result.installed) == 1
+    assert result.installed[0].startswith("HYDRA-UMC-SERVER@1.0.0#sha256:")
+    # Never promoted - a real caller must never see a half-built image at
+    # the real output path.
+    assert not output_path.exists()
+    # The real cleanup (umount boot, umount rootfs, losetup -d) ran
+    # unconditionally, via the direct subprocess.run path (never the
+    # check=True _run wrapper, which would abort on a real failure here).
+    cleanup_labels = [call[0] for call in subprocess_calls]
+    assert cleanup_labels == ["umount", "umount", "losetup"]
+    assert subprocess_calls[2] == ["losetup", "-d", "/dev/loop0"]
+    # secret-scan/firstboot-config never ran for a build that stopped
+    # mid-install - "secret-scan" would appear in progress_phases if they had.
+    assert "secret-scan" not in progress_phases
+    assert "unmount" in progress_phases, "unmount is still reported even though the build failed"
+
+
+def test_build_image_stopping_on_a_real_subprocess_failure_also_cleans_up_and_never_promotes(
+    fixture_server: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # A real, unrelated subprocess failure (git over a flaky connection,
+    # say) - _run()'s own check=True raises subprocess.CalledProcessError,
+    # never ImageBuildError. Same real stop-cleanup-report contract must
+    # still hold.
+    import subprocess
+
+    monkeypatch.setattr(image_builder_module, "check_build_platform", lambda: PlatformCheck(True))
+
+    subprocess_calls: list[list[str]] = []
+    monkeypatch.setattr(image_builder_module.subprocess, "run", _fake_subprocess_run(subprocess_calls))
+
+    def fake_run(*command: str, **kwargs):
+        if command[:2] == ("losetup", "--find"):
+            class _Completed:
+                stdout = "/dev/loop0\n"
+
+            return _Completed()
+        if command[0] == "mount":
+            return None
+        if command[:2] == ("git", "clone"):
+            raise subprocess.CalledProcessError(returncode=128, cmd=list(command), stderr="fatal: unable to access: network unreachable")
+        return None
+
+    monkeypatch.setattr(image_builder_module, "_run", fake_run)
+
+    plan = EcosystemPlan(entries=(_entry(name="HYDRA-UMC-SERVER", commit_sha="c" * 40),), discovery_errors=())
+    output_path = tmp_path / "out.img"
+
+    result = build_image(
+        source=BaseImageSource(label="fixture", url=f"{fixture_server}/image.img", sha256=""),
+        plan=plan, firstboot=None, work_dir=tmp_path / "work", output_path=output_path, progress=None,
+    )
+
+    assert result.ok is False
+    assert "HYDRA-UMC-SERVER" in result.error
+    assert "returned non-zero exit status 128" in result.error
+    assert not output_path.exists()
+    assert [call[0] for call in subprocess_calls] == ["umount", "umount", "losetup"]
+
+
+def test_build_image_reports_platform_check_failure_without_touching_any_real_subprocess(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(image_builder_module, "check_build_platform", lambda: PlatformCheck(False, "not a real Linux host"))
+    calls: list[list[str]] = []
+    monkeypatch.setattr(image_builder_module, "_run", lambda *a, **k: calls.append(list(a)) or None)
+
+    result = build_image(
+        source=BaseImageSource(label="fixture", url="http://127.0.0.1:1/image.img", sha256=""),
+        plan=EcosystemPlan(entries=(), discovery_errors=()),
+        firstboot=None,
+        work_dir=tmp_path / "work",
+        output_path=tmp_path / "out.img",
+        progress=None,
+    )
+
+    assert result.ok is False
+    assert result.error == "not a real Linux host"
+    assert calls == [], "a platform-check failure must never attempt a real subprocess call"
