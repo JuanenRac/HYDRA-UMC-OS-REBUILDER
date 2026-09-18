@@ -19,6 +19,7 @@ from pathlib import Path
 from . import __version__
 from .ecosystem_plan import fetch_ecosystem_plan, plan_summary_lines
 from .firstboot_config import FirstBootConfig, WifiConfig, build_boot_partition_patch
+from .image_builder import DEFAULT_PROJECT_TIMEOUT_SECONDS
 from .profile_manifest import (
     ProfileManifestError,
     diff_profile,
@@ -131,6 +132,7 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
         work_dir=Path(args.work_dir),
         output_path=Path(args.out),
         progress=progress,
+        project_timeout_seconds=args.project_timeout_seconds or None,
     )
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
@@ -226,6 +228,7 @@ def _cmd_profile_build(args: argparse.Namespace) -> int:
         work_dir=Path(args.work_dir),
         output_path=Path(args.out),
         progress=progress,
+        project_timeout_seconds=args.project_timeout_seconds or None,
     )
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
@@ -284,6 +287,13 @@ def build_parser() -> argparse.ArgumentParser:
     build_parser_cmd.add_argument("--timezone")
     build_parser_cmd.add_argument("--keyboard")
     build_parser_cmd.add_argument("--locale")
+    build_parser_cmd.add_argument(
+        "--project-timeout-seconds",
+        type=float,
+        default=DEFAULT_PROJECT_TIMEOUT_SECONDS,
+        help="real per-submodule timeout (clone/checkout/chrooted build.sh) in seconds - "
+        f"default {DEFAULT_PROJECT_TIMEOUT_SECONDS:.0f}s; 0 means unlimited (the old, unbounded behavior)",
+    )
 
     # D05: freeze/diff/update/build a named, persisted, tested combination
     # of components - see profile_manifest.py's own module docstring.
@@ -328,6 +338,13 @@ def build_parser() -> argparse.ArgumentParser:
     profile_build_parser.add_argument("--timezone")
     profile_build_parser.add_argument("--keyboard")
     profile_build_parser.add_argument("--locale")
+    profile_build_parser.add_argument(
+        "--project-timeout-seconds",
+        type=float,
+        default=DEFAULT_PROJECT_TIMEOUT_SECONDS,
+        help="real per-submodule timeout (clone/checkout/chrooted build.sh) in seconds - "
+        f"default {DEFAULT_PROJECT_TIMEOUT_SECONDS:.0f}s; 0 means unlimited (the old, unbounded behavior)",
+    )
 
     return parser
 
