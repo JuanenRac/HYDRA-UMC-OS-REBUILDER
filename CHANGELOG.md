@@ -21,6 +21,11 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.2.3]
+
+- Added a real, configurable per-submodule timeout (`--project-timeout-seconds`, default 30 minutes) to the image build pipeline: a project's own clone/checkout/chrooted `build.sh` step that hangs (a stalled clone, a build.sh stuck on an unexpected prompt) now fails clearly and by name instead of hanging the whole build forever. Applied consistently to both the local build path and the SSH-driven remote build station orchestration.
+- Added a real, early disk-space refusal to the SSH-driven remote build station orchestration: before creating a venv or installing anything, it now fails clearly if the remote host's own chosen scratch directory reports less free space than a real, documented minimum, instead of only picking the larger of two candidates regardless of whether either has enough room.
+
 ## [0.2.2] - PROM-IMG-F03: build_image() used to RAISE past itself on a mid-build failure instead of returning BuildResult(ok=False)
 
 A per-project install failure (`_install_one_project()`'s own

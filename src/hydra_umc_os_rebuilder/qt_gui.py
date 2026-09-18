@@ -26,13 +26,25 @@ from PySide6.QtQml import QQmlApplicationEngine
 from . import __version__, i18n
 from .ecosystem_plan import EcosystemPlanEntry, fetch_ecosystem_plan
 from .firstboot_config import FirstBootConfig, WifiConfig
-from .image_builder import BuildProgress, check_build_platform
+from .image_builder import DEFAULT_PROJECT_TIMEOUT_SECONDS, BuildProgress, check_build_platform
 
 # Matches the real "[phase] detail" lines the remote build's own CLI
 # progress() printer emits (main.py's _cmd_build_image) - see
 # RebuilderBridge._start_remote_build's own emit_line() for why this is
 # parsed back apart rather than shown as one opaque string.
 _REMOTE_LOG_LINE_RE = re.compile(r"^\[(?P<phase>[\w-]+)\]\s*(?P<detail>.*)$")
+
+# Real, conservative pre-flight floor for RebuilderBridge._start_remote_build's
+# own disk-space check, in KB (df --output=avail's own unit) - covers a real
+# base image download (~1GB compressed), its own decompressed size
+# (historically 3-4x that), and every ecosystem project's own cloned source
+# tree. Deliberately generous rather than exact: the real, precise check
+# against the base image's own live Content-Length/uncompressed size already
+# happens later, inside image_builder.py's own _require_free_space() once
+# the remote `--cli build-image` process actually starts - this is only a
+# fast, cheap, EARLY refusal so a too-small remote host fails before this
+# GUI spends minutes creating a venv and pip installing over the network.
+_MIN_REMOTE_FREE_KB = 6 * 1024 * 1024  # 6GB
 
 #: Real, plain-text log file, one per real GUI run - the QML build log
 #: (a ListView, not a selectable text box) can't be copy-pasted out of
@@ -386,6 +398,15 @@ class RebuilderBridge(QObject):
 
         output_path = options.get("outputPath") or "hydra-umc-cm5.img"
         firstboot_args = self._firstboot_cli_args(options)
+        # Real per-submodule timeout, explicit here (not just relying on
+        # the remote CLI's own default) so a remote build never silently
+        # runs with a different real timeout than a local one just because
+        # this flag was left off the command line - same default
+        # (DEFAULT_PROJECT_TIMEOUT_SECONDS) _start_local_build's own
+        # build_image() call already uses, GUI-overridable via
+        # `options["projectTimeoutSeconds"]` the same way outputPath/host/etc.
+        # already are.
+        project_timeout_seconds = float(options.get("projectTimeoutSeconds") or DEFAULT_PROJECT_TIMEOUT_SECONDS)
         host = options.get("host") or ""
         port = int(options.get("port") or 22)
         username = options.get("username") or ""
@@ -490,6 +511,35 @@ class RebuilderBridge(QObject):
                     + f" -> using {work_base}"
                 )
 
+                # Real gap found live: the check above only ever picked the
+                # BETTER of the two candidates - a real host where both are
+                # short on room still sailed straight into creating a venv,
+                # pip installing this whole project over the network, then
+                # cloning every ecosystem project's own source, only to
+                # fail (or worse, half-succeed with a corrupt partial
+                # image) minutes later once the base image download/
+                # decompress actually ran out of real disk. `_MIN_REMOTE_FREE_KB`
+                # is a real, conservative, documented floor (base image
+                # download ~1GB + its own decompressed size, historically
+                # 3-4x that, + every ecosystem project's own cloned source
+                # tree) - a fast, cheap, EARLY sanity gate, not a
+                # replacement for `_require_free_space()`'s own more
+                # precise, exact checks already inside `build_image()`
+                # itself (image_builder.py) once it has the base image's
+                # real, live Content-Length/uncompressed size to check
+                # against.
+                work_base_avail_kb = avail_by_candidate.get(work_base, -1)
+                if work_base_avail_kb >= 0 and work_base_avail_kb < _MIN_REMOTE_FREE_KB:
+                    raise RuntimeError(
+                        i18n.text(
+                            self._lang,
+                            "lbl_build_remote_low_disk",
+                            path=work_base,
+                            available_mb=work_base_avail_kb // 1024,
+                            required_mb=_MIN_REMOTE_FREE_KB // 1024,
+                        )
+                    )
+
                 # Real bug found live on the real CM5: the `finally` block
                 # below that removes `remote_tmp` only ever runs if this
                 # worker thread itself reaches it - closing/crashing the
@@ -524,7 +574,11 @@ class RebuilderBridge(QObject):
 
                 remote_img = f"{remote_tmp}/output.img"
                 remote_work = f"{remote_tmp}/work"
-                cli = f"sudo {shlex.quote(venv_dir)}/bin/hydra-umc-os-rebuilder --cli build-image --out {shlex.quote(remote_img)} --work-dir {shlex.quote(remote_work)}"
+                cli = (
+                    f"sudo {shlex.quote(venv_dir)}/bin/hydra-umc-os-rebuilder --cli build-image "
+                    f"--out {shlex.quote(remote_img)} --work-dir {shlex.quote(remote_work)} "
+                    f"--project-timeout-seconds {project_timeout_seconds!r}"
+                )
                 if firstboot_args:
                     cli += " " + " ".join(firstboot_args)
 

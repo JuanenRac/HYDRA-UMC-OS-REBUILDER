@@ -268,8 +268,21 @@ def fetch_base_image(source: BaseImageSource, dest_dir: Path, *, chunk_size: int
     return dest_path
 
 
-def _run(*command: str, **kwargs) -> subprocess.CompletedProcess:
-    return subprocess.run(command, check=True, **kwargs)
+# Real, honest default: generous enough for a real `pip install`/`npm
+# install`/`cargo build` a project's own build.sh might run chrooted into
+# the target rootfs (no network/CPU speed guarantee on every real host this
+# tool could run against), but finite - a single hung/misbehaving
+# submodule (a stalled `git clone`, a chroot build.sh stuck on an
+# interactive prompt it should never emit) used to be able to hang an
+# entire image build forever, indistinguishable from real progress until
+# the operator gave up waiting. `None` (via `--project-timeout-seconds 0`
+# at the CLI) still opts back into the old, unlimited behavior for a
+# project known to need longer.
+DEFAULT_PROJECT_TIMEOUT_SECONDS: float = 1800.0
+
+
+def _run(*command: str, timeout: float | None = None, **kwargs) -> subprocess.CompletedProcess:
+    return subprocess.run(command, check=True, timeout=timeout, **kwargs)
 
 
 def build_image(
@@ -280,6 +293,7 @@ def build_image(
     work_dir: Path,
     output_path: Path,
     progress=None,
+    project_timeout_seconds: float | None = DEFAULT_PROJECT_TIMEOUT_SECONDS,
 ) -> BuildResult:
     """The real end-to-end pipeline. `progress`, if given, is called with a
     BuildProgress at each real phase transition - never a fake percentage,
@@ -369,7 +383,7 @@ def build_image(
             # stops, so the `finally` block's own cleanup still runs
             # exactly as before.
             try:
-                real_version = _install_one_project(entry, rootfs_mount)
+                real_version = _install_one_project(entry, rootfs_mount, timeout_seconds=project_timeout_seconds)
             except (ImageBuildError, subprocess.CalledProcessError) as exc:
                 # A real, unrelated subprocess failure (git over a flaky
                 # connection, chroot hitting a disk-full host) is just as
@@ -378,6 +392,17 @@ def build_image(
                 # itself raises `subprocess.CalledProcessError` for that
                 # (`check=True`), never `ImageBuildError`.
                 install_error = f"{entry.name}: {exc}"
+                break
+            except subprocess.TimeoutExpired as exc:
+                # Real per-submodule timeout, not an unbounded hang: a
+                # project's own clone/checkout/chrooted build.sh step that
+                # runs past `project_timeout_seconds` is stopped and
+                # reported as a clear, named failure - never a build that
+                # just silently never returns, with no way for an operator
+                # (local or over the SSH-driven remote build in
+                # qt_gui.py's own _start_remote_build) to tell a real hang
+                # apart from real, slow progress.
+                install_error = f"{entry.name}: timed out after {exc.timeout:.0f}s running {' '.join(exc.cmd)!r}"
                 break
             # C15: a real content hash of what actually landed on disk,
             # not just the version string _install_one_project already
@@ -607,7 +632,7 @@ def verify_installed_resources(project_root: Path, required_resources: tuple[str
     return missing
 
 
-def _install_one_project(entry, rootfs_mount: Path) -> str:
+def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | None = None) -> str:
     """Clone `entry`'s own repository at its own real, immutable pinned
     commit and run its own `build.sh` chrooted into the target rootfs -
     the same "each project owns its own build" principle CONTRIBUTING.md
@@ -635,13 +660,13 @@ def _install_one_project(entry, rootfs_mount: Path) -> str:
             f"{entry.name}: no real, resolved commit SHA in the plan - refusing to clone a mutable branch name into the image"
         )
     target = rootfs_mount / "opt" / "hydra-umc" / entry.name.lower()
-    _run("git", "clone", entry.git_url, str(target))
-    _run("git", "-C", str(target), "checkout", entry.commit_sha)
+    _run("git", "clone", entry.git_url, str(target), timeout=timeout_seconds)
+    _run("git", "-C", str(target), "checkout", entry.commit_sha, timeout=timeout_seconds)
     build_script = target / "build.sh"
     if not build_script.is_file():
         raise ImageBuildError(f"{entry.name}: no build.sh found - cannot install into the image")
     relative = build_script.relative_to(rootfs_mount)
-    _run("chroot", str(rootfs_mount), "/bin/bash", f"/{relative.as_posix()}")
+    _run("chroot", str(rootfs_mount), "/bin/bash", f"/{relative.as_posix()}", timeout=timeout_seconds)
     # V07-013 (P1 - closing
     # REV-018's own documented "real, separate future work" gap): this
     # pinned commit's own build.sh is this ecosystem's real, INCREMENTAL,
@@ -676,7 +701,7 @@ def _install_one_project(entry, rootfs_mount: Path) -> str:
     # a silent gap: _read_real_installed_version below still catches the
     # only case that would actually matter for THIS check (the version
     # itself failing to revert).
-    _run("git", "-C", str(target), "checkout", "--", ".")
+    _run("git", "-C", str(target), "checkout", "--", ".", timeout=timeout_seconds)
     installed_version = _read_real_installed_version(target, entry.name)
     # Real, honest safety net kept from REV-018, not removed: if the
     # restore above somehow left the version genuinely diverged (a

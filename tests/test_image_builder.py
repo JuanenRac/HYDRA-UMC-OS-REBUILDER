@@ -18,6 +18,7 @@ import pytest
 from hydra_umc_os_rebuilder import image_builder as image_builder_module
 from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlan, EcosystemPlanEntry
 from hydra_umc_os_rebuilder.image_builder import (
+    DEFAULT_PROJECT_TIMEOUT_SECONDS,
     BaseImageSource,
     BuildProgress,
     ImageBuildError,
@@ -729,3 +730,95 @@ def test_build_image_reports_platform_check_failure_without_touching_any_real_su
     assert result.ok is False
     assert result.error == "not a real Linux host"
     assert calls == [], "a platform-check failure must never attempt a real subprocess call"
+
+
+# ---------------------------------------------------------------------------
+# Real per-submodule timeout: a hung/misbehaving project's own clone/
+# checkout/chrooted build.sh must never be able to hang an entire image
+# build forever - caught here as a clear, named subprocess.TimeoutExpired,
+# not left as an unbounded wait.
+# ---------------------------------------------------------------------------
+
+
+def test_install_one_project_threads_the_real_timeout_into_every_run_call(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_run, _calls, _target = _fake_run_for_install(tmp_path, pre_build_version="0.4.8", post_build_version="0.4.8")
+
+    # calls only records positional command args, not kwargs - a
+    # kwarg-capturing wrapper around the same fake_run asserts the real
+    # timeout value reaches every single _run() call this function makes
+    # (clone, checkout, chroot build.sh, and the post-build restore
+    # checkout).
+    seen_timeouts: list[float | None] = []
+
+    def capturing_fake_run(*command: str, **kwargs):
+        seen_timeouts.append(kwargs.get("timeout"))
+        return fake_run(*command, **kwargs)
+
+    monkeypatch.setattr(image_builder_module, "_run", capturing_fake_run)
+    _install_one_project(_entry(commit_sha="c" * 40, version="0.4.8"), tmp_path, timeout_seconds=42.0)
+
+    assert seen_timeouts, "at least one _run() call must have happened"
+    assert all(t == 42.0 for t in seen_timeouts), f"every _run() call must get the real configured timeout, got {seen_timeouts}"
+
+
+def test_build_image_stopping_on_a_real_per_submodule_timeout_also_cleans_up_and_never_promotes(
+    fixture_server: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import subprocess
+
+    monkeypatch.setattr(image_builder_module, "check_build_platform", lambda: PlatformCheck(True))
+
+    subprocess_calls: list[list[str]] = []
+    monkeypatch.setattr(image_builder_module.subprocess, "run", _fake_subprocess_run(subprocess_calls))
+
+    def fake_run(*command: str, **kwargs):
+        if command[:2] == ("losetup", "--find"):
+            class _Completed:
+                stdout = "/dev/loop0\n"
+
+            return _Completed()
+        if command[0] == "mount":
+            return None
+        if command[:2] == ("git", "clone"):
+            # Models a real hung clone (a stalled network, an interactive
+            # credential prompt this pipeline should never hit) - the real
+            # subprocess.run(..., timeout=...) contract raises exactly
+            # this, never hangs the calling thread forever.
+            raise subprocess.TimeoutExpired(cmd=list(command), timeout=42.0)
+        return None
+
+    monkeypatch.setattr(image_builder_module, "_run", fake_run)
+
+    plan = EcosystemPlan(entries=(_entry(name="HYDRA-UMC-SERVER", commit_sha="c" * 40),), discovery_errors=())
+    output_path = tmp_path / "out.img"
+
+    result = build_image(
+        source=BaseImageSource(label="fixture", url=f"{fixture_server}/image.img", sha256=""),
+        plan=plan,
+        firstboot=None,
+        work_dir=tmp_path / "work",
+        output_path=output_path,
+        progress=None,
+        project_timeout_seconds=42.0,
+    )
+
+    assert result.ok is False
+    assert "HYDRA-UMC-SERVER" in result.error
+    assert "timed out after 42" in result.error
+    assert not output_path.exists()
+    # The real cleanup still ran, exactly as it does for any other real
+    # per-project failure (ImageBuildError, CalledProcessError).
+    assert [call[0] for call in subprocess_calls] == ["umount", "umount", "losetup"]
+
+
+def test_build_image_defaults_to_the_real_documented_project_timeout(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # DEFAULT_PROJECT_TIMEOUT_SECONDS is the real value build_image() uses
+    # when a caller (main.py's own CLI, qt_gui.py's own local build path)
+    # does not explicitly override it - asserted directly against
+    # build_image's own signature default so the two can never silently
+    # drift apart.
+    import inspect
+
+    default = inspect.signature(build_image).parameters["project_timeout_seconds"].default
+    assert default == DEFAULT_PROJECT_TIMEOUT_SECONDS
+    assert default and default > 0, "the real default must be a positive, finite timeout, not unlimited"
