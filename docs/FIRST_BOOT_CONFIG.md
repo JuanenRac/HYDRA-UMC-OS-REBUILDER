@@ -64,7 +64,7 @@ tool runs on.
   branch, so a key given without both would otherwise be silently
   dropped from the generated script with no error and no trace.
 
-## Recovery procedure (D04)
+## Recovery procedure
 
 "Changing identity or remote access must preserve a way back in - the
 installation must never leave the operator locked out." This tool
