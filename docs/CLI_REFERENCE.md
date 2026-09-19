@@ -84,7 +84,7 @@ straight into the real build.
 
 ## `profile-freeze` / `profile-diff` / `profile-update` / `profile-set-required-resources` / `profile-build`
 
-D05 ("versions and compatibility across the set"): `status` above always
+"Versions and compatibility across the set": `status` above always
 answers "what is current on GitHub right now" - a live, moving target.
 These five commands let a candidate combination be pinned, inspected,
 curated and built from without ever silently picking up whatever
@@ -102,7 +102,7 @@ hydra-umc-os-rebuilder --cli profile-diff --manifest profiles/cm5-production.jso
 # exactly as it was tested before, even if it also changed upstream
 hydra-umc-os-rebuilder --cli profile-update --manifest profiles/cm5-production.json --project HYDRA-UMC-SERVER
 
-# I12: curate the real inventory of resources (relative paths inside a
+# Curate the real inventory of resources (relative paths inside a
 # project's own installed tree) profile-build refuses to promote an
 # image without - repeatable --resource, edits the manifest in place
 hydra-umc-os-rebuilder --cli profile-set-required-resources --manifest profiles/cm5-production.json --project HYDRA-UMC-STUDIO --resource dist/index.html
@@ -124,7 +124,7 @@ base-10 odometer with no semantic-versioning meaning (see this repo's
 own `CHANGELOG.md`, "Versioning scheme"), so a version diff alone was
 never going to be an honest compatibility signal by itself.
 
-`profile-set-required-resources` (I12, "Verificación del contenido
+`profile-set-required-resources` ("Verificación del contenido
 distribuido fuera del checkout") is deliberately per-profile, not a
 global per-project list: a minimal headless profile and a full
 UI-carrying one can require different resources from the same project.

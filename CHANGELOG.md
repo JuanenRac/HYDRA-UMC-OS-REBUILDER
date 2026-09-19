@@ -26,7 +26,7 @@ a change is actually worth summarizing for a human.
 - Added a real, configurable per-submodule timeout (`--project-timeout-seconds`, default 30 minutes) to the image build pipeline: a project's own clone/checkout/chrooted `build.sh` step that hangs (a stalled clone, a build.sh stuck on an unexpected prompt) now fails clearly and by name instead of hanging the whole build forever. Applied consistently to both the local build path and the SSH-driven remote build station orchestration.
 - Added a real, early disk-space refusal to the SSH-driven remote build station orchestration: before creating a venv or installing anything, it now fails clearly if the remote host's own chosen scratch directory reports less free space than a real, documented minimum, instead of only picking the larger of two candidates regardless of whether either has enough room.
 
-## [0.2.2] - PROM-IMG-F03: build_image() used to RAISE past itself on a mid-build failure instead of returning BuildResult(ok=False)
+## [0.2.2] - build_image() used to RAISE past itself on a mid-build failure instead of returning BuildResult(ok=False)
 
 A per-project install failure (`_install_one_project()`'s own
 `ImageBuildError` - a missing commit SHA, a diverged version, a missing
@@ -59,7 +59,7 @@ never-promote - is exercised for real, not merely asserted.
 
 3 new tests (120 passed).
 
-## [0.2.1] - H026: an empty password silently dropped the whole user/SSH-key setup
+## [0.2.1] - an empty password silently dropped the whole user/SSH-key setup
 
 `_validate()`'s own check (`config.password is None`) let an empty
 string (`""`) through as if it were a real password - `build_firstrun_
@@ -120,9 +120,9 @@ public repos) before launching this tool to raise the budget to
 
 4 new tests (`test_ecosystem_plan.py`), 116 total, `ci_validate.py` PASS.
 
-## [0.1.9] - I12: a real, human-curated resource inventory per profile
+## [0.1.9] - a real, human-curated resource inventory per profile
 
-I12 ("Verificación del contenido distribuido fuera del checkout"): C15
+This
 already gave every installed project a real content hash of what
 actually landed on disk, but a hash only proves "the same bytes as last
 time" - it says nothing about whether a project's own `build.sh` ever
@@ -153,9 +153,9 @@ resources from the exact same project.
 13 new tests (`test_profile_manifest.py`, `test_image_builder.py`,
 `test_main.py`), 112 total. `docs/CLI_REFERENCE.md` + README x7 synced.
 
-## [0.1.8] - D04/D05: a recovery-procedure guard, and frozen per-profile version manifests
+## [0.1.8] - a recovery-procedure guard, and frozen per-profile version manifests
 
-**D04 (first-time provisioning)** - `firstboot_config.py` used to let two
+**First-time provisioning** - `firstboot_config.py` used to let two
 real lockout shapes through silently:
 
 - `ssh_authorized_key` was only ever installed inside the
@@ -175,7 +175,7 @@ real lockout shapes through silently:
   mechanism (an empty `ssh` file dropped onto the boot partition) if that
   path ever stops working.
 
-**D05 (versions and compatibility across the set)** - new
+**Versions and compatibility across the set** - new
 `profile_manifest.py` and four new CLI subcommands
 (`profile-freeze`/`profile-diff`/`profile-update`/`profile-build`):
 `ecosystem_plan.py` already answers "what is current, right now" - a
@@ -197,7 +197,7 @@ refreezing the whole set.
 
 Verified: full pytest suite (99/99, 32 new), `tools/ci_validate.py` PASS.
 
-## [0.1.7] - C15: a real content hash of what actually landed in the image, not just its version string
+## [0.1.7] - a real content hash of what actually landed in the image, not just its version string
 
 The built image's own inventory (`BuildResult.installed`) only ever
 recorded `name@version` as free text - a build that installed the right
@@ -219,7 +219,7 @@ addition sensitivity, walk-order independence, empty-directory, real
 symlink handling), `tools/ci_validate.py` PASS (incl. a 6-language
 README version-string fix this surfaced).
 
-## [0.1.6] - C15: scan the built image's own output for a leaked secret
+## [0.1.6] - scan the built image's own output for a leaked secret
 
 Input integrity (the official base image's own checksum, commit-SHA
 pinning for every installed project) was already real and tested - but
@@ -248,9 +248,9 @@ into a publicly distributable image.
 - README + all 6 translations - documents this as a 4th real pipeline
   step, alongside download/build/first-boot-config.
 
-## [0.1.5] - V07-013: a normal incremental build.sh could never actually finish an install
+## [0.1.5] - a normal incremental build.sh could never actually finish an install
 
-REV-018 (an earlier review pass) correctly found that
+An earlier review pass correctly found that
 `_install_one_project()` ran a pinned commit's own real, INCREMENTAL,
 version-bumping `build.sh` and then refused to install if the reported
 version diverged from the plan - but every real `build.sh` in this
@@ -279,17 +279,17 @@ work, not claimed done here.
 
 2 new regression tests (50 total): the ordinary incremental-build case
 now succeeds and reports the restored, planned version; the "restore
-did not actually fix it" case still refuses, exactly like REV-018's own
+did not actually fix it" case still refuses, exactly like that earlier fix's own
 original closure criterion.
 
-## [0.1.4] - REV-018: real regression found by independent revalidation
+## [0.1.4] - real regression found by independent revalidation
 
 A review pass reproduced a real gap in `_install_one_project()`
 (against a real fixture project whose own `build.sh` bumps its version,
 no real image/mount involved):
 
-- **REV-018 [P1]:** the pinned commit `_install_one_project()` clones and
-  checks out (IMAGE-01's own real fix) is still built with that project's
+- the pinned commit `_install_one_project()` clones and
+  checks out is still built with that project's
   real `build.sh` - this ecosystem's real, INCREMENTAL, version-bumping
   build script (the same one a human release runs), not the non-mutating
   `build-test.sh` every project also carries. Running it here can change
@@ -309,9 +309,9 @@ no real image/mount involved):
   for the matching-version case, one proving the divergent case is now
   refused).
 
-## [0.1.3] - IMAGE-01/02: pin to a real commit, never promote an image cleanup couldn't finish
+## [0.1.3] - pin to a real commit, never promote an image cleanup couldn't finish
 
-- **IMAGE-01 (P1):** `_install_one_project()` used to `git clone --branch <branch>` -
+- `_install_one_project()` used to `git clone --branch <branch>` -
   a real push to that branch between planning and building silently
   changed what got installed, with no way to tell after the fact. New
   `ecosystem_plan.resolve_commit_shas()` resolves each entry's real,
@@ -326,7 +326,7 @@ no real image/mount involved):
   bumps the version itself, this ecosystem's universal per-repo
   convention, so the plan alone was never proof of what actually ended
   up installed.
-- **IMAGE-02 (found in the same review pass, P1):** `build_image()`'s cleanup
+- `build_image()`'s cleanup
   (`umount`/`losetup -d`) ran with `check=False`, so a real failure there
   passed silently - the function went on to promote (move + report
   `ok=True`) an image whose own loop device or mount could still be
