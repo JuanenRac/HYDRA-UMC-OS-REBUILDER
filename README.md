@@ -169,10 +169,10 @@ chmod +x build.sh   # one-time
 ./run.sh --cli status                   # every ecosystem project's latest real GitHub version
 ./run.sh --cli config --out ./boot ...  # write first-boot config (see docs/CLI_REFERENCE.md for every flag)
 ./run.sh --cli build-image --out FILE   # build a ready-to-flash .img (Linux/root only)
-./run.sh --cli profile-freeze --name cm5-production --out profiles/cm5-production.json  # D05: pin a real tested combination
+./run.sh --cli profile-freeze --name cm5-production --out profiles/cm5-production.json  # pin a real tested combination
 ./run.sh --cli profile-diff --manifest profiles/cm5-production.json                     # what changed since it was frozen
 ./run.sh --cli profile-update --manifest profiles/cm5-production.json --project X       # refreeze only X, leave the rest pinned
-./run.sh --cli profile-set-required-resources --manifest profiles/cm5-production.json --project X --resource dist/index.html  # I12: curate what X must produce
+./run.sh --cli profile-set-required-resources --manifest profiles/cm5-production.json --project X --resource dist/index.html  # curate what X must produce
 ./run.sh --cli profile-build --manifest profiles/cm5-production.json --out FILE         # build from EXACTLY that frozen profile
 ```
 
@@ -197,7 +197,7 @@ with root either way - see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md).
   private - refreeze the profile (`profile-freeze`) against the current
   live ecosystem instead.
 - `profile-build` refuses with "missing N required resource(s)": a
-  project curated with `profile-set-required-resources` (I12) had its own
+  project curated with `profile-set-required-resources` had its own
   `build.sh` run, but a declared relative path still doesn't exist on
   disk afterward - a real, incomplete build, never rescued by a
   leftover file elsewhere; the image is not promoted.
@@ -264,6 +264,7 @@ This project is part of the HYDRA-UMC robotics ecosystem by the same author (Jua
 - **[HYDRA-UMC-IOS-CONTROL](https://github.com/JuanenRac/HYDRA-UMC-IOS-CONTROL)** — iOS/iPadOS control app (Flutter) with real-time WebSocket sync.
 - **[HYDRA-UMC-DSI](https://github.com/JuanenRac/HYDRA-UMC-DSI)** — native touch UI for the onboard 7" DSI touchscreen, embedded on the CM5 itself.
 - **[HYDRA-UMC-EDITOR-URDF](https://github.com/JuanenRac/HYDRA-UMC-EDITOR-URDF)** — desktop graphical URDF creator/editor that pushes finished models into STUDIO's own catalog.
+- **[HYDRA-UMC-EDITOR-STL](https://github.com/JuanenRac/HYDRA-UMC-EDITOR-STL)** — desktop STL model editor, transforming/replacing/removing/adding real parts in the same model catalog HYDRA-UMC-EDITOR-URDF also edits.
 - **[HYDRA-UMC-BRIDGE-AMR](https://github.com/JuanenRac/HYDRA-UMC-BRIDGE-AMR)** — coordination boundary for AGV/AMR fleets via a real VDA 5050 MQTT publisher.
 - **[HYDRA-UMC-BRIDGE-CNC](https://github.com/JuanenRac/HYDRA-UMC-BRIDGE-CNC)** — high-level CNC-cell coordinator with real GRBL status/control-byte access.
 - **[HYDRA-UMC-BRIDGE-DROIDS](https://github.com/JuanenRac/HYDRA-UMC-BRIDGE-DROIDS)** — coordination boundary for legged/humanoid droids, with a real Boston Dynamics Spot command sender.
