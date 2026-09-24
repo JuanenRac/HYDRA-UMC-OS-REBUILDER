@@ -87,7 +87,7 @@ class EcosystemPlan:
     """Every real `deployment_target: "cm5"` project discovered on GitHub,
     at the exact version its own manifest currently declares - never a
     fixed/hardcoded list, matching this ecosystem's own dynamic-discovery
-    convention everywhere else (see [[project_manifest_dynamic_discovery]])."""
+    convention everywhere else."""
 
     entries: tuple[EcosystemPlanEntry, ...]
     discovery_errors: tuple[str, ...]
