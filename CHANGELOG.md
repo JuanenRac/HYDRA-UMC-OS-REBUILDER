@@ -21,6 +21,15 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.2.6] - SDK pinned by the frozen profile
+
+- **The shared SDK is now pinned by the frozen profile.** `profile-freeze`
+  records the SDK's commit in the manifest (`sdk_commit_sha`) and
+  `profile-build` installs exactly that commit into the image for projects
+  that need it, instead of taking whatever the default branch holds at build
+  time. Older manifests without the field still work and use the default
+  branch; freezing warns when the SDK commit cannot be resolved.
+
 ## [0.2.5] - Bridges build into an image
 
 - **Projects that use the shared SDK can now be built into an image.** A

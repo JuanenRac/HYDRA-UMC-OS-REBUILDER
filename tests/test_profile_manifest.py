@@ -206,3 +206,21 @@ def test_manifest_to_ecosystem_plan_carries_required_resources_through_to_build_
     plan = manifest_to_ecosystem_plan(manifest)
     entry = next(e for e in plan.entries if e.name == "A")
     assert entry.required_resources == ("dist/index.html",)
+
+
+def test_sdk_commit_survives_freeze_json_round_trip_and_plan_conversion() -> None:
+    from dataclasses import replace
+
+    from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlan, EcosystemPlanEntry
+    from hydra_umc_os_rebuilder.profile_manifest import freeze_profile, from_json, manifest_to_ecosystem_plan, to_json
+
+    entry = EcosystemPlanEntry(name="P", version="0.0.1", role="r", stack="python", git_url="u", commit_sha="c1")
+    plan = EcosystemPlan(entries=(entry,), discovery_errors=(), sdk_commit_sha="sdk1")
+    manifest = freeze_profile(plan, profile_name="x")
+    assert manifest.sdk_commit_sha == "sdk1"
+    assert from_json(to_json(manifest)).sdk_commit_sha == "sdk1"
+    assert manifest_to_ecosystem_plan(manifest).sdk_commit_sha == "sdk1"
+    older = to_json(replace(manifest, sdk_commit_sha=None))
+    older.pop("sdk_commit_sha")
+    assert from_json(older).sdk_commit_sha is None
+
