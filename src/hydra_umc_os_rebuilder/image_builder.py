@@ -651,6 +651,35 @@ def verify_installed_resources(project_root: Path, required_resources: tuple[str
     return missing
 
 
+_SDK_DISTRIBUTION = "hydra-umc-sdk"
+_SDK_CHECKOUT_NAME = "hydra-umc-sdk"
+_SDK_PYTHON_SRC = "clients/python/src"
+
+
+def _ensure_sdk_importable(target: Path, rootfs_mount: Path, *, timeout_seconds: float | None = None) -> bool:
+    """Make the shared Python SDK importable inside the image when a project needs it.
+
+    A project that declares `hydra-umc-sdk` in its pyproject runs its tests
+    from its own `build.sh` inside the chroot, where nothing installed the
+    SDK: the build failed with `No module named hydra_umc_sdk` and no
+    profile containing a bridge could be built. The SDK checkout is cloned
+    once into the image and a `.pth` file puts its Python sources on the
+    system interpreter's path. Returns True when the project needed it.
+    """
+    pyproject = target / "pyproject.toml"
+    if not pyproject.is_file() or _SDK_DISTRIBUTION not in pyproject.read_text(encoding="utf-8", errors="replace"):
+        return False
+    sdk_checkout = rootfs_mount / "opt" / "hydra-umc" / _SDK_CHECKOUT_NAME
+    if not sdk_checkout.is_dir():
+        from .ecosystem_plan import _git_url
+
+        _run("git", "clone", "--depth", "1", _git_url("JuanenRac", "HYDRA-UMC-SDK"), str(sdk_checkout), timeout=timeout_seconds)
+    pth_dir = rootfs_mount / "usr" / "lib" / "python3" / "dist-packages"
+    pth_dir.mkdir(parents=True, exist_ok=True)
+    (pth_dir / "hydra_umc_sdk.pth").write_text(f"/opt/hydra-umc/{_SDK_CHECKOUT_NAME}/{_SDK_PYTHON_SRC}" + chr(10), encoding="utf-8")
+    return True
+
+
 def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | None = None) -> str:
     """Clone `entry`'s own repository at its own real, immutable pinned
     commit and run its own `build.sh` chrooted into the target rootfs -
@@ -684,6 +713,7 @@ def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | 
     build_script = target / "build.sh"
     if not build_script.is_file():
         raise ImageBuildError(f"{entry.name}: no build.sh found - cannot install into the image")
+    _ensure_sdk_importable(target, rootfs_mount, timeout_seconds=timeout_seconds)
     relative = build_script.relative_to(rootfs_mount)
     _run("chroot", str(rootfs_mount), "/bin/bash", f"/{relative.as_posix()}", timeout=timeout_seconds)
     # (P1 - closing

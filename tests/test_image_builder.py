@@ -24,6 +24,7 @@ from hydra_umc_os_rebuilder.image_builder import (
     ImageBuildError,
     PlatformCheck,
     _hash_directory_tree,
+    _ensure_sdk_importable,
     _install_one_project,
     _read_real_installed_version,
     _remote_content_length,
@@ -839,4 +840,37 @@ def test_hash_directory_tree_still_sees_real_source_next_to_ignored_paths(tmp_pa
     before = _hash_directory_tree(tmp_path)
     _write(tmp_path / "pkg" / "m.py", "real source")
     assert _hash_directory_tree(tmp_path) != before
+
+
+def test_sdk_is_provisioned_for_a_project_that_declares_it(tmp_path: Path, monkeypatch) -> None:
+    calls: list[tuple] = []
+    monkeypatch.setattr("hydra_umc_os_rebuilder.image_builder._run", lambda *command, **kwargs: calls.append(command))
+    rootfs = tmp_path / "rootfs"
+    target = rootfs / "opt" / "hydra-umc" / "hydra-umc-bridge-amr"
+    _write(target / "pyproject.toml", 'dependencies = ["hydra-umc-sdk @ git+https://example/sdk.git"]')
+    assert _ensure_sdk_importable(target, rootfs) is True
+    assert calls and calls[0][:2] == ("git", "clone") and "HYDRA-UMC-SDK" in calls[0][-2]
+    pth = (rootfs / "usr" / "lib" / "python3" / "dist-packages" / "hydra_umc_sdk.pth").read_text(encoding="utf-8")
+    assert pth.strip() == "/opt/hydra-umc/hydra-umc-sdk/clients/python/src"
+
+
+def test_sdk_is_not_cloned_twice_for_two_projects(tmp_path: Path, monkeypatch) -> None:
+    calls: list[tuple] = []
+    monkeypatch.setattr("hydra_umc_os_rebuilder.image_builder._run", lambda *command, **kwargs: calls.append(command))
+    rootfs = tmp_path / "rootfs"
+    (rootfs / "opt" / "hydra-umc" / "hydra-umc-sdk").mkdir(parents=True)
+    target = rootfs / "opt" / "hydra-umc" / "p"
+    _write(target / "pyproject.toml", 'dependencies = ["hydra-umc-sdk"]')
+    assert _ensure_sdk_importable(target, rootfs) is True
+    assert calls == []
+
+
+def test_sdk_is_left_alone_for_a_project_that_does_not_need_it(tmp_path: Path, monkeypatch) -> None:
+    calls: list[tuple] = []
+    monkeypatch.setattr("hydra_umc_os_rebuilder.image_builder._run", lambda *command, **kwargs: calls.append(command))
+    rootfs = tmp_path / "rootfs"
+    target = rootfs / "opt" / "hydra-umc" / "p"
+    _write(target / "pyproject.toml", 'dependencies = ["numpy"]')
+    assert _ensure_sdk_importable(target, rootfs) is False
+    assert calls == [] and not (rootfs / "usr").exists()
 

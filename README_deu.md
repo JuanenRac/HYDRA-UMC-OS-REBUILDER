@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows und Linux">
 </p>
 
-> **Status: v0.2.4, Grundgerüst.** Die CLI, die Ökosystem-Erkennung, der
+> **Status: v0.2.5, Grundgerüst.** Die CLI, die Ökosystem-Erkennung, der
 > Ersteinrichtungs-Generator und die GUI sind real und getestet. Der
 > echte End-to-End-Image-Build (Download → Loop-Mount →
 > Chroot-Installation → Unmount) ist implementiert, läuft aber nur auf
