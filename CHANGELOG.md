@@ -21,6 +21,12 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.2.7] - Freezing survives a failed SDK lookup
+
+- `profile-freeze` no longer fails when GitHub cannot answer the SDK commit
+  lookup (rate limit or network): it freezes without the pin and warns. The
+  tests no longer reach GitHub for that lookup.
+
 ## [0.2.6] - SDK pinned by the frozen profile
 
 - **The shared SDK is now pinned by the frozen profile.** `profile-freeze`

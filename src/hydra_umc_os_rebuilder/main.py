@@ -144,7 +144,10 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
 
 def _cmd_profile_freeze(args: argparse.Namespace) -> int:
     plan = fetch_ecosystem_plan(owner=args.owner)
-    sdk_sha = _fetch_commit_sha(args.owner, "HYDRA-UMC-SDK", "main", token=None)
+    try:
+        sdk_sha = _fetch_commit_sha(args.owner, "HYDRA-UMC-SDK", "main", token=None)
+    except Exception:  # rate limit or network failure: freezing must still work
+        sdk_sha = None
     if sdk_sha is None:
         print("WARNING: could not resolve the SDK commit; images built from this profile will use the SDK default branch", file=sys.stderr)
     manifest = freeze_profile(replace(plan, sdk_commit_sha=sdk_sha), profile_name=args.name)
