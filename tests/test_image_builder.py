@@ -822,3 +822,21 @@ def test_build_image_defaults_to_the_real_documented_project_timeout(tmp_path: P
     default = inspect.signature(build_image).parameters["project_timeout_seconds"].default
     assert default == DEFAULT_PROJECT_TIMEOUT_SECONDS
     assert default and default > 0, "the real default must be a positive, finite timeout, not unlimited"
+
+
+def test_hash_directory_tree_ignores_git_metadata_and_bytecode_caches(tmp_path: Path) -> None:
+    _write(tmp_path / "a.py", "print(1)")
+    before = _hash_directory_tree(tmp_path)
+    _write(tmp_path / ".git" / "index", "clone-time noise")
+    _write(tmp_path / "pkg" / "__pycache__" / "m.cpython-311.pyc", "mtime-dependent")
+    _write(tmp_path / "pkg" / "stray.pyc", "mtime-dependent")
+    _write(tmp_path / ".pytest_cache" / "v" / "x", "cache")
+    assert _hash_directory_tree(tmp_path) == before
+
+
+def test_hash_directory_tree_still_sees_real_source_next_to_ignored_paths(tmp_path: Path) -> None:
+    _write(tmp_path / "pkg" / "__pycache__" / "m.pyc", "noise")
+    before = _hash_directory_tree(tmp_path)
+    _write(tmp_path / "pkg" / "m.py", "real source")
+    assert _hash_directory_tree(tmp_path) != before
+

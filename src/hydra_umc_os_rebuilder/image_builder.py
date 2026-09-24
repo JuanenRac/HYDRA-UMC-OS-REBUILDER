@@ -562,6 +562,19 @@ def scan_for_leaked_secrets(rootfs_mount: Path) -> list[str]:
     return findings
 
 
+# Byproducts that differ between two builds of byte-identical sources and
+# so must not decide whether two builds match: the checkout's own git
+# metadata (index and reflog carry clone-time timestamps), and Python
+# bytecode caches (each .pyc embeds its source file's modification time).
+# Two real builds from one frozen profile differed ONLY in these paths;
+# every source file, dependency file and script was identical.
+_NONDETERMINISTIC_DIRS = frozenset({".git", "__pycache__", ".pytest_cache"})
+
+
+def _is_nondeterministic_artifact(relative: Path) -> bool:
+    return relative.suffix == ".pyc" or any(part in _NONDETERMINISTIC_DIRS for part in relative.parts)
+
+
 def _hash_directory_tree(path: Path) -> str:
     """real, output-side inventory hashing -
     found completely missing (not just untested): the built image's own
@@ -583,12 +596,18 @@ def _hash_directory_tree(path: Path) -> str:
     installed project's own build output has never been this check's real
     concern), stated honestly rather than implied.
 
+    Git metadata, `__pycache__`/`.pyc` and `.pytest_cache` are left out of
+    the hash (see `_NONDETERMINISTIC_DIRS`): they vary between otherwise
+    identical builds, so counting them made every rebuild look different.
+
     Symlinks are hashed by their real target string (never followed) so a
     symlink pointing outside `path` can never pull arbitrary host content
     into the hash, and a broken/dangling symlink never raises.
     """
     entries: list[tuple[str, str]] = []
     for file_path in path.rglob("*"):
+        if _is_nondeterministic_artifact(file_path.relative_to(path)):
+            continue
         if file_path.is_symlink():
             relative = file_path.relative_to(path).as_posix()
             entries.append((relative, f"symlink:{os.readlink(file_path)}"))
