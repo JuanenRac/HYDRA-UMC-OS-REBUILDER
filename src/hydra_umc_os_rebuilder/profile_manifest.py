@@ -68,6 +68,10 @@ class ProfileManifestEntry:
 class ProfileManifest:
     profile_name: str
     entries: tuple[ProfileManifestEntry, ...]
+    # The shared SDK checkout that projects declaring `hydra-umc-sdk` are
+    # built against inside the image (None: an older manifest, or the
+    # SDK commit could not be resolved when the profile was frozen).
+    sdk_commit_sha: str | None = None
 
     def entry(self, name: str) -> ProfileManifestEntry | None:
         for e in self.entries:
@@ -97,7 +101,7 @@ def freeze_profile(plan: EcosystemPlan, *, profile_name: str) -> ProfileManifest
                 name=e.name, version=e.version, role=e.role, stack=e.stack, git_url=e.git_url, commit_sha=e.commit_sha
             )
         )
-    return ProfileManifest(profile_name=profile_name, entries=tuple(frozen))
+    return ProfileManifest(profile_name=profile_name, entries=tuple(frozen), sdk_commit_sha=plan.sdk_commit_sha)
 
 
 def manifest_to_ecosystem_plan(manifest: ProfileManifest) -> EcosystemPlan:
@@ -116,12 +120,13 @@ def manifest_to_ecosystem_plan(manifest: ProfileManifest) -> EcosystemPlan:
         )
         for e in manifest.entries
     )
-    return EcosystemPlan(entries=entries, discovery_errors=())
+    return EcosystemPlan(entries=entries, discovery_errors=(), sdk_commit_sha=manifest.sdk_commit_sha)
 
 
 def to_json(manifest: ProfileManifest) -> dict:
     return {
         "profile_name": manifest.profile_name,
+        "sdk_commit_sha": manifest.sdk_commit_sha,
         "entries": [
             {
                 "name": e.name,
@@ -161,7 +166,7 @@ def from_json(data: dict) -> ProfileManifest:
             )
         except KeyError as exc:
             raise ProfileManifestError(f"malformed profile manifest entry: missing {exc}") from exc
-    return ProfileManifest(profile_name=profile_name, entries=tuple(entries))
+    return ProfileManifest(profile_name=profile_name, entries=tuple(entries), sdk_commit_sha=data.get("sdk_commit_sha"))
 
 
 def save_profile_manifest(manifest: ProfileManifest, path: Path) -> None:
@@ -201,7 +206,7 @@ def record_build_result(manifest: ProfileManifest, installed: tuple[str, ...]) -
         replace(e, content_hash=hashes[e.name]) if e.name in hashes else e
         for e in manifest.entries
     )
-    return ProfileManifest(profile_name=manifest.profile_name, entries=updated)
+    return ProfileManifest(profile_name=manifest.profile_name, entries=updated, sdk_commit_sha=manifest.sdk_commit_sha)
 
 
 @dataclass(frozen=True)
@@ -327,7 +332,7 @@ def refreeze_selected(frozen: ProfileManifest, live: EcosystemPlan, names: set[s
             )
         )
     updated.sort(key=lambda e: e.name.casefold())
-    return ProfileManifest(profile_name=frozen.profile_name, entries=tuple(updated))
+    return ProfileManifest(profile_name=frozen.profile_name, entries=tuple(updated), sdk_commit_sha=frozen.sdk_commit_sha)
 
 
 def set_required_resources(manifest: ProfileManifest, name: str, required_resources: tuple[str, ...]) -> ProfileManifest:
@@ -349,4 +354,4 @@ def set_required_resources(manifest: ProfileManifest, name: str, required_resour
         replace(e, required_resources=tuple(required_resources)) if e.name == name else e
         for e in manifest.entries
     )
-    return ProfileManifest(profile_name=manifest.profile_name, entries=updated)
+    return ProfileManifest(profile_name=manifest.profile_name, entries=updated, sdk_commit_sha=manifest.sdk_commit_sha)

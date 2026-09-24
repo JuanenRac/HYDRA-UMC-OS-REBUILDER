@@ -91,6 +91,9 @@ class EcosystemPlan:
 
     entries: tuple[EcosystemPlanEntry, ...]
     discovery_errors: tuple[str, ...]
+    # Commit of the shared SDK that gets installed into the image for the
+    # projects that need it; None means "the SDK's current default branch".
+    sdk_commit_sha: str | None = None
 
     def __len__(self) -> int:
         return len(self.entries)

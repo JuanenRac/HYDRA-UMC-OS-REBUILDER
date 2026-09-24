@@ -383,7 +383,7 @@ def build_image(
             # stops, so the `finally` block's own cleanup still runs
             # exactly as before.
             try:
-                real_version = _install_one_project(entry, rootfs_mount, timeout_seconds=project_timeout_seconds)
+                real_version = _install_one_project(entry, rootfs_mount, timeout_seconds=project_timeout_seconds, sdk_commit_sha=plan.sdk_commit_sha)
             except (ImageBuildError, subprocess.CalledProcessError) as exc:
                 # A real, unrelated subprocess failure (git over a flaky
                 # connection, chroot hitting a disk-full host) is just as
@@ -656,7 +656,7 @@ _SDK_CHECKOUT_NAME = "hydra-umc-sdk"
 _SDK_PYTHON_SRC = "clients/python/src"
 
 
-def _ensure_sdk_importable(target: Path, rootfs_mount: Path, *, timeout_seconds: float | None = None) -> bool:
+def _ensure_sdk_importable(target: Path, rootfs_mount: Path, *, timeout_seconds: float | None = None, sdk_commit_sha: str | None = None) -> bool:
     """Make the shared Python SDK importable inside the image when a project needs it.
 
     A project that declares `hydra-umc-sdk` in its pyproject runs its tests
@@ -673,14 +673,19 @@ def _ensure_sdk_importable(target: Path, rootfs_mount: Path, *, timeout_seconds:
     if not sdk_checkout.is_dir():
         from .ecosystem_plan import _git_url
 
-        _run("git", "clone", "--depth", "1", _git_url("JuanenRac", "HYDRA-UMC-SDK"), str(sdk_checkout), timeout=timeout_seconds)
+        if sdk_commit_sha:
+            # Pinned by the frozen profile: a full clone so that exact commit is reachable.
+            _run("git", "clone", _git_url("JuanenRac", "HYDRA-UMC-SDK"), str(sdk_checkout), timeout=timeout_seconds)
+            _run("git", "-C", str(sdk_checkout), "checkout", sdk_commit_sha, timeout=timeout_seconds)
+        else:
+            _run("git", "clone", "--depth", "1", _git_url("JuanenRac", "HYDRA-UMC-SDK"), str(sdk_checkout), timeout=timeout_seconds)
     pth_dir = rootfs_mount / "usr" / "lib" / "python3" / "dist-packages"
     pth_dir.mkdir(parents=True, exist_ok=True)
     (pth_dir / "hydra_umc_sdk.pth").write_text(f"/opt/hydra-umc/{_SDK_CHECKOUT_NAME}/{_SDK_PYTHON_SRC}" + chr(10), encoding="utf-8")
     return True
 
 
-def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | None = None) -> str:
+def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | None = None, sdk_commit_sha: str | None = None) -> str:
     """Clone `entry`'s own repository at its own real, immutable pinned
     commit and run its own `build.sh` chrooted into the target rootfs -
     the same "each project owns its own build" principle CONTRIBUTING.md
@@ -713,7 +718,7 @@ def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | 
     build_script = target / "build.sh"
     if not build_script.is_file():
         raise ImageBuildError(f"{entry.name}: no build.sh found - cannot install into the image")
-    _ensure_sdk_importable(target, rootfs_mount, timeout_seconds=timeout_seconds)
+    _ensure_sdk_importable(target, rootfs_mount, timeout_seconds=timeout_seconds, sdk_commit_sha=sdk_commit_sha)
     relative = build_script.relative_to(rootfs_mount)
     _run("chroot", str(rootfs_mount), "/bin/bash", f"/{relative.as_posix()}", timeout=timeout_seconds)
     # (P1 - closing

@@ -12,12 +12,13 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import json
 import sys
 from pathlib import Path
 
 from . import __version__
-from .ecosystem_plan import fetch_ecosystem_plan, plan_summary_lines
+from .ecosystem_plan import _fetch_commit_sha, fetch_ecosystem_plan, plan_summary_lines
 from .firstboot_config import FirstBootConfig, WifiConfig, build_boot_partition_patch
 from .image_builder import DEFAULT_PROJECT_TIMEOUT_SECONDS
 from .profile_manifest import (
@@ -143,7 +144,10 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
 
 def _cmd_profile_freeze(args: argparse.Namespace) -> int:
     plan = fetch_ecosystem_plan(owner=args.owner)
-    manifest = freeze_profile(plan, profile_name=args.name)
+    sdk_sha = _fetch_commit_sha(args.owner, "HYDRA-UMC-SDK", "main", token=None)
+    if sdk_sha is None:
+        print("WARNING: could not resolve the SDK commit; images built from this profile will use the SDK default branch", file=sys.stderr)
+    manifest = freeze_profile(replace(plan, sdk_commit_sha=sdk_sha), profile_name=args.name)
     save_profile_manifest(manifest, Path(args.out))
     print(f"PROFILE_FROZEN name={manifest.profile_name} out={args.out} projects={len(manifest)}")
     return 0

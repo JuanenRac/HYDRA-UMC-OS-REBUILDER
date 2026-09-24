@@ -874,3 +874,14 @@ def test_sdk_is_left_alone_for_a_project_that_does_not_need_it(tmp_path: Path, m
     assert _ensure_sdk_importable(target, rootfs) is False
     assert calls == [] and not (rootfs / "usr").exists()
 
+
+def test_sdk_is_checked_out_at_the_pinned_commit(tmp_path: Path, monkeypatch) -> None:
+    calls: list[tuple] = []
+    monkeypatch.setattr("hydra_umc_os_rebuilder.image_builder._run", lambda *command, **kwargs: calls.append(command))
+    rootfs = tmp_path / "rootfs"
+    target = rootfs / "opt" / "hydra-umc" / "p"
+    _write(target / "pyproject.toml", 'dependencies = ["hydra-umc-sdk"]')
+    assert _ensure_sdk_importable(target, rootfs, sdk_commit_sha="abc123") is True
+    assert calls[0][:2] == ("git", "clone") and "--depth" not in calls[0]
+    assert calls[1][-2:] == ("checkout", "abc123")
+
