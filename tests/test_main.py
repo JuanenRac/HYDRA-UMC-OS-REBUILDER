@@ -5,12 +5,20 @@
 # =============================================================================
 from __future__ import annotations
 
+import pytest
+
 import json
 
 from hydra_umc_os_rebuilder import main as main_module
 from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlan, EcosystemPlanEntry
 from hydra_umc_os_rebuilder.main import build_parser
 from hydra_umc_os_rebuilder.profile_manifest import freeze_profile, load_profile_manifest, save_profile_manifest
+
+
+@pytest.fixture(autouse=True)
+def _no_network_sdk_lookup(monkeypatch):
+    """profile-freeze also resolves the SDK commit; never let a test reach GitHub."""
+    monkeypatch.setattr(main_module, "_fetch_commit_sha", lambda *a, **k: "sdk-sha-for-tests")
 
 
 def test_status_command_parses() -> None:
