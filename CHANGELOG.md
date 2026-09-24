@@ -21,6 +21,18 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.2.5] - Bridges build into an image
+
+- **Projects that use the shared SDK can now be built into an image.** A
+  project declaring `hydra-umc-sdk` runs its tests from its own `build.sh`
+  inside the chroot, where nothing had installed the SDK, so every profile
+  containing a bridge failed with `No module named hydra_umc_sdk`. The
+  builder now clones the SDK once into the image and adds a `.pth` file that
+  puts its Python sources on the system interpreter's path before running the
+  project's build. Verified with a real chroot build of two bridge projects;
+  three new tests cover it. The SDK is taken at its current default branch,
+  the same reference the projects' own dependency declaration uses.
+
 ## [0.2.4] - Rebuilds of one profile now hash identically
 
 - **Reproducible content hash:** two real `profile-build` runs from the same
