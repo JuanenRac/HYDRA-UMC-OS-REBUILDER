@@ -21,6 +21,20 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.2.4] - Rebuilds of one profile now hash identically
+
+- **Reproducible content hash:** two real `profile-build` runs from the same
+  frozen manifest produced different per-project hashes even though every
+  source, dependency and script file was byte-identical. The only differing
+  paths were the checkout's `.git` metadata (clone-time index and reflog) and
+  Python bytecode caches (each `.pyc` embeds its source's modification time).
+  `_hash_directory_tree()` now leaves `.git`, `__pycache__`, `*.pyc` and
+  `.pytest_cache` out, so a rebuild of the same profile records the same hash.
+  Hashes recorded by earlier builds included those paths and will not match
+  a rebuild made with this version.
+  Two new tests cover the exclusion and that real source next to ignored
+  paths is still hashed.
+
 ## [0.2.3]
 
 - Added a real, configurable per-submodule timeout (`--project-timeout-seconds`, default 30 minutes) to the image build pipeline: a project's own clone/checkout/chrooted `build.sh` step that hangs (a stalled clone, a build.sh stuck on an unexpected prompt) now fails clearly and by name instead of hanging the whole build forever. Applied consistently to both the local build path and the SSH-driven remote build station orchestration.
