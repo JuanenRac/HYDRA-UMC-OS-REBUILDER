@@ -80,7 +80,7 @@ def test_custom_owner_is_threaded_through() -> None:
     assert args.owner == "SomeoneElse"
 
 
-# --- D05: profile-freeze / profile-diff / profile-update ----------------
+# --- profile-freeze / profile-diff / profile-update ----------------
 
 
 def _fake_plan(*names_and_shas: tuple[str, str]) -> EcosystemPlan:

@@ -1,5 +1,5 @@
 # =============================================================================
-# HYDRA-UMC-OS-REBUILDER - D05: frozen per-profile version manifests
+# HYDRA-UMC-OS-REBUILDER - frozen per-profile version manifests
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
 # GPL-3.0 - see LICENSE
 #
@@ -56,7 +56,7 @@ class ProfileManifestEntry:
     # already produces (see record_build_result() below) - None until a
     # real build has actually happened. Never guessed or pre-filled.
     content_hash: str | None = None
-    # I12: relative paths a human has curated, for THIS profile, as
+    # relative paths a human has curated, for THIS profile, as
     # genuinely required for this entry to work once installed - see
     # set_required_resources() below and ecosystem_plan.EcosystemPlanEntry's
     # own docstring for how this reaches build_image(). Empty by default:
@@ -82,7 +82,7 @@ class ProfileManifest:
 def freeze_profile(plan: EcosystemPlan, *, profile_name: str) -> ProfileManifest:
     """Turns a live EcosystemPlan into a frozen ProfileManifest - the real
     'tested combination of components' D05 asks for. Refuses to freeze an
-    entry whose commit SHA never resolved (IMAGE-01 already excludes those
+    entry whose commit SHA never resolved (already excludes those
     from `plan.entries`, but a caller could still hand this a hand-built
     plan) - freezing a mutable branch name instead of an immutable commit
     would defeat the entire point of a frozen profile."""
@@ -108,7 +108,7 @@ def manifest_to_ecosystem_plan(manifest: ProfileManifest) -> EcosystemPlan:
     without a single new network call, and therefore without any chance
     of silently picking up a 'latest' that moved since the profile was
     frozen. `branch` is left at its default: _install_one_project() only
-    ever clones by commit_sha (IMAGE-01), branch is dead weight here."""
+    ever clones by commit_sha, branch is dead weight here."""
     entries = tuple(
         EcosystemPlanEntry(
             name=e.name, version=e.version, role=e.role, stack=e.stack, git_url=e.git_url, commit_sha=e.commit_sha,
@@ -331,7 +331,7 @@ def refreeze_selected(frozen: ProfileManifest, live: EcosystemPlan, names: set[s
 
 
 def set_required_resources(manifest: ProfileManifest, name: str, required_resources: tuple[str, ...]) -> ProfileManifest:
-    """I12: the one place a human actually curates 'the real inventory of
+    """the one place a human actually curates 'the real inventory of
     resources this project needs, for this profile' - image_builder.py's
     own build_image() verifies every one of these actually exists on disk
     right after that entry's build.sh runs, before promoting the image

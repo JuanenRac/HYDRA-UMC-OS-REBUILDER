@@ -175,7 +175,7 @@ def test_xz_uncompressed_size_returns_none_for_a_file_that_is_not_real_xz(tmp_pa
 
 
 # =============================================================================
-# IMAGE-01 (P1):
+# (P1):
 # _install_one_project() must refuse an unpinned entry, clone+checkout by
 # real commit SHA (not a mutable branch), and report the REAL post-build
 # version from the rootfs's own manifest - never the plan's stale one.
@@ -212,7 +212,7 @@ def _fake_run_for_install(
     `restore_succeeds` models `git checkout -- .` actually reverting the
     tracked manifest back to `pre_build_version` (the ordinary, expected
     case - a plain working-tree edit is exactly what `git checkout --.`
-    reverts) - set False to simulate the one case V07-013's own
+    reverts) - set False to simulate the one case this project's own
     safety net still exists for: the version living somewhere that
     checkout call cannot reach.
     """
@@ -255,12 +255,12 @@ def test_install_one_project_clones_and_checks_out_the_real_pinned_sha_when_the_
 def test_install_one_project_restores_the_planned_version_after_a_real_incremental_build_regression_for_v07_013(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # V07-013 (P1 - closing
-    # REV-018's own documented "real, separate future work" gap): build.sh
+    # (P1 - closing
+    # this project's own documented "real, separate future work" gap): build.sh
     # is this ecosystem's own real, INCREMENTAL, version-bumping build
     # script - it ALWAYS advances the version as its own first real
     # effect on every real invocation, exactly what this test simulates.
-    # REV-018 refused on that divergence outright, which meant this
+    # refused on that divergence outright, which meant this
     # pipeline could never actually finish installing a single real
     # project. The real fix restores the pinned commit's tracked files
     # (`git checkout -- .`) right after build.sh's real work is done, so
@@ -278,10 +278,10 @@ def test_install_one_project_restores_the_planned_version_after_a_real_increment
 def test_install_one_project_still_refuses_when_the_version_stays_diverged_after_the_restore_attempt(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # The real safety net V07-013 keeps, not removes: a version that
+    # The real safety net keeps, not removes: a version that
     # somehow stays diverged even after `git checkout -- .` (e.g. it
     # lives in a path that checkout call cannot reach) must still refuse
-    # to install, exactly like REV-018's own original closure criterion -
+    # to install, exactly like this project's own original closure criterion -
     # only the ordinary, always-diverges-then-restores case above is
     # fixed, not this check itself.
     fake_run, _calls, _target = _fake_run_for_install(
@@ -294,7 +294,7 @@ def test_install_one_project_still_refuses_when_the_version_stays_diverged_after
 
 
 # =============================================================================
-# I12 ("Verificacion del contenido distribuido fuera del checkout"): a
+# ("Verificacion del contenido distribuido fuera del checkout"): a
 # real, human-curated resource inventory per profile, checked against the
 # actual post-build tree - never rescued by a residual file elsewhere.
 # =============================================================================
@@ -321,7 +321,7 @@ def test_verify_installed_resources_with_no_declared_resources_reports_nothing(t
 def test_install_one_project_refuses_to_install_a_build_missing_a_declared_required_resource(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    # I12's own literal acceptance test: build.sh ran and reported the
+    # this project's own literal acceptance test: build.sh ran and reported the
     # right version, but silently never produced the UI resource this
     # profile curated as required - must be caught here, before the image
     # is ever promoted, not discovered later on real hardware.
@@ -381,7 +381,7 @@ def test_fetch_base_image_refuses_to_start_a_download_with_no_real_room_for_it(
     assert not (tmp_path / "image.img.part").exists()
 
 
-# C15: scan_for_leaked_secrets() real tests. No real loop-mount needed -
+# scan_for_leaked_secrets real tests. No real loop-mount needed -
 # the function only ever reads from a plain directory tree, so a real
 # tmp_path standing in for a mounted rootfs exercises the real logic
 # end-to-end without any Linux-only privilege.
@@ -470,7 +470,7 @@ def test_scan_for_leaked_secrets_reports_every_real_finding_not_just_the_first(t
     assert len(findings) == 2
 
 
-# C15: real output-side inventory hashing -
+# real output-side inventory hashing -
 # _hash_directory_tree() itself, pure and fully testable without a real
 # mount/chroot pipeline.
 def _write(path: Path, content: str) -> None:
@@ -553,7 +553,7 @@ def test_hash_directory_tree_never_raises_on_a_real_dangling_symlink(tmp_path: P
 
 
 # ---------------------------------------------------------------------------
-# PROM-IMG-F03: a real, dedicated end-to-end test of build_image() stopping
+# a real, dedicated end-to-end test of build_image stopping
 # partway through - a per-project install failure raised from inside the
 # real install loop (the same real code path a real mid-build cancellation
 # or crash exercises: the `finally` block's own real cleanup, and never

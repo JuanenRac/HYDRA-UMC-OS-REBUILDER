@@ -104,7 +104,7 @@ def test_plan_is_sorted_by_name_case_insensitively() -> None:
 
 
 # =============================================================================
-# IMAGE-01 (P1):
+# (P1):
 # resolve_commit_shas() real network pass - a real local fixture HTTP
 # server standing in for GitHub's own `/repos/:owner/:repo/commits/:branch`
 # endpoint, no network mocking of the request/response machinery itself.
@@ -207,7 +207,7 @@ def test_resolve_commit_shas_excludes_an_entry_it_cannot_resolve_a_real_sha_for(
 def test_resolve_commit_shas_never_fabricates_a_sha_for_one_entry_just_because_another_resolved(
     fake_github_commits,
 ) -> None:
-    # IMAGE-01's own real bar: a partial failure must exclude ONLY the
+    # this project's own real bar: a partial failure must exclude ONLY the
     # entry that actually failed, never silently degrade to an unpinned
     # build for it, and never contaminate the entry that DID resolve.
     fake_github_commits.shas = {"JuanenRac/HYDRA-UMC-SERVER/main": "b" * 40}

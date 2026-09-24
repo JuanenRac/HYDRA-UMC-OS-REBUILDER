@@ -51,7 +51,7 @@ def test_username_without_password_is_rejected() -> None:
 
 
 def test_username_with_an_empty_string_password_is_rejected() -> None:
-    # H026: `password is None` alone let "" through - build_firstrun_
+    # `password is None` alone let "" through - build_firstrun_
     # script()'s own user-creation block gates on the truthy `if
     # username and password:`, under which "" is just as falsy as None,
     # so this used to pass validation and then have its entire user
@@ -141,7 +141,7 @@ def test_hash_password_produces_a_real_verifiable_sha512_crypt_hash() -> None:
     assert not passlib_hash.sha512_crypt.verify("wrong password", hashed)
 
 
-# --- D04: recovery-procedure guard --------------------------------------
+# --- recovery-procedure guard --------------------------------------
 
 
 def test_ssh_key_without_username_or_password_is_rejected() -> None:

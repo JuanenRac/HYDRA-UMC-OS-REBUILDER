@@ -115,13 +115,13 @@ class BuildResult:
     output_path: Path | None = None
     error: str | None = None
     platform_check: PlatformCheck | None = None
-    # C15: "name@version#sha256:<hash>" per installed project - the hash
+    # "name@version#sha256:<hash>" per installed project - the hash
     # is _hash_directory_tree()'s own real content hash of that project's
     # real installed directory, not merely a repeat of the version string
     # already checked by _install_one_project. See that function's own
     # docstring for exactly what is and is not covered.
     installed: tuple[str, ...] = field(default_factory=tuple)
-    # C15: every real secret-shaped path this build found still sitting in
+    # every real secret-shaped path this build found still sitting in
     # the mounted rootfs before it was ever considered for promotion -
     # empty on a clean build. Kept even when `ok` is True (an empty tuple)
     # so a caller can tell "scanned and clean" from "never scanned" if
@@ -299,7 +299,7 @@ def build_image(
     BuildProgress at each real phase transition - never a fake percentage,
     just the phase this call has actually reached.
 
-    PROM-IMG-F03: this function always returns a real `BuildResult`, never
+    this function always returns a real `BuildResult`, never
     raises `ImageBuildError` past itself - a per-project install failure
     (a missing commit SHA, a diverged version, a missing required
     resource) is caught here and reported as `ok=False`, the same as a
@@ -361,7 +361,7 @@ def build_image(
         report("install", f"{len(plan)} ecosystem project(s)")
         for entry in plan.entries:
             report("install", entry.name)
-            # PROM-IMG-F03: `_install_one_project()` raising
+            # `_install_one_project` raising
             # `ImageBuildError` (a missing commit SHA, a diverged
             # version, a missing required resource - every one a REAL,
             # already-tested refusal) used to propagate straight past
@@ -404,7 +404,7 @@ def build_image(
                 # apart from real, slow progress.
                 install_error = f"{entry.name}: timed out after {exc.timeout:.0f}s running {' '.join(exc.cmd)!r}"
                 break
-            # C15: a real content hash of what actually landed on disk,
+            # a real content hash of what actually landed on disk,
             # not just the version string _install_one_project already
             # confirmed matches the plan - see _hash_directory_tree's own
             # docstring for exactly what this does and does not prove.
@@ -421,7 +421,7 @@ def build_image(
 
         report("unmount")
     finally:
-        # IMAGE-02 (P1): `check=False` here used to let a real umount/
+        # `check=False` here used to let a real umount/
         # losetup failure pass silently - the function went on to
         # promote (move + report ok=True) an image whose own loop device
         # or mount could still be active. Every real exit code and
@@ -454,7 +454,7 @@ def build_image(
         )
 
     if install_error is not None:
-        # PROM-IMG-F03: same real "never promote, report what genuinely
+        # same real "never promote, report what genuinely
         # finished" contract as a cleanup failure or a leaked secret -
         # the loop/mount are already known-clean at this point (the
         # `finally` block above already ran and reported no
@@ -467,7 +467,7 @@ def build_image(
         )
 
     if secret_findings:
-        # C15: never promote an image with a real secret still in it -
+        # never promote an image with a real secret still in it -
         # left in work_dir (not moved to output_path) for the same
         # "an operator inspects the real state" reason cleanup failures
         # above already use. Scanned BEFORE unmount (rootfs_mount is
@@ -563,7 +563,7 @@ def scan_for_leaked_secrets(rootfs_mount: Path) -> list[str]:
 
 
 def _hash_directory_tree(path: Path) -> str:
-    """C15: real, output-side inventory hashing -
+    """real, output-side inventory hashing -
     found completely missing (not just untested): the built image's own
     inventory only ever recorded `name@version` as free text, with nothing
     tying that claim to what was ACTUALLY installed on disk. A build that
@@ -610,7 +610,7 @@ def _hash_directory_tree(path: Path) -> str:
 
 
 def verify_installed_resources(project_root: Path, required_resources: tuple[str, ...]) -> tuple[str, ...]:
-    """I12 ("Verificacion del contenido distribuido fuera del checkout"):
+    """("Verificacion del contenido distribuido fuera del checkout"):
     a real, minimal check that every resource a human curated as required
     for THIS profile (profile_manifest.set_required_resources()) actually
     exists on disk under `project_root` - a project's own build.sh runs
@@ -623,7 +623,7 @@ def verify_installed_resources(project_root: Path, required_resources: tuple[str
     own real ImageBuildError below).
 
     Deliberately just `Path.exists()` per declared relative path, nothing
-    heavier: I12's own real point is catching an OMITTED resource, not
+    heavier: this project's own real point is catching an OMITTED resource, not
     validating its content (that's what _hash_directory_tree's own C15
     tree hash already covers, over whatever DID get installed)."""
     missing = tuple(
@@ -641,7 +641,7 @@ def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | 
     abstraction, since there is exactly one real caller and no second
     implementation to share it with yet.
 
-    IMAGE-01 (P1): this used to `git clone --branch <mutable branch name>` - a
+    this used to `git clone --branch <mutable branch name>` - a
     real push to that branch between planning and building silently
     changed what got installed, with no way to tell after the fact.
     `entry.commit_sha` (see ecosystem_plan.resolve_commit_shas) is now
@@ -667,13 +667,13 @@ def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | 
         raise ImageBuildError(f"{entry.name}: no build.sh found - cannot install into the image")
     relative = build_script.relative_to(rootfs_mount)
     _run("chroot", str(rootfs_mount), "/bin/bash", f"/{relative.as_posix()}", timeout=timeout_seconds)
-    # V07-013 (P1 - closing
-    # REV-018's own documented "real, separate future work" gap): this
+    # (P1 - closing
+    # this project's own documented "real, separate future work" gap): this
     # pinned commit's own build.sh is this ecosystem's real, INCREMENTAL,
     # version-bumping build script (the same one a human release runs),
     # not a non-mutating build-test.sh - it always advances
     # hydra-umc.project.json/CHANGELOG.md/the stack's own version file as
-    # its own first real effect, on every single real invocation. REV-018
+    # its own first real effect, on every single real invocation. 
     # correctly refused to silently accept that divergence, but refusing
     # ANY divergence from a script that ALWAYS diverges meant this
     # pipeline could never actually finish installing a single real
@@ -703,7 +703,7 @@ def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | 
     # itself failing to revert).
     _run("git", "-C", str(target), "checkout", "--", ".", timeout=timeout_seconds)
     installed_version = _read_real_installed_version(target, entry.name)
-    # Real, honest safety net kept from REV-018, not removed: if the
+    # Real, honest safety net kept from, not removed: if the
     # restore above somehow left the version genuinely diverged (a
     # project keeping its version in a path its own .gitignore excludes,
     # or a real git failure the checkout call's own check=True didn't
@@ -717,7 +717,7 @@ def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | 
             "refusing to install a diverged, unplanned version into the image"
         )
     if entry.required_resources:
-        # I12: checked against the real post-build tree, AFTER build.sh
+        # checked against the real post-build tree, AFTER build.sh
         # ran - a resource this project's own build script was supposed
         # to produce but silently stopped producing is exactly what this
         # catches, before the image is ever promoted.

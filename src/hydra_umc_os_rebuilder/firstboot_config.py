@@ -76,7 +76,7 @@ def _validate(config: FirstBootConfig) -> None:
         raise FirstBootConfigError(f"invalid hostname: {config.hostname!r}")
     if config.username is not None and not _USERNAME_RE.fullmatch(config.username):
         raise FirstBootConfigError(f"invalid username: {config.username!r}")
-    # H026: `is None` alone let an EMPTY string ("") through as if it
+    # `is None` alone let an EMPTY string ("") through as if it
     # were a real password - build_firstrun_script()'s own user-creation
     # block (below, and the ssh_authorized_key check right after this
     # one) gates on the truthy `if config.username and config.password:`,
@@ -106,7 +106,7 @@ def _validate(config: FirstBootConfig) -> None:
         if not config.wifi.country or not _COUNTRY_RE.fullmatch(config.wifi.country):
             raise FirstBootConfigError(f"invalid Wi-Fi country code: {config.wifi.country!r}")
     if not config.enable_ssh and config.username is None and not config.acknowledge_no_remote_access:
-        # D04: "cambiar identidad o acceso remoto debe preservar un
+        # "cambiar identidad o acceso remoto debe preservar un
         # procedimiento de recuperacion; no dejar al operador fuera del
         # equipo durante la instalacion." The official Raspberry Pi OS
         # base images this tool builds from (see image_builder.py's
