@@ -170,7 +170,7 @@ def test_refreeze_selected_requires_at_least_one_name() -> None:
 
 
 # =============================================================================
-# I12: set_required_resources() - the one real place a human curates
+# set_required_resources - the one real place a human curates
 # "the real inventory of resources this project needs, for this profile".
 # =============================================================================
 

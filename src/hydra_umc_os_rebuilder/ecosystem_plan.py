@@ -60,7 +60,7 @@ class EcosystemPlanEntry:
     stack: str
     git_url: str
     branch: str = "main"
-    # IMAGE-01 (P1): `branch` alone is a mutable pointer - a real push to `main`
+    # `branch` alone is a mutable pointer - a real push to `main`
     # between this plan being built and an image actually being built
     # from it silently changes what gets installed. `commit_sha` is the
     # real, immutable identity `_install_one_project` now clones and
@@ -68,7 +68,7 @@ class EcosystemPlanEntry:
     # gets filled in. `None` here means "not yet resolved" (the shape
     # `build_plan()` itself, a pure/offline function, produces).
     commit_sha: str | None = None
-    # I12 ("Verificacion del contenido distribuido fuera del checkout"):
+    # ("Verificacion del contenido distribuido fuera del checkout"):
     # relative paths (POSIX-style, relative to this project's own
     # installed root) a human profile author has curated as genuinely
     # required for this project to actually work once installed - e.g. a
@@ -126,7 +126,7 @@ def build_plan(discovery: RemoteDiscovery, *, owner: str = "JuanenRac") -> Ecosy
 
 
 def _fetch_commit_sha(owner: str, name: str, branch: str, *, token: str | None, timeout: float = 15) -> str | None:
-    """IMAGE-01: the real, immutable HEAD commit SHA for `owner/name`'s
+    """the real, immutable HEAD commit SHA for `owner/name`'s
     `branch`, via GitHub's own real REST API (never guessed, never
     derived from the raw-content fetch discovery already does - that
     endpoint doesn't expose a commit identity at all). Returns `None` on
@@ -165,7 +165,7 @@ def _fetch_commit_sha(owner: str, name: str, branch: str, *, token: str | None, 
 
 
 def resolve_commit_shas(plan: EcosystemPlan, *, owner: str = "JuanenRac", token: str | None = None) -> EcosystemPlan:
-    """IMAGE-01's own real second pass over an already-built
+    """this project's own real second pass over an already-built
     `EcosystemPlan`: resolves each entry's real, immutable commit SHA so
     `image_builder._install_one_project` clones an exact, reproducible
     source instead of a mutable branch name that could have moved

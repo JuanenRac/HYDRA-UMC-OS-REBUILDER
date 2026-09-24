@@ -233,7 +233,7 @@ def _cmd_profile_build(args: argparse.Namespace) -> int:
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
         return 1
-    # D05/D07: fold the real, post-build content hashes back into the
+    # D05/fold the real, post-build content hashes back into the
     # frozen manifest on disk - a rebuilt profile now carries real proof
     # of what actually landed, not just the recipe it was built from.
     built_manifest = record_build_result(manifest, result.installed)
@@ -295,7 +295,7 @@ def build_parser() -> argparse.ArgumentParser:
         f"default {DEFAULT_PROJECT_TIMEOUT_SECONDS:.0f}s; 0 means unlimited (the old, unbounded behavior)",
     )
 
-    # D05: freeze/diff/update/build a named, persisted, tested combination
+    # freeze/diff/update/build a named, persisted, tested combination
     # of components - see profile_manifest.py's own module docstring.
     freeze_parser = sub.add_parser("profile-freeze", help="freeze the current live ecosystem plan into a named, persisted profile manifest")
     freeze_parser.add_argument("--name", required=True, help="profile name, e.g. 'cm5-production'")
@@ -311,7 +311,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     resources_parser = sub.add_parser(
         "profile-set-required-resources",
-        help="I12: curate the real inventory of resources (relative paths) a project's own installed tree "
+        help="curate the real inventory of resources (relative paths) a project's own installed tree "
              "must contain for this profile - profile-build refuses to promote an image missing any of them",
     )
     resources_parser.add_argument("--manifest", required=True, help="path to an existing profile manifest JSON (edited in place)")
