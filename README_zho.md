@@ -94,6 +94,8 @@ HYDRA-UMC-UPDATER 相同的视觉语言（相同的深色调色板、字体排�
   文件内容（一个 `firstrun.sh` 字符串、一个 `cmdline.txt` 补丁字符串） -
   它自身从不触碰真实的镜像或文件系统，因此无需 root 或真实镜像即可轻松
   测试。只有 `image_builder.py` 负责真正把这些内容写入真实的 boot 分区。
+- **会把操作员锁在外面的首次启动配置会被拒绝，而不是被构建。** 在不配置任何账户的情况下禁用 SSH，会让本工具自己的官方基础镜像（Bookworm 及之后没有默认用户）完全没有登录途径 - 除非 `acknowledge_no_remote_access=True` 明确同意，否则会被拒绝。`describe_recovery_procedure()` 会说明配置所留下的部分的真实恢复途径。
+- **冻结的配置是真实的、持久化的配方，绝不会重新获取。** `profile_manifest.py` 的 `freeze_profile()`/`profile-build` 把每个项目固定在测试时的确切提交 SHA 上 - 之后的构建绝不会悄悄替换为 GitHub 当前所称的“latest”。`diff_profile()` 按项目（而不是单一布尔值）把冻结的配置与实际生态系统比较，因为这个生态系统的版本号是没有语义化含义的十进制里程表，本身永远不能作为诚实的兼容性信号。
 - **真实的 SHA-512-crypt 密码哈希，而非标准库的 `crypt` 模块。** `crypt`
   只是包装了*主机自身*的 libc 调用（仅限 Unix，且已在 Python 3.13 中彻底
   移除） - `passlib` 在本工具运行的任何平台（包括 Windows）上都能生成与
@@ -151,9 +153,13 @@ chmod +x build.sh   # 仅需一次
 - `--cli config` 抛出校验错误：你给出的主机名/用户名/Wi-Fi 国家代码不符合
   这些字段所要求的真实、严格的格式 - 参见 `firstboot_config.py` 自身的
   校验逻辑。
+- `--cli config`/`build-image` 以“no login path at all”拒绝：禁用了 SSH 却没有配置账户 - 要么配置一个，要么在确定有其他进入方式时传入 `acknowledge_no_remote_access=True`（GUI/API）。参见 `describe_recovery_procedure()`。
+- `profile-build` 以“no real, resolved commit SHA”拒绝某个项目：冻结的清单早于某个仓库被重命名或设为私有 - 请针对当前的实际生态系统重新冻结配置（`profile-freeze`）。
+- `profile-build` 以“missing N required resource(s)”拒绝：用 `profile-set-required-resources` 整理过的项目运行了自己的 `build.sh`，但声明的相对路径之后在磁盘上仍不存在 - 这是真实的不完整构建，绝不会被别处遗留的文件挽救；镜像不会被提升。
 - 图形界面的"生态系统状态"标签页始终为空：请检查你的网络 - 本工具的
   `status`/发现功能需要真实连接到 `github.com`/`raw.githubusercontent.com`，
   与 `hydra-umc-updater` 本身相同。
+- **重复刷新时项目数量不断减少（例如 42 -> 9 -> 0），即使重启应用也一样** - 一个此前未被报告的真实缺陷：解析每个项目的真实提交 SHA 会为每个项目消耗一次 `api.github.com` 调用，而 *未认证* 的预算是每小时 60 次请求，并与本工具（以及 `hydra-umc-updater`）的其他所有操作共用 - 有 50 多个真实的生态系统项目时，一次刷新就可能耗尽，而需要重置的是 GitHub 自己的小时窗口（不是本应用的状态），重启无法解决。已修复为如实报告，而不是悄悄列出更少的项目：项目列表下方的琥珀色横幅会准确写出在达到上限前解析了多少个项目，以及 GitHub 的限额何时重置（参见 `ecosystem_plan.GitHubRateLimitedError`）。启动本工具之前设置环境变量 `GITHUB_TOKEN`（普通的 GitHub 个人访问令牌，公开仓库不需要任何权限）即可把预算提高到每小时 5000 次 - 仓库列表和按项目解析提交 SHA 现在都一致地使用它。
 
 ## 🚀 路线图
 
@@ -165,6 +171,8 @@ chmod +x build.sh   # 仅需一次
 - 独立打包的图形界面可执行文件（PyInstaller），遵循与
   HYDRA-UMC-SUITE 自身 `build_exe.bat`/`.sh` 相同的约定，实现无需
   `pip`/venv 步骤的双击安装。
+- 为 `acknowledge_no_remote_access` 提供 GUI 复选框 - 目前 GUI 会如实显示 `FirstBootConfigError` 的真实消息（不崩溃，也不是静默无操作），但没有专门的控件来表示同意，只有 CLI/API 可以。
+- 基于 `profile_manifest.py` 的 GUI 面板（在桌面界面中冻结/比较/更新，而不只是 CLI）。
 
 ## 🔗 相关项目
 

@@ -118,6 +118,8 @@ Configuration du Premier Démarrage.
   trivialement testable sans root ni image réelle. `image_builder.py` est
   seul responsable d'écrire réellement ce contenu sur une partition boot
   réelle.
+- **Une configuration de premier démarrage qui enfermerait l'opérateur dehors est refusée, pas construite.** Désactiver SSH sans configurer de compte laisserait les propres images de base officielles de cet outil (aucun utilisateur par défaut depuis Bookworm) sans aucun moyen de connexion - refusé sauf si `acknowledge_no_remote_access=True` l'accepte explicitement. `describe_recovery_procedure()` indique la vraie procédure de récupération pour tout ce que la configuration laisse ouvert.
+- **Un profil figé est une vraie recette persistée, jamais re-téléchargée.** `freeze_profile()`/`profile-build` de `profile_manifest.py` épinglent chaque projet sur le SHA exact du commit avec lequel il a été testé - un build ultérieur ne substitue jamais silencieusement ce que GitHub appelle actuellement « latest ». `diff_profile()` compare un profil figé à l'écosystème réel projet par projet (pas comme un simple booléen), car les numéros de version de cet écosystème sont un compteur kilométrique en base 10 sans sens sémantique et ne peuvent jamais être, à eux seuls, un signal honnête de compatibilité.
 - **Hachage de mot de passe SHA-512-crypt réel, pas le module `crypt` de
   la stdlib.** `crypt` ne fait qu'envelopper l'appel libc de *l'hôte*
   lui-même (Unix uniquement, et purement supprimé dans Python 3.13) -
@@ -179,10 +181,14 @@ véritable hôte Linux avec root - voir
   d'utilisateur/code pays Wi-Fi donné ne correspond pas à la forme réelle
   et stricte exigée par ces champs - voir la validation propre de
   `firstboot_config.py`.
+- `--cli config`/`build-image` refuse avec « no login path at all » : SSH a été désactivé sans configurer de compte - configurez-en un, ou passez `acknowledge_no_remote_access=True` (GUI/API) si un autre accès est sûr. Voir `describe_recovery_procedure()`.
+- `profile-build` refuse un projet avec « no real, resolved commit SHA » : le manifeste figé date d'avant qu'un dépôt soit renommé ou rendu privé - refigez plutôt le profil (`profile-freeze`) par rapport à l'écosystème réel actuel.
+- `profile-build` refuse avec « missing N required resource(s) » : un projet curé avec `profile-set-required-resources` a exécuté son propre `build.sh`, mais un chemin relatif déclaré n'existe toujours pas sur le disque ensuite - un vrai build incomplet, jamais sauvé par un fichier résiduel ailleurs ; l'image n'est pas promue.
 - L'onglet État de l'Écosystème de la GUI reste vide : vérifiez votre
   réseau - cet outil a besoin d'une vraie connexion à
   `github.com`/`raw.githubusercontent.com` pour `status`/la découverte,
   comme `hydra-umc-updater` lui-même.
+- **Le nombre de projets continue de diminuer à chaque actualisation (par ex. 42 -> 9 -> 0), même après avoir redémarré l'application** - un vrai bug jusque-là non signalé : résoudre le vrai SHA de commit de chaque projet dépense un appel `api.github.com` PAR PROJET, sur un budget *non authentifié* de 60 requêtes PAR HEURE partagé avec tout ce que fait cet outil (et `hydra-umc-updater`) - avec plus de 50 vrais projets de l'écosystème, une seule actualisation peut l'épuiser, et c'est la fenêtre horaire de GitHub (pas l'état de cette application) qui doit se réinitialiser, ce qu'un redémarrage ne fait pas. Corrigé pour le signaler honnêtement au lieu de lister silencieusement moins de projets : le bandeau ambre sous la liste des projets indique exactement combien de projets ont été résolus avant la limite et quand la limite de GitHub se réinitialise (voir `ecosystem_plan.GitHubRateLimitedError`). Définissez la variable d'environnement `GITHUB_TOKEN` (un simple jeton d'accès personnel GitHub, aucun droit nécessaire pour les dépôts publics) avant de lancer cet outil pour porter le budget à 5000/heure - la liste des dépôts comme la résolution du SHA par projet le respectent désormais de façon cohérente.
 
 ## 🚀 FEUILLE DE ROUTE
 
@@ -195,6 +201,8 @@ véritable hôte Linux avec root - voir
 - Exécutable GUI autonome (PyInstaller), suivant la même convention que
   `build_exe.bat`/`.sh` de HYDRA-UMC-SUITE, pour une installation en un
   double-clic sans aucune étape `pip`/venv.
+- Une case à cocher dans la GUI pour `acknowledge_no_remote_access` - aujourd'hui la GUI affiche honnêtement le vrai message de `FirstBootConfigError` (pas de plantage, pas d'action silencieuse) mais n'a pas de contrôle dédié pour l'accepter, seuls la CLI/l'API le font.
+- Un panneau GUI au-dessus de `profile_manifest.py` (figer/comparer/mettre à jour depuis l'interface de bureau, pas seulement la CLI).
 
 ## 🔗 Projets Liés
 
