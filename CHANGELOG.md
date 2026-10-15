@@ -381,8 +381,6 @@ no real image/mount involved):
   real post-build version instead of the plan's stale one. `pytest
   tests/ -q`: all passing.
 
-## Unreleased
-
 - **Real UI layout/sizing pass, per real user feedback**:
   - The Build Target buttons (This computer / Remote host via SSH) and
     the Remote Preset buttons (CM5 / Custom host) each now sit on one
@@ -604,7 +602,7 @@ no real image/mount involved):
 
 ## [0.0.2]
 
-- **Fixed a real bug found the same night while auditing the code:
+- **Fixed a real bug found the same night on code review:
   base-image checksum verification never actually ran.**
   `KNOWN_BASE_IMAGES`'s own `sha256=""` (deliberate - meant "fetch the
   real digest from the publisher's sidecar at download time") made the
