@@ -2,6 +2,10 @@
 
 All notable work on **HYDRA-UMC-OS-REBUILDER** is summarized here, newest first.
 
+## Unreleased
+
+- The button that copies the log is a small icon (two sheets) instead of words, and turns green for a moment when it has copied.
+
 ## Versioning scheme
 
 `pyproject.toml`'s `version` field bumps via

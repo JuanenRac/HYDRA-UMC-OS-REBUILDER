@@ -852,15 +852,32 @@ ApplicationWindow {
                     RowLayout {
                         Layout.fillWidth: true
                         LabelText { text: ui("activity_log_title"); font.pixelSize: 16; font.bold: true; Layout.fillWidth: true }
-                        GameButton {
-                            text: ui("btn_copy_log")
-                            Layout.preferredWidth: 116
-                            accent: "#264966"
-                            onClicked: {
-                                buildLogArea.selectAll()
-                                buildLogArea.copy()
-                                buildLogArea.deselect()
+                        Rectangle {
+                            id: copyIconButton
+                            property bool copied: false
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 32
+                            radius: 8
+                            color: copyIconMouse.containsMouse ? "#1b3c52" : "#102a3b"
+                            border.width: 1
+                            border.color: copyIconButton.copied ? "#5df0c4" : "#264966"
+                            // the icon of "copy": two sheets, one in front of the other
+                            Item {
+                                anchors.centerIn: parent
+                                width: 18; height: 18
+                                Rectangle { x: 6; y: 0; width: 11; height: 12; radius: 2; color: "transparent"; border.width: 1.6; border.color: copyIconButton.copied ? "#5df0c4" : "#9fd8e3" }
+                                Rectangle { x: 1; y: 5; width: 11; height: 12; radius: 2; color: copyIconMouse.containsMouse ? "#1b3c52" : "#102a3b"; border.width: 1.6; border.color: copyIconButton.copied ? "#5df0c4" : "#9fd8e3" }
                             }
+                            Timer { id: copiedTimer; interval: 1400; onTriggered: copyIconButton.copied = false }
+                            MouseArea {
+                                id: copyIconMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: { buildLogArea.selectAll(); buildLogArea.copy(); buildLogArea.deselect(); copyIconButton.copied = true; copiedTimer.restart() }
+                            }
+                            ToolTip.visible: copyIconMouse.containsMouse && ToolTip.text !== ""
+                            ToolTip.text: ui("btn_copy_log")
                         }
                     }
                     // A real, selectable/copyable log - real user feedback:
