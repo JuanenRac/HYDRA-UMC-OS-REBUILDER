@@ -25,3 +25,13 @@ def test_text_formats_placeholders() -> None:
 
 def test_text_returns_the_key_itself_for_a_genuinely_unknown_key() -> None:
     assert text("en", "this_key_does_not_exist") == "this_key_does_not_exist"
+
+
+def test_portuguese_is_offered_and_keeps_the_english_placeholders() -> None:
+    import re
+
+    assert "pt" in {code for code, _label in LANGUAGES}
+    placeholder = re.compile(r"\{[a-z_]+\}")
+    for key, english in TRANSLATIONS["en"].items():
+        assert sorted(placeholder.findall(TRANSLATIONS["pt"][key])) == sorted(placeholder.findall(english)), key
+    assert text("pt", "lbl_projects_found", count=7) == "7 projeto(s) da CM5 encontrado(s)"

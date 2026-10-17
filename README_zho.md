@@ -4,7 +4,7 @@
 
 # 🏗️ HYDRA-UMC-OS-REBUILDER
 
-<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | 🇨🇳 <b>简体中文</b> | <a href="README_jpn.md">🇯🇵 日本語</a></p>
+<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | 🇨🇳 <b>简体中文</b> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 📀 构建一份即刻可烧录、完全最新的 CM5 镜像
 
@@ -15,13 +15,13 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows 与 Linux">
 </p>
 
-> **状态：v0.2.7，脚手架阶段。** CLI、生态系统发现、首次启动配置生成器和
+> **状态：v0.2.8，脚手架阶段。** CLI、生态系统发现、首次启动配置生成器和
 > 图形界面都是真实并已测试的功能。真正的端到端镜像构建流程（下载 → 环回
 > 挂载 → chroot 安装 → 卸载）已实现，但只能在具备 root 权限的真实 Linux
 > 主机上运行 - 具体的平台边界及其存在的原因见
 > [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)。
 
-**诚实核查——今天真正能跑起来的部分：** CLI（`main.py`）、复用 `hydra_umc_updater` 自己的 GitHub 客户端而不是再实现一份的动态生态系统发现（`ecosystem_plan.py`）、没有任何文件系统访问、并自带防止操作者被锁在设备外的保护机制的纯 `firstrun.sh`/`cmdline.txt` 生成器（`firstboot_config.py`）、冻结的按方案版本清单——冻结/对比/有选择地更新一套已测试过的组件组合，而不是每次都从当前最新版本重新构建（`profile_manifest.py`）、7 种语言的 GUI 翻译（`i18n.py`），以及 Qt Quick 桌面外壳（`qt_gui.py`、`qml/Main.qml`）都是真实且经过测试的（130 个测试，`pytest`）。`image_builder.py` 的下载/校验和验证/环回挂载/chroot 安装/卸载流水线、它对每个项目实际落盘内容的哈希计算，以及它在提升镜像前对泄露的 Wi-Fi 密码/私有 SSH 密钥/shell 历史记录/`.env` 文件的扫描都是真实代码，由 `check_build_platform()` 把关——它们只在具备 root 权限、且 `PATH` 中有 `losetup`/`chroot` 的真实 Linux 主机上执行，在本环境中从未针对真实的 CM5 SD 卡/eMMC 写入完整跑通过端到端流程；在 Windows 上或非 root 的 Linux 用户下，`build-image` 会立即以 `BUILD_BLOCKED reason=...` 退出，而不是假装成功。`status`/`config` 则已经针对真实的 GitHub 在线发现做过验证。已交付的具体内容见 `CHANGELOG.md`，尚未完成的部分见下面的 ROADMAP。
+**诚实核查——今天真正能跑起来的部分：** CLI（`main.py`）、复用 `hydra_umc_updater` 自己的 GitHub 客户端而不是再实现一份的动态生态系统发现（`ecosystem_plan.py`）、没有任何文件系统访问、并自带防止操作者被锁在设备外的保护机制的纯 `firstrun.sh`/`cmdline.txt` 生成器（`firstboot_config.py`）、冻结的按方案版本清单——冻结/对比/有选择地更新一套已测试过的组件组合，而不是每次都从当前最新版本重新构建（`profile_manifest.py`）、8 种语言的 GUI 翻译（`i18n.py`），以及 Qt Quick 桌面外壳（`qt_gui.py`、`qml/Main.qml`）都是真实且经过测试的（132 个测试，`pytest`）。`image_builder.py` 的下载/校验和验证/环回挂载/chroot 安装/卸载流水线、它对每个项目实际落盘内容的哈希计算，以及它在提升镜像前对泄露的 Wi-Fi 密码/私有 SSH 密钥/shell 历史记录/`.env` 文件的扫描都是真实代码，由 `check_build_platform()` 把关——它们只在具备 root 权限、且 `PATH` 中有 `losetup`/`chroot` 的真实 Linux 主机上执行，在本环境中从未针对真实的 CM5 SD 卡/eMMC 写入完整跑通过端到端流程；在 Windows 上或非 root 的 Linux 用户下，`build-image` 会立即以 `BUILD_BLOCKED reason=...` 退出，而不是假装成功。`status`/`config` 则已经针对真实的 GitHub 在线发现做过验证。已交付的具体内容见 `CHANGELOG.md`，尚未完成的部分见下面的 ROADMAP。
 
 ---
 
@@ -99,7 +99,7 @@ HYDRA-UMC-UPDATER 相同的视觉语言（相同的深色调色板、字体排�
 - **真实的 SHA-512-crypt 密码哈希，而非标准库的 `crypt` 模块。** `crypt`
   只是包装了*主机自身*的 libc 调用（仅限 Unix，且已在 Python 3.13 中彻底
   移除） - `passlib` 在本工具运行的任何平台（包括 Windows）上都能生成与
-  `chpasswd -e` 期望完全一致的真实 `$6$...` 格式。
+  `chpasswd -e` 期望完全一致的真实 `$6$...` 格式。哈希使用 500000 轮，而不是 glibc 自 2000 年起的默认 5000 轮，因此攻击一份镜像副本或 `/etc/shadow` 的成本要高得多；设备自身偏好的 yescrypt（`$y$`）无法在 Windows 上通过 Python 以可移植的方式生成。
 
 ## 📂 目录结构
 
@@ -110,7 +110,7 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── firstboot_config.py  # 纯粹的 firstrun.sh/cmdline.txt 生成器 - 不访问文件系统；带恢复保护机制
 │   ├── profile_manifest.py  # 冻结的按方案版本清单：冻结/对比/有选择地更新，绝不在试验中途换成"最新版本"
 │   ├── image_builder.py     # 真实的下载/环回挂载/chroot 安装流程，仅限 Linux/root
-│   ├── i18n.py               # 真实、完整的图形界面翻译（7 种语言）
+│   ├── i18n.py               # 真实、完整的图形界面翻译（8 种语言）
 │   ├── qt_gui.py             # 覆盖在上述真实模块之上的 Qt Quick 桥接，与 CLI 使用的完全相同
 │   ├── qml/Main.qml          # 主题化的桌面界面：生态系统状态 / 构建镜像 / 首次启动配置
 │   └── main.py                # 分派：默认图形界面，--cli 用于 status/config/build-image

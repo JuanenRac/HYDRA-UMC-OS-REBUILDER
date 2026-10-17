@@ -4,7 +4,7 @@
 
 # 🏗️ HYDRA-UMC-OS-REBUILDER
 
-<p align="center">🇺🇸 <b>English</b> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a></p>
+<p align="center">🇺🇸 <b>English</b> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 📀 Build a Ready-to-Flash, Fully Current CM5 Image
 
@@ -15,14 +15,14 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows and Linux">
 </p>
 
-> **Status: v0.2.7, scaffolding.** The CLI, the ecosystem discovery, the
+> **Status: v0.2.8, scaffolding.** The CLI, the ecosystem discovery, the
 > first-boot config generator and the GUI shell are real and tested. The
 > real end-to-end image build (download → loop-mount → chroot-install →
 > unmount) is implemented but only runs on a real Linux host with root -
 > see [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) for the exact
 > platform boundary and why it exists.
 
-**Honesty check - what actually runs today:** the CLI (`main.py`), the dynamic ecosystem discovery that reuses `hydra_umc_updater`'s own GitHub client instead of a second copy of it (`ecosystem_plan.py` - now stopping cleanly and reporting a real, actionable message the instant GitHub's own hourly rate limit is hit, rather than silently listing fewer projects per commit-SHA lookup that fails), the pure `firstrun.sh`/`cmdline.txt` first-boot config generator with no filesystem access and its own recovery-procedure guard (`firstboot_config.py`), frozen per-profile version manifests - freeze/diff/selectively-update a tested combination of components instead of always rebuilding from whatever is currently latest (`profile_manifest.py`), the 7-language GUI translations (`i18n.py`) and the Qt Quick desktop shell (`qt_gui.py`, `qml/Main.qml`, now surfacing real discovery errors instead of only a shrinking project count) are real and tested (130 tests, `pytest`). `image_builder.py`'s download/checksum-verify/loop-mount/chroot-install/unmount pipeline, its per-project content-hashing of what actually landed on disk, and its pre-promotion scan for a leaked Wi-Fi password/private SSH key/shell history/`.env` file are real code, gated behind `check_build_platform()` - they only execute on a real Linux host with root and `losetup`/`chroot` on `PATH`, and have not been run end-to-end against a real CM5 SD card/eMMC write in this environment; on Windows or a non-root Linux user, `build-image`/`profile-build` exit early with `BUILD_BLOCKED reason=...` rather than pretending to succeed. `status`/`config`/`profile-freeze`/`profile-diff` have been exercised for real against live GitHub discovery. See `CHANGELOG.md` for exactly what has shipped so far, and the ROADMAP below for what remains open.
+**Honesty check - what actually runs today:** the CLI (`main.py`), the dynamic ecosystem discovery that reuses `hydra_umc_updater`'s own GitHub client instead of a second copy of it (`ecosystem_plan.py` - now stopping cleanly and reporting a real, actionable message the instant GitHub's own hourly rate limit is hit, rather than silently listing fewer projects per commit-SHA lookup that fails), the pure `firstrun.sh`/`cmdline.txt` first-boot config generator with no filesystem access and its own recovery-procedure guard (`firstboot_config.py`), frozen per-profile version manifests - freeze/diff/selectively-update a tested combination of components instead of always rebuilding from whatever is currently latest (`profile_manifest.py`), the 8-language GUI translations (`i18n.py`) and the Qt Quick desktop shell (`qt_gui.py`, `qml/Main.qml`, now surfacing real discovery errors instead of only a shrinking project count) are real and tested (132 tests, `pytest`). `image_builder.py`'s download/checksum-verify/loop-mount/chroot-install/unmount pipeline, its per-project content-hashing of what actually landed on disk, and its pre-promotion scan for a leaked Wi-Fi password/private SSH key/shell history/`.env` file are real code, gated behind `check_build_platform()` - they only execute on a real Linux host with root and `losetup`/`chroot` on `PATH`, and have not been run end-to-end against a real CM5 SD card/eMMC write in this environment; on Windows or a non-root Linux user, `build-image`/`profile-build` exit early with `BUILD_BLOCKED reason=...` rather than pretending to succeed. `status`/`config`/`profile-freeze`/`profile-diff` have been exercised for real against live GitHub discovery. See `CHANGELOG.md` for exactly what has shipped so far, and the ROADMAP below for what remains open.
 
 ---
 
@@ -130,7 +130,7 @@ Status, Build Image, and First-Boot Config.
   `crypt` only wraps the *host's own* libc call (Unix-only, and removed
   outright in Python 3.13) - `passlib` produces the byte-identical real
   `$6$...` format `chpasswd -e` expects, on every platform this tool
-  itself runs on, including Windows.
+  itself runs on, including Windows. The hash uses 500000 rounds, not the glibc default of 5000 from the year 2000, so a copy of the image or of `/etc/shadow` costs far more to attack; the device's own preferred yescrypt (`$y$`) cannot be produced portably from Python on Windows.
 
 ## 📂 DIRECTORY STRUCTURE
 
@@ -141,7 +141,7 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── firstboot_config.py  # Pure firstrun.sh/cmdline.txt generator - no filesystem access; recovery-procedure guard
 │   ├── profile_manifest.py  # Frozen per-profile version manifests: freeze/diff/selectively update, never "latest" mid-trial
 │   ├── image_builder.py     # Real download/loop-mount/chroot-install pipeline, Linux/root-gated
-│   ├── i18n.py               # Real, complete GUI translations (7 languages)
+│   ├── i18n.py               # Real, complete GUI translations (8 languages)
 │   ├── qt_gui.py             # Qt Quick bridge over the real CLI-facing modules above
 │   ├── qml/Main.qml          # Themed desktop shell: Ecosystem Status / Build Image / First-Boot Config
 │   └── main.py                # Dispatch: GUI by default, --cli for status/config/build-image

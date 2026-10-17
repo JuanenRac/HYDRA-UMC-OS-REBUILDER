@@ -4,7 +4,7 @@
 
 # 🏗️ HYDRA-UMC-OS-REBUILDER
 
-<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | 🇯🇵 <b>日本語</b></p>
+<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | 🇯🇵 <b>日本語</b> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 📀 書き込み可能な、完全に最新のCM5イメージを構築する
 
@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="WindowsとLinux">
 </p>
 
-> **ステータス: v0.2.7、スキャフォールディング段階。** CLI、エコシステム
+> **ステータス: v0.2.8、スキャフォールディング段階。** CLI、エコシステム
 > 検出、初回起動設定ジェネレータ、GUIはいずれも実際に動作しテスト済み
 > です。実際のエンドツーエンドのイメージビルド（ダウンロード → ループ
 > マウント → chrootインストール → アンマウント）は実装済みですが、root
@@ -23,7 +23,7 @@
 > の境界とその理由については
 > [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) を参照してください。
 
-**正直な現状確認 - 実際に今動くもの:** CLI（`main.py`）、`hydra_umc_updater` 自身のGitHubクライアントを再利用し二重実装を避けている動的なエコシステム検出（`ecosystem_plan.py`）、ファイルシステムに一切アクセスせず、操作者を締め出さないための独自の保護機構を備えた純粋な `firstrun.sh`/`cmdline.txt` ジェネレータ（`firstboot_config.py`）、既にテスト済みのコンポーネントの組み合わせを凍結/比較/選択的に更新する、凍結されたプロファイルバージョンマニフェスト - 常に最新版から再構築するのではなく（`profile_manifest.py`）、7言語対応のGUI翻訳（`i18n.py`）、そしてQt Quickデスクトップシェル（`qt_gui.py`、`qml/Main.qml`）は本物であり、テスト済みです（130件のテスト、`pytest`）。`image_builder.py` のダウンロード／チェックサム検証／ループマウント／chrootインストール／アンマウントのパイプライン、実際にディスクに書き込まれた内容に対するプロジェクトごとのコンテンツハッシュ、そして昇格前に漏洩したWi-Fiパスワード／秘密のSSH鍵／シェル履歴／`.env`ファイルを検出するスキャンは本物のコードであり、`check_build_platform()` によってゲートされています - これらはroot権限を持つ実際のLinuxホストで、かつ `losetup`/`chroot` が `PATH` 上にある場合にのみ実行され、この環境では実際のCM5のSD/eMMC書き込みに対してエンドツーエンドで実行されたことはありません。WindowsまたはrootではないLinuxユーザーでは、`build-image` は成功したふりをする代わりに即座に `BUILD_BLOCKED reason=...` で終了します。`status`/`config` は実際のライブGitHub検出に対して本当にテストされています。これまでに実際に出荷されたものの詳細は `CHANGELOG.md` を、残っている未完了事項は下記のROADMAPを参照してください。
+**正直な現状確認 - 実際に今動くもの:** CLI（`main.py`）、`hydra_umc_updater` 自身のGitHubクライアントを再利用し二重実装を避けている動的なエコシステム検出（`ecosystem_plan.py`）、ファイルシステムに一切アクセスせず、操作者を締め出さないための独自の保護機構を備えた純粋な `firstrun.sh`/`cmdline.txt` ジェネレータ（`firstboot_config.py`）、既にテスト済みのコンポーネントの組み合わせを凍結/比較/選択的に更新する、凍結されたプロファイルバージョンマニフェスト - 常に最新版から再構築するのではなく（`profile_manifest.py`）、8言語対応のGUI翻訳（`i18n.py`）、そしてQt Quickデスクトップシェル（`qt_gui.py`、`qml/Main.qml`）は本物であり、テスト済みです（132件のテスト、`pytest`）。`image_builder.py` のダウンロード／チェックサム検証／ループマウント／chrootインストール／アンマウントのパイプライン、実際にディスクに書き込まれた内容に対するプロジェクトごとのコンテンツハッシュ、そして昇格前に漏洩したWi-Fiパスワード／秘密のSSH鍵／シェル履歴／`.env`ファイルを検出するスキャンは本物のコードであり、`check_build_platform()` によってゲートされています - これらはroot権限を持つ実際のLinuxホストで、かつ `losetup`/`chroot` が `PATH` 上にある場合にのみ実行され、この環境では実際のCM5のSD/eMMC書き込みに対してエンドツーエンドで実行されたことはありません。WindowsまたはrootではないLinuxユーザーでは、`build-image` は成功したふりをする代わりに即座に `BUILD_BLOCKED reason=...` で終了します。`status`/`config` は実際のライブGitHub検出に対して本当にテストされています。これまでに実際に出荷されたものの詳細は `CHANGELOG.md` を、残っている未完了事項は下記のROADMAPを参照してください。
 
 ---
 
@@ -119,7 +119,7 @@ HYDRA-UMC-UPDATERと同じビジュアル言語（同じダークパレット、
   ラップするだけなので（Unix専用で、Python 3.13で完全に削除されました）、
   `passlib` はこのツールが動作するあらゆるプラットフォーム（Windowsを
   含む）で `chpasswd -e` が期待するのとバイト単位で同一の実際の
-  `$6$...` 形式を生成します。
+  `$6$...` 形式を生成します。ハッシュは glibc の既定値である 2000 年当時の 5000 ラウンドではなく 500000 ラウンドを使うため、イメージのコピーや `/etc/shadow` を攻撃するコストがはるかに高くなります。デバイス自身が好む yescrypt（`$y$`）は、Windows 上の Python からは移植可能な形で生成できません。
 
 ## 📂 ディレクトリ構成
 
@@ -130,7 +130,7 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── firstboot_config.py  # 純粋なfirstrun.sh/cmdline.txtジェネレータ - ファイルシステムへのアクセスなし、復旧手順の保護付き
 │   ├── profile_manifest.py  # 凍結されたプロファイルバージョンマニフェスト：凍結/比較/選択的更新、試用中に「最新版」へ黙って差し替わることはない
 │   ├── image_builder.py     # 実際のダウンロード/ループマウント/chrootインストールのパイプライン、Linux/rootに限定
-│   ├── i18n.py               # 実際の完全なGUI翻訳（7言語）
+│   ├── i18n.py               # 実際の完全なGUI翻訳（8言語）
 │   ├── qt_gui.py             # 上記の実際のモジュール（CLIと同じもの）の上に構築されたQt Quickブリッジ
 │   ├── qml/Main.qml          # テーマ化されたデスクトップシェル：エコシステム状態 / イメージ作成 / 初回起動設定
 │   └── main.py                # ディスパッチ：デフォルトはGUI、--cliでstatus/config/build-image

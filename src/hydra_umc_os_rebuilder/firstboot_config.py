@@ -124,6 +124,16 @@ def _validate(config: FirstBootConfig) -> None:
         )
 
 
+# 5000 rounds is the glibc default from the year 2000 - cheap for anyone who gets
+# hold of the hash (a copy of the image, /etc/shadow). 500000 is within the range
+# glibc's crypt() accepts (1000..999999999), costs a fraction of a second to check
+# a login on the CM5, and leaves the "$6$" format `chpasswd -e` expects. The
+# device's own preferred hash is yescrypt ("$y$"), but nothing portable produces
+# it from Python on Windows, so a stronger SHA-512-crypt is what this tool can
+# write on every platform it runs on.
+SHA512_CRYPT_ROUNDS = 500_000
+
+
 def hash_password(plaintext: str) -> str:
     """Real SHA-512-crypt hash (the `$6$...` format `chpasswd -e` expects),
     the same algorithm glibc's own `crypt()` uses on the real device - never
@@ -139,7 +149,7 @@ def hash_password(plaintext: str) -> str:
         raise FirstBootConfigError(
             "password hashing needs the 'passlib' package - install this project with its default dependencies (pip install -e .)"
         ) from exc
-    return sha512_crypt.using(rounds=5000).hash(plaintext)
+    return sha512_crypt.using(rounds=SHA512_CRYPT_ROUNDS).hash(plaintext)
 
 
 def _sh_quote(value: str) -> str:

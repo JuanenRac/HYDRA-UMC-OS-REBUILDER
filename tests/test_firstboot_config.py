@@ -14,6 +14,7 @@ from hydra_umc_os_rebuilder.firstboot_config import (
     build_firstrun_script,
     cmdline_run_directive,
     describe_recovery_procedure,
+    SHA512_CRYPT_ROUNDS,
     hash_password,
 )
 
@@ -139,6 +140,13 @@ def test_hash_password_produces_a_real_verifiable_sha512_crypt_hash() -> None:
     assert hashed.startswith("$6$")
     assert passlib_hash.sha512_crypt.verify("correct horse battery staple", hashed)
     assert not passlib_hash.sha512_crypt.verify("wrong password", hashed)
+
+
+def test_hash_password_uses_far_more_than_the_year_2000_default_rounds() -> None:
+    pytest.importorskip("passlib.hash")
+    hashed = hash_password("correct horse battery staple")
+    assert hashed.startswith(f"$6$rounds={SHA512_CRYPT_ROUNDS}$")
+    assert SHA512_CRYPT_ROUNDS >= 100_000
 
 
 # --- recovery-procedure guard --------------------------------------

@@ -4,7 +4,7 @@
 
 # 🏗️ HYDRA-UMC-OS-REBUILDER
 
-<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | 🇫🇷 <b>Français</b> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a></p>
+<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | 🇫🇷 <b>Français</b> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 📀 Construire une Image CM5 Prête à Graver et Totalement à Jour
 
@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows et Linux">
 </p>
 
-> **Statut : v0.2.7, squelette.** La CLI, la découverte de l'écosystème, le
+> **Statut : v0.2.8, squelette.** La CLI, la découverte de l'écosystème, le
 > générateur de configuration de premier démarrage et l'interface
 > graphique sont réels et testés. La construction d'image réelle de bout
 > en bout (téléchargement → montage loop → installation en chroot →
@@ -24,7 +24,7 @@
 > [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) pour la limite exacte de
 > plateforme et pourquoi elle existe.
 
-**Vérification d'honnêteté - ce qui fonctionne réellement aujourd'hui :** la CLI (`main.py`), la découverte dynamique de l'écosystème qui réutilise le client GitHub de `hydra_umc_updater` plutôt que d'en dupliquer un second (`ecosystem_plan.py`), le générateur pur de `firstrun.sh`/`cmdline.txt` sans accès au système de fichiers et avec sa propre protection contre le verrouillage de l'opérateur (`firstboot_config.py`), les manifestes de profil de version figés - figer/comparer/mettre à jour sélectivement une combinaison de composants déjà testée plutôt que de toujours reconstruire depuis la dernière version disponible (`profile_manifest.py`), les traductions de l'interface en 7 langues (`i18n.py`) et l'interface de bureau Qt Quick (`qt_gui.py`, `qml/Main.qml`) sont réels et testés (130 tests, `pytest`). Le pipeline de `image_builder.py` (téléchargement/vérification de somme de contrôle/montage loop/installation en chroot/démontage), son hachage de contenu par projet de ce qui a réellement atterri sur le disque, et son analyse avant promotion à la recherche d'un mot de passe Wi-Fi divulgué/une clé SSH privée/un historique de shell/un fichier `.env` sont du code réel, verrouillé derrière `check_build_platform()` - ils ne s'exécutent que sur un véritable hôte Linux avec les droits root et `losetup`/`chroot` sur le `PATH`, et n'ont pas été exécutés de bout en bout contre une écriture réelle de carte SD/eMMC d'une CM5 dans cet environnement ; sous Windows ou avec un utilisateur Linux non root, `build-image` s'arrête immédiatement avec `BUILD_BLOCKED reason=...` plutôt que de simuler un succès. `status`/`config` ont bien été testés en conditions réelles contre la découverte GitHub en direct. Voir `CHANGELOG.md` pour ce qui a déjà été livré exactement, et la feuille de route (ROADMAP) ci-dessous pour ce qui reste ouvert.
+**Vérification d'honnêteté - ce qui fonctionne réellement aujourd'hui :** la CLI (`main.py`), la découverte dynamique de l'écosystème qui réutilise le client GitHub de `hydra_umc_updater` plutôt que d'en dupliquer un second (`ecosystem_plan.py`), le générateur pur de `firstrun.sh`/`cmdline.txt` sans accès au système de fichiers et avec sa propre protection contre le verrouillage de l'opérateur (`firstboot_config.py`), les manifestes de profil de version figés - figer/comparer/mettre à jour sélectivement une combinaison de composants déjà testée plutôt que de toujours reconstruire depuis la dernière version disponible (`profile_manifest.py`), les traductions de l'interface en 8 langues (`i18n.py`) et l'interface de bureau Qt Quick (`qt_gui.py`, `qml/Main.qml`) sont réels et testés (132 tests, `pytest`). Le pipeline de `image_builder.py` (téléchargement/vérification de somme de contrôle/montage loop/installation en chroot/démontage), son hachage de contenu par projet de ce qui a réellement atterri sur le disque, et son analyse avant promotion à la recherche d'un mot de passe Wi-Fi divulgué/une clé SSH privée/un historique de shell/un fichier `.env` sont du code réel, verrouillé derrière `check_build_platform()` - ils ne s'exécutent que sur un véritable hôte Linux avec les droits root et `losetup`/`chroot` sur le `PATH`, et n'ont pas été exécutés de bout en bout contre une écriture réelle de carte SD/eMMC d'une CM5 dans cet environnement ; sous Windows ou avec un utilisateur Linux non root, `build-image` s'arrête immédiatement avec `BUILD_BLOCKED reason=...` plutôt que de simuler un succès. `status`/`config` ont bien été testés en conditions réelles contre la découverte GitHub en direct. Voir `CHANGELOG.md` pour ce qui a déjà été livré exactement, et la feuille de route (ROADMAP) ci-dessous pour ce qui reste ouvert.
 
 ---
 
@@ -125,7 +125,7 @@ Configuration du Premier Démarrage.
   lui-même (Unix uniquement, et purement supprimé dans Python 3.13) -
   `passlib` produit le même format réel `$6$...` octet pour octet
   qu'attend `chpasswd -e`, sur toute plateforme où tourne cet outil, y
-  compris Windows.
+  compris Windows. Le hachage utilise 500000 tours, et non les 5000 par défaut de glibc, qui datent de l'an 2000, si bien qu'attaquer une copie de l'image ou de `/etc/shadow` coûte beaucoup plus cher ; le yescrypt (`$y$`) que préfère l'appareil lui-même ne peut pas être produit de façon portable depuis Python sous Windows.
 
 ## 📂 STRUCTURE DES RÉPERTOIRES
 
@@ -136,7 +136,7 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── firstboot_config.py  # Générateur pur firstrun.sh/cmdline.txt - aucun accès au système de fichiers ; protection de récupération
 │   ├── profile_manifest.py  # Manifestes de profil de version figés : figer/comparer/mettre à jour sélectivement, jamais "la dernière version" en cours d'essai
 │   ├── image_builder.py     # Pipeline réel téléchargement/montage loop/installation chroot, limité à Linux/root
-│   ├── i18n.py               # Traductions réelles et complètes de la GUI (7 langues)
+│   ├── i18n.py               # Traductions réelles et complètes de la GUI (8 langues)
 │   ├── qt_gui.py             # Pont Qt Quick sur les modules réels ci-dessus, les mêmes qu'utilise la CLI
 │   ├── qml/Main.qml          # Interface de bureau thématique : État de l'Écosystème / Créer l'Image / Configuration du Premier Démarrage
 │   └── main.py                # Répartition : GUI par défaut, --cli pour status/config/build-image

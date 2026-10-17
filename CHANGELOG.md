@@ -25,6 +25,12 @@ a change is actually worth summarizing for a human.
 
 ---
 
+## [0.2.8] - Stronger first-boot password hash; Portuguese interface
+
+- **Stronger password hash:** the first-boot user password is hashed with SHA-512-crypt at 500000 rounds (`SHA512_CRYPT_ROUNDS`) instead of the glibc default of 5000 from the year 2000, so a copy of the image or of `/etc/shadow` costs far more to attack. The output is still the `$6$...` format `chpasswd -e` expects; a test checks the rounds in the hash. The device's own preferred yescrypt (`$y$`) cannot be produced portably from Python on Windows.
+- **Portuguese interface:** `pt` joins the other seven languages in `i18n.py` (86 keys, the same placeholders as English), the language menu offers `Português`, and a README_por.md joins the other seven.
+- 2 new tests (132 in all). `docs/FIRST_BOOT_CONFIG.md` states the new rounds.
+
 ## [0.2.7] - Freezing survives a failed SDK lookup
 
 - `profile-freeze` no longer fails when GitHub cannot answer the SDK commit

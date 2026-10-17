@@ -42,8 +42,8 @@ that itself.
 ## Password hashing
 
 `firstboot_config.hash_password()` uses
-[`passlib`](https://passlib.readthedocs.io/)'s `sha512_crypt` (rounds=5000,
-glibc's own default) to produce the exact `$6$...` format `chpasswd -e`
+[`passlib`](https://passlib.readthedocs.io/)'s `sha512_crypt` (rounds=500000,
+far above glibc's own default of 5000 from the year 2000) to produce the exact `$6$...` format `chpasswd -e`
 expects. This is deliberately **not** Python's stdlib `crypt` module:
 `crypt` only ever wraps the *host's own* `libc` call, so it is Unix-only
 (this tool also runs on Windows) and was removed outright in Python 3.13.
