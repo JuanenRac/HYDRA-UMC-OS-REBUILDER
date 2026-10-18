@@ -9,13 +9,13 @@
 ### 📀 Ein flashbereites, vollständig aktuelles CM5-Image erstellen
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licencia-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/Licencia-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="PySide6 Qt Quick Desktop-GUI">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows und Linux">
 </p>
 
-> **Status: v0.3.0, funktional.** Die CLI, die Ökosystem-Erkennung, der
+> **Status: v0.3.1, funktional.** Die CLI, die Ökosystem-Erkennung, der
 > Ersteinrichtungs-Generator und die GUI sind real und getestet. Der
 > echte End-to-End-Image-Build (Download → Loop-Mount →
 > Chroot-Installation → Unmount) ist implementiert, läuft aber nur auf
@@ -308,4 +308,4 @@ Dieses Projekt ist Teil des HYDRA-UMC-Robotik-Ökosystems desselben Autors (Juan
 
 ## 📜 LIZENZ
 
-GPL-3.0 (Software) / CC BY-SA 4.0 (Dokumentation) - siehe [LICENSE.md](LICENSE.md).
+GPL-3.0-or-later (Software) / CC BY-SA 4.0 (Dokumentation) - siehe [LICENSE.md](LICENSE.md).

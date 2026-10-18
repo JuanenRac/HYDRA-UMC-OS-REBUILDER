@@ -2,6 +2,11 @@
 
 All notable work on **HYDRA-UMC-OS-REBUILDER** is summarized here, newest first.
 
+## [0.3.1]
+
+- Build version synchronized with `hydra-umc.project.json` and the repository-native version source.
+- The licence is written as GPL-3.0-or-later in every header and in the package metadata.
+
 ## [0.3.0] - Debian trixie is the base image
 
 - The official base image is now Raspberry Pi OS Lite 64-bit on Debian trixie (the pinned download URL and its `.sha256` sidecar check were updated); the docs and READMEs in the eight languages say trixie instead of bookworm.

@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-OS-REBUILDER - GUI translations: i18n.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 #
 # Real, complete translations for the windowed GUI's own UI chrome, in the
 # same 7 languages and the same resolution precedence (saved choice -> OS
@@ -115,7 +115,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about_author_label": "Author",
         "about_email_label": "Email",
         "about_license_label": "License",
-        "about_license": "GPL-3.0",
+        "about_license": "GPL-3.0-or-later",
         "open_github_button": "Open on GitHub",
         "about_close_button": "Close",
         "lbl_build_needs_refresh": "Refresh the Ecosystem Status tab first - Build needs a real, current project list to install.",
@@ -203,7 +203,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about_author_label": "Autor",
         "about_email_label": "Correo",
         "about_license_label": "Licencia",
-        "about_license": "GPL-3.0",
+        "about_license": "GPL-3.0-or-later",
         "open_github_button": "Abrir en GitHub",
         "about_close_button": "Cerrar",
         "lbl_build_needs_refresh": "Actualiza primero la pestaña Estado del Ecosistema - Crear Imagen necesita una lista de proyectos real y actual.",
@@ -291,7 +291,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about_author_label": "Auteur",
         "about_email_label": "E-mail",
         "about_license_label": "Licence",
-        "about_license": "GPL-3.0",
+        "about_license": "GPL-3.0-or-later",
         "open_github_button": "Ouvrir sur GitHub",
         "about_close_button": "Fermer",
         "lbl_build_needs_refresh": "Actualisez d'abord l'onglet État de l'écosystème - Créer l'image a besoin d'une liste de projets réelle et à jour.",
@@ -379,7 +379,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about_author_label": "Autore",
         "about_email_label": "Email",
         "about_license_label": "Licenza",
-        "about_license": "GPL-3.0",
+        "about_license": "GPL-3.0-or-later",
         "open_github_button": "Apri su GitHub",
         "about_close_button": "Chiudi",
         "lbl_build_needs_refresh": "Aggiorna prima la scheda Stato dell'Ecosistema - Crea Immagine richiede un elenco progetti reale e aggiornato.",
@@ -467,7 +467,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about_author_label": "Autor",
         "about_email_label": "E-Mail",
         "about_license_label": "Lizenz",
-        "about_license": "GPL-3.0",
+        "about_license": "GPL-3.0-or-later",
         "open_github_button": "Auf GitHub öffnen",
         "about_close_button": "Schließen",
         "lbl_build_needs_refresh": "Zuerst den Tab Ökosystem-Status aktualisieren - Image erstellen braucht eine echte, aktuelle Projektliste.",
@@ -555,7 +555,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about_author_label": "作者",
         "about_email_label": "邮箱",
         "about_license_label": "许可证",
-        "about_license": "GPL-3.0",
+        "about_license": "GPL-3.0-or-later",
         "open_github_button": "在 GitHub 上打开",
         "about_close_button": "关闭",
         "lbl_build_needs_refresh": "请先刷新“生态系统状态”标签页 - 构建镜像需要真实、最新的项目列表。",
@@ -643,7 +643,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about_author_label": "作者",
         "about_email_label": "メール",
         "about_license_label": "ライセンス",
-        "about_license": "GPL-3.0",
+        "about_license": "GPL-3.0-or-later",
         "open_github_button": "GitHubで開く",
         "about_close_button": "閉じる",
         "lbl_build_needs_refresh": "先に「エコシステムの状態」タブを更新してください - イメージ作成には実際の最新プロジェクト一覧が必要です。",
@@ -731,7 +731,7 @@ TRANSLATIONS: dict[str, dict[str, str]] = {
         "about_author_label": "Autor",
         "about_email_label": "E-mail",
         "about_license_label": "Licença",
-        "about_license": "GPL-3.0",
+        "about_license": "GPL-3.0-or-later",
         "open_github_button": "Abrir no GitHub",
         "about_close_button": "Fechar",
         "lbl_build_needs_refresh": "Atualize primeiro o separador Estado do ecossistema - a construção precisa de uma lista de projetos real e atual para instalar.",

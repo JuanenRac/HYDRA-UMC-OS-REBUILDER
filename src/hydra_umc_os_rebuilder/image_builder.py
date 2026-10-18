@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-OS-REBUILDER - Image build pipeline: image_builder.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 #
 # Builds a ready-to-flash Raspberry Pi OS CM5 image: download the official
 # base image, loop-mount its two real partitions, install/update every

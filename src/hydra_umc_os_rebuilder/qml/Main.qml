@@ -1,7 +1,7 @@
 // =============================================================================
 // HYDRA-UMC-OS-REBUILDER - Qt Quick visual desktop shell: Main.qml
 // Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-// GPL-3.0 - see LICENSE
+// GPL-3.0-or-later - see LICENSE
 // =============================================================================
 // Same real colors/typography AND the same styled component set
 // (GameButton/GameCombo/GameCheck/GameField/MetricCard/AboutInfoRow, the

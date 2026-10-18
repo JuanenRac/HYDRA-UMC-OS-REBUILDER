@@ -9,13 +9,13 @@
 ### 📀 Build a Ready-to-Flash, Fully Current CM5 Image
 
 <p align="center">
-  <img src="https://img.shields.io/badge/License-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="PySide6 Qt Quick desktop GUI">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows and Linux">
 </p>
 
-> **Status: v0.3.0, functional.** The CLI, the ecosystem discovery, the
+> **Status: v0.3.1, functional.** The CLI, the ecosystem discovery, the
 > first-boot config generator and the GUI shell are real and tested. The
 > real end-to-end image build (download → loop-mount → chroot-install →
 > unmount) is implemented but only runs on a real Linux host with root -
@@ -345,4 +345,4 @@ This project is part of the HYDRA-UMC robotics ecosystem by the same author (Jua
 
 ## 📜 LICENSE
 
-GPL-3.0 (software) / CC BY-SA 4.0 (documentation) - see [LICENSE.md](LICENSE.md).
+GPL-3.0-or-later (software) / CC BY-SA 4.0 (documentation) - see [LICENSE.md](LICENSE.md).

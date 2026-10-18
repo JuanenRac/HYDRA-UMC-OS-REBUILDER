@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-OS-REBUILDER - package init
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 # =============================================================================
 # Real bug found and fixed here: this used to be a hardcoded literal string,
 # a second copy of pyproject.toml's own real version field with nothing

@@ -9,13 +9,13 @@
 ### 📀 書き込み可能な、完全に最新のCM5イメージを構築する
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licencia-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/Licencia-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="PySide6 Qt Quick デスクトップGUI">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="WindowsとLinux">
 </p>
 
-> **ステータス: v0.3.0、機能段階。** CLI、エコシステム
+> **ステータス: v0.3.1、機能段階。** CLI、エコシステム
 > 検出、初回起動設定ジェネレータ、GUIはいずれも実際に動作しテスト済み
 > です。実際のエンドツーエンドのイメージビルド（ダウンロード → ループ
 > マウント → chrootインストール → アンマウント）は実装済みですが、root
@@ -302,4 +302,4 @@ Windowsの場合：`build.bat` を実行後、`run.bat`（GUI）/
 
 ## 📜 ライセンス
 
-GPL-3.0（ソフトウェア）/ CC BY-SA 4.0（ドキュメント） - 詳細は [LICENSE.md](LICENSE.md) を参照してください。
+GPL-3.0-or-later（ソフトウェア）/ CC BY-SA 4.0（ドキュメント） - 詳細は [LICENSE.md](LICENSE.md) を参照してください。

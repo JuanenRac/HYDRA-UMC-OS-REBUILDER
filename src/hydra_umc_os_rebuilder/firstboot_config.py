@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-OS-REBUILDER - First-boot provisioning: firstboot_config.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 #
 # Reproduces the real mechanism Raspberry Pi Imager itself uses for its own
 # "OS Customisation" screen on a Raspberry Pi OS (Trixie-and-later) image:

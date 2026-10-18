@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-OS-REBUILDER - tests/test_pipeline_guards.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 # =============================================================================
 """Guards around the image pipeline that do not need a loop device: what runs
 before the first mount, what a subprocess may read, what a profile file may

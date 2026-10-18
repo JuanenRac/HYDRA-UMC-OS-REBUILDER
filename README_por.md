@@ -9,13 +9,13 @@
 ### 📀 Construa uma imagem da CM5 pronta a gravar e totalmente atual
 
 <p align="center">
-  <img src="https://img.shields.io/badge/License-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="PySide6 Qt Quick desktop GUI">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows and Linux">
 </p>
 
-> **Estado: v0.3.0, funcional.** A CLI, a descoberta do ecossistema, o gerador
+> **Estado: v0.3.1, funcional.** A CLI, a descoberta do ecossistema, o gerador
 > de configuração de primeiro arranque e o shell da GUI são reais e testados.
 > A construção real de imagem de ponta a ponta (descarregar → montar em loop
 > → instalar em chroot → desmontar) está implementada, mas só corre num
@@ -358,5 +358,5 @@ Este projeto faz parte do ecossistema de robótica HYDRA-UMC do mesmo autor (Jua
 
 ## 📜 LICENÇA
 
-GPL-3.0 (software) / CC BY-SA 4.0 (documentação) - veja [LICENSE.md](LICENSE.md).
+GPL-3.0-or-later (software) / CC BY-SA 4.0 (documentação) - veja [LICENSE.md](LICENSE.md).
 

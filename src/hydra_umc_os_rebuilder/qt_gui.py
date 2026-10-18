@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-OS-REBUILDER - Qt Quick / QML GUI bridge: qt_gui.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 #
 # QML calls this bridge; the bridge calls the same ecosystem_plan.py/
 # firstboot_config.py/image_builder.py the CLI uses - no separate GUI-only

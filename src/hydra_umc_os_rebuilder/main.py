@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-OS-REBUILDER - CLI entry point: main.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 #
 # No arguments launches the windowed GUI (qt_gui.py, PySide6/QML) - the
 # default way this tool runs, matching HYDRA-UMC-UPDATER's own run.bat/.sh

@@ -1,7 +1,7 @@
 ' =============================================================================
 ' HYDRA-UMC-OS-REBUILDER - Silent Qt Quick desktop launcher: run-gui.vbs
 ' Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-' GPL-3.0 - see LICENSE
+' GPL-3.0-or-later - see LICENSE
 ' =============================================================================
 '
 ' This launcher is intentionally separate from run.bat: Windows starts a

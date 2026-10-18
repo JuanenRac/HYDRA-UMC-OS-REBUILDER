@@ -9,13 +9,13 @@
 ### 📀 构建一份即刻可烧录、完全最新的 CM5 镜像
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licencia-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/Licencia-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Python">
   <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="PySide6 Qt Quick 桌面界面">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows 与 Linux">
 </p>
 
-> **状态：v0.3.0，功能阶段。** CLI、生态系统发现、首次启动配置生成器和
+> **状态：v0.3.1，功能阶段。** CLI、生态系统发现、首次启动配置生成器和
 > 图形界面都是真实并已测试的功能。真正的端到端镜像构建流程（下载 → 环回
 > 挂载 → chroot 安装 → 卸载）已实现，但只能在具备 root 权限的真实 Linux
 > 主机上运行 - 具体的平台边界及其存在的原因见
@@ -280,4 +280,4 @@ chmod +x build.sh   # 仅需一次
 
 ## 📜 许可证
 
-GPL-3.0（软件）/ CC BY-SA 4.0（文档）- 详见 [LICENSE.md](LICENSE.md)。
+GPL-3.0-or-later（软件）/ CC BY-SA 4.0（文档）- 详见 [LICENSE.md](LICENSE.md)。

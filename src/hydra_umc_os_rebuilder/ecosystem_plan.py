@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-OS-REBUILDER - Ecosystem freshness plan: ecosystem_plan.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 #
 # Answers "what is the most current real version of every ecosystem project
 # that belongs on the CM5, right now" - the input a real image build needs to
