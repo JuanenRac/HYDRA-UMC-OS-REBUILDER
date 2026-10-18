@@ -249,7 +249,7 @@ def test_install_one_project_clones_and_checks_out_the_real_pinned_sha_when_the_
 
     assert real_version == "0.4.8"
     assert calls[0] == ["git", "clone", "https://github.com/JuanenRac/HYDRA-UMC-SERVER.git", str(target)]
-    assert calls[1] == ["git", "-C", str(target), "checkout", "c" * 40]
+    assert calls[1] == ["git", "-C", str(target), "checkout", "--detach", "c" * 40, "--"]
     assert "--depth" not in calls[0], "a shallow clone cannot check out an arbitrary historical commit"
 
 
@@ -615,6 +615,7 @@ def test_build_image_stopping_mid_install_still_cleans_up_and_never_promotes(
     fixture_server: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(image_builder_module, "check_build_platform", lambda: PlatformCheck(True))
+    monkeypatch.setattr(image_builder_module, "_wait_for_partitions", lambda *_a, **_k: None)
 
     succeeding_target = tmp_path / "work" / "mnt" / "rootfs" / "opt" / "hydra-umc" / "hydra-umc-server"
     fake_run, run_calls = _install_pipeline_fake_run(succeeding_target)
@@ -679,6 +680,7 @@ def test_build_image_stopping_on_a_real_subprocess_failure_also_cleans_up_and_ne
     import subprocess
 
     monkeypatch.setattr(image_builder_module, "check_build_platform", lambda: PlatformCheck(True))
+    monkeypatch.setattr(image_builder_module, "_wait_for_partitions", lambda *_a, **_k: None)
 
     subprocess_calls: list[list[str]] = []
     monkeypatch.setattr(image_builder_module.subprocess, "run", _fake_subprocess_run(subprocess_calls))
@@ -768,6 +770,7 @@ def test_build_image_stopping_on_a_real_per_submodule_timeout_also_cleans_up_and
     import subprocess
 
     monkeypatch.setattr(image_builder_module, "check_build_platform", lambda: PlatformCheck(True))
+    monkeypatch.setattr(image_builder_module, "_wait_for_partitions", lambda *_a, **_k: None)
 
     subprocess_calls: list[list[str]] = []
     monkeypatch.setattr(image_builder_module.subprocess, "run", _fake_subprocess_run(subprocess_calls))

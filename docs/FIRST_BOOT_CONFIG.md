@@ -23,7 +23,10 @@ Customisation" dialog on a Raspberry Pi OS (Bookworm and later) image:
    image's own pre-existing first user (uid 1000) is renamed and given a
    real `SHA-512-crypt` password hash (`chpasswd -e`, or `userconf-pi`'s own
    helper when present) - the plaintext password this tool asks for is
-   never written anywhere; only its hash is.
+   never written anywhere; only its hash is. The Wi-Fi passphrase, on the
+   other hand, is written in clear in the first-boot script on the boot
+   partition of the image until the device starts for the first time: treat an
+   image built with Wi-Fi settings as private.
 5. The script deletes itself and cleans `cmdline.txt` back up before
    the real boot continues, so a normal reboot afterward never re-runs it.
 

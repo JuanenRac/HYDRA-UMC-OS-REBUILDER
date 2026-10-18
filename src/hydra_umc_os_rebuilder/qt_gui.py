@@ -14,6 +14,7 @@ from __future__ import annotations
 import logging
 import re
 import sys
+import shlex
 import threading
 import time
 import traceback
@@ -314,8 +315,9 @@ class RebuilderBridge(QObject):
         other key is read by whichever path needs it, ignored by the
         other. Reuses whatever ecosystem plan the Status tab already
         discovered (a fresh refresh() first is what populates it) rather
-        than re-fetching, so Build always installs the exact same project
-        set the user already reviewed."""
+        than re-fetching, so a LOCAL build installs the exact same project
+        set the user already reviewed. A remote build discovers the plan again
+        on the remote host."""
         if self._buildBusy:
             return
         if not self._projects:
@@ -623,7 +625,10 @@ class RebuilderBridge(QObject):
                 if client is not None:
                     if remote_tmp:
                         try:
-                            client.exec_command(f"rm -rf {remote_tmp}")
+                            # the build ran with sudo, so its files belong to root: remove them with sudo,
+                            # quote the path, and wait for the command to finish
+                            _stdin, _stdout, _stderr = client.exec_command(f"sudo -n rm -rf -- {shlex.quote(remote_tmp)}")
+                            _stdout.channel.recv_exit_status()
                         except Exception:  # pragma: no cover - best-effort cleanup, a failed rm here never hides the real build result already emitted above
                             pass
                     client.close()

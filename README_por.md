@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows and Linux">
 </p>
 
-> **Estado: v0.2.8, funcional.** A CLI, a descoberta do ecossistema, o gerador
+> **Estado: v0.2.9, funcional.** A CLI, a descoberta do ecossistema, o gerador
 > de configuração de primeiro arranque e o shell da GUI são reais e testados.
 > A construção real de imagem de ponta a ponta (descarregar → montar em loop
 > → instalar em chroot → desmontar) está implementada, mas só corre num

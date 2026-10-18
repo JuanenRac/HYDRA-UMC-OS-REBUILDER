@@ -33,6 +33,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -152,6 +153,10 @@ def from_json(data: dict) -> ProfileManifest:
     entries = []
     for raw in raw_entries:
         try:
+            if not re.fullmatch(r"[0-9a-f]{40}", str(raw["commit_sha"])):
+                raise ProfileManifestError(f"{raw.get('name')}: commit_sha must be a full 40-character commit hash")
+            if not re.fullmatch(r"https://github\.com/JuanenRac/[A-Za-z0-9._-]+(?:\.git)?", str(raw["git_url"])):
+                raise ProfileManifestError(f"{raw.get('name')}: git_url must be an https://github.com/JuanenRac/ repository URL")
             entries.append(
                 ProfileManifestEntry(
                     name=raw["name"],
@@ -313,10 +318,12 @@ def refreeze_selected(frozen: ProfileManifest, live: EcosystemPlan, names: set[s
             live_entry = live_by_name.get(frozen_entry.name)
             if live_entry is None or not live_entry.commit_sha:
                 raise ProfileManifestError(f"{frozen_entry.name}: not found in the live ecosystem plan (or has no resolved commit SHA) - cannot update it")
+            # a refreshed project keeps the resources a person curated for it in this profile
             updated.append(
                 ProfileManifestEntry(
                     name=live_entry.name, version=live_entry.version, role=live_entry.role,
                     stack=live_entry.stack, git_url=live_entry.git_url, commit_sha=live_entry.commit_sha,
+                    required_resources=frozen_entry.required_resources,
                 )
             )
         else:

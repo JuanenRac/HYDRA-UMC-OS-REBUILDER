@@ -214,7 +214,7 @@ def test_sdk_commit_survives_freeze_json_round_trip_and_plan_conversion() -> Non
     from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlan, EcosystemPlanEntry
     from hydra_umc_os_rebuilder.profile_manifest import freeze_profile, from_json, manifest_to_ecosystem_plan, to_json
 
-    entry = EcosystemPlanEntry(name="P", version="0.0.1", role="r", stack="python", git_url="u", commit_sha="c1")
+    entry = EcosystemPlanEntry(name="P", version="0.0.1", role="r", stack="python", git_url="https://github.com/JuanenRac/P.git", commit_sha="c" * 40)
     plan = EcosystemPlan(entries=(entry,), discovery_errors=(), sdk_commit_sha="sdk1")
     manifest = freeze_profile(plan, profile_name="x")
     assert manifest.sdk_commit_sha == "sdk1"

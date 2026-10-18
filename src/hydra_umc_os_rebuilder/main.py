@@ -109,7 +109,7 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
     if args.wifi_ssid:
         wifi = WifiConfig(ssid=args.wifi_ssid, psk=args.wifi_password or "", country=args.wifi_country, hidden=args.wifi_hidden)
     firstboot = None
-    if any([args.hostname, args.username, args.password, wifi, args.timezone, args.keyboard, args.locale, args.no_ssh]):
+    if any([args.hostname, args.username, args.password, wifi, args.timezone, args.keyboard, args.locale, args.no_ssh, args.ssh_key]):
         firstboot = FirstBootConfig(
             hostname=args.hostname,
             username=args.username,
@@ -211,7 +211,7 @@ def _cmd_profile_build(args: argparse.Namespace) -> int:
     if args.wifi_ssid:
         wifi = WifiConfig(ssid=args.wifi_ssid, psk=args.wifi_password or "", country=args.wifi_country, hidden=args.wifi_hidden)
     firstboot = None
-    if any([args.hostname, args.username, args.password, wifi, args.timezone, args.keyboard, args.locale, args.no_ssh]):
+    if any([args.hostname, args.username, args.password, wifi, args.timezone, args.keyboard, args.locale, args.no_ssh, args.ssh_key]):
         firstboot = FirstBootConfig(
             hostname=args.hostname,
             username=args.username,

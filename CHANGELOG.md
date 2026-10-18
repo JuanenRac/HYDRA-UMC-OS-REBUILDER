@@ -8,10 +8,9 @@ All notable work on **HYDRA-UMC-OS-REBUILDER** is summarized here, newest first.
 
 ## Versioning scheme
 
-`pyproject.toml`'s `version` field bumps via
-`bump_manifest_version.py` (bare invocation - this repo is a "single owner"
-of its own version, no separate `--sync` step), run as the first step of
-`build.bat`/`build.sh` before the real build itself, matching every other
+`pyproject.toml`'s `version` field is bumped by `build.bat`/`build.sh` as
+their first step (`bump_version.py`, then `bump_manifest_version.py --sync`
+for the manifest), before the real build itself, matching every other
 Python tool in this ecosystem. Same base-10 "odometer" rule rather than
 semantic-versioning judgment calls:
 
@@ -24,6 +23,15 @@ verification runs with nothing changelog-worthy); it's updated by hand when
 a change is actually worth summarizing for a human.
 
 ---
+
+## [0.2.9] - The pipeline stops waiting for a person, checks its host and its input first
+
+- **No prompts:** every step of the pipeline ran with the terminal's stdin, and a project's `build.sh` ends with a "press Enter" prompt when stdin is a terminal, so a build started from a shell held each project until its 30-minute timeout. Subprocesses now get no stdin, and the project build runs with `HYDRA_UMC_CI=1`.
+- **Checks before the work:** a host that is not aarch64 and has no `qemu-user-static` binfmt registration is refused up front (the first command in the image used to fail with "Exec format error" after the download), the first-boot settings are validated before anything is downloaded (an invalid hostname used to surface after the whole install), and a failed download, decompression or loop device is a failed build with a message instead of an exception, with the half-downloaded file removed. The pipeline also waits (bounded) for the partition devices that udev creates asynchronously.
+- **Profiles:** updating one project in a frozen profile no longer erases the required resources curated for it; a profile file whose commit is not a full 40-character hash or whose repository URL is not under `https://github.com/JuanenRac/` is refused (a value starting with `-` would have been read by git, run as root, as an option), and the checkout is `git checkout --detach <commit> --`.
+- **Remote build:** the temporary directory is removed with `sudo`, quoted, and the command is waited for (the root-owned files of a build used to stay for hours).
+- **CLI:** `build-image --ssh-key` alone is a first-boot setting now instead of being ignored.
+- **Docs:** the changelog describes how the version is really bumped and the test count is current (139 tests).
 
 ## [0.2.8] - Stronger first-boot password hash; Portuguese interface
 

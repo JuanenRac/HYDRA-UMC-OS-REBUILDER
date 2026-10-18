@@ -10,12 +10,13 @@
 # go/pip build steps here - the same "delegate to each project's own build
 # script" principle HYDRA-UMC-UPDATER's own install.py already documents),
 # write the first-boot config (firstboot_config.py) onto the boot partition,
-# unmount, and (optionally) compress.
+# unmount and promote the raw image (it is not compressed).
 #
 # HONEST PLATFORM BOUNDARY: loop-mounting a raw .img and chrooting into an
 # aarch64 rootfs needs a real Linux host with root (losetup/mount/chroot are
 # not meaningfully emulable on Windows, and qemu-user-static's binfmt
-# registration for a foreign-arch chroot needs the same). This module always
+# registration for a foreign-arch chroot needs the same; on a host that is not
+# aarch64 the check also requires that registration to exist). This module always
 # checks that boundary FIRST and returns a real, honest BuildResult
 # explaining exactly what's missing rather than silently no-op'ing or
 # pretending to have built something - the same discipline this ecosystem's
@@ -37,7 +38,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .ecosystem_plan import EcosystemPlan
-from .firstboot_config import BootPartitionPatch, FirstBootConfig, build_boot_partition_patch
+from .firstboot_config import BootPartitionPatch, FirstBootConfig, FirstBootConfigError, build_boot_partition_patch
 
 
 class ImageBuildError(RuntimeError):
@@ -100,6 +101,15 @@ def check_build_platform() -> PlatformCheck:
     for tool in ("losetup", "mount", "umount", "chroot", "xz"):
         if shutil.which(tool) is None:
             return PlatformCheck(False, f"required tool not found on PATH: {tool}")
+    # The image is aarch64: on any other CPU the chroot only works through user-mode emulation
+    # registered with the kernel (binfmt_misc), and without it the first command inside the
+    # image fails with "Exec format error" after the whole image was downloaded and mounted.
+    if platform.machine().lower() not in ("aarch64", "arm64") and not Path("/proc/sys/fs/binfmt_misc/qemu-aarch64").exists():
+        return PlatformCheck(
+            False,
+            f"this host is {platform.machine()} and cannot run an aarch64 image: install qemu-user-static and binfmt-support "
+            "(so /proc/sys/fs/binfmt_misc/qemu-aarch64 exists), or build on an aarch64 host.",
+        )
     return PlatformCheck(True)
 
 
@@ -281,7 +291,29 @@ def fetch_base_image(source: BaseImageSource, dest_dir: Path, *, chunk_size: int
 DEFAULT_PROJECT_TIMEOUT_SECONDS: float = 1800.0
 
 
+def _wait_for_partitions(loop_device: str, *, timeout_seconds: float = 15.0, sleep=None, exists=None) -> None:
+    """losetup --partscan returns before udev has created /dev/loopNp1 and p2; mounting at once
+    fails now and then with "special device does not exist". Waits (bounded) for both nodes."""
+    import time
+
+    sleep = sleep or time.sleep
+    exists = exists or (lambda path: Path(path).exists())
+    if shutil.which("udevadm"):
+        subprocess.run(["udevadm", "settle", "--timeout=10"], check=False, stdin=subprocess.DEVNULL)
+    waited = 0.0
+    wanted = (f"{loop_device}p1", f"{loop_device}p2")
+    while not all(exists(path) for path in wanted):
+        if waited >= timeout_seconds:
+            missing = [path for path in wanted if not exists(path)]
+            raise ImageBuildError(f"the partition device(s) {', '.join(missing)} did not appear after {timeout_seconds:.0f}s")
+        sleep(0.2)
+        waited += 0.2
+
+
 def _run(*command: str, timeout: float | None = None, **kwargs) -> subprocess.CompletedProcess:
+    # No step of the pipeline may wait for a person: a project's build.sh ends with a "press Enter"
+    # prompt when its stdin is a terminal, which would hold the build until the timeout.
+    kwargs.setdefault("stdin", subprocess.DEVNULL)
     return subprocess.run(command, check=True, timeout=timeout, **kwargs)
 
 
@@ -320,38 +352,49 @@ def build_image(
         if progress is not None:
             progress(BuildProgress(phase, detail))
 
-    work_dir.mkdir(parents=True, exist_ok=True)
-    report("download", source.label)
-    image_path = fetch_base_image(source, work_dir)
-
-    report("decompress")
-    raw_image = work_dir / image_path.with_suffix("").name
-    if image_path.suffix == ".xz":
-        uncompressed_size = _xz_uncompressed_size(image_path)
-        if uncompressed_size is not None:
-            _require_free_space(work_dir, uncompressed_size, f"decompressing {image_path.name}")
-        # Real fix for a real failure this session: this used to pass -k
-        # (keep the compressed source), so a successful decompress left
-        # BOTH the .xz and the full raw .img sitting in work_dir for the
-        # rest of the build - on a host as space-constrained as the real
-        # CM5, that's the difference between the mount/install phase that
-        # follows having room to work and it not. Dropping -k means xz
-        # removes the now-redundant .xz itself once decompression
-        # succeeds (never before - a failed decompress still leaves the
-        # real source in place to retry from).
-        _run("xz", "-d", "-f", str(image_path))
-    else:
-        raw_image = image_path
-
-    mount_root = work_dir / "mnt"
-    boot_mount = mount_root / "boot"
-    rootfs_mount = mount_root / "rootfs"
-    boot_mount.mkdir(parents=True, exist_ok=True)
-    rootfs_mount.mkdir(parents=True, exist_ok=True)
-
-    report("mount")
-    loop_dev = _run("losetup", "--find", "--show", "--partscan", str(raw_image), capture_output=True, text=True).stdout.strip()
+    # Everything before the first mount runs inside this guard: a bad first-boot setting is found
+    # BEFORE an hour of downloading and installing, and a failed download, decompression or loop
+    # device is reported as a failed build instead of an exception, with no half-downloaded file left.
     try:
+        if firstboot is not None:
+            build_boot_partition_patch(firstboot)
+        work_dir.mkdir(parents=True, exist_ok=True)
+        report("download", source.label)
+        image_path = fetch_base_image(source, work_dir)
+
+        report("decompress")
+        raw_image = work_dir / image_path.with_suffix("").name
+        if image_path.suffix == ".xz":
+            uncompressed_size = _xz_uncompressed_size(image_path)
+            if uncompressed_size is not None:
+                _require_free_space(work_dir, uncompressed_size, f"decompressing {image_path.name}")
+            # Real fix for a real failure this session: this used to pass -k
+            # (keep the compressed source), so a successful decompress left
+            # BOTH the .xz and the full raw .img sitting in work_dir for the
+            # rest of the build - on a host as space-constrained as the real
+            # CM5, that's the difference between the mount/install phase that
+            # follows having room to work and it not. Dropping -k means xz
+            # removes the now-redundant .xz itself once decompression
+            # succeeds (never before - a failed decompress still leaves the
+            # real source in place to retry from).
+            _run("xz", "-d", "-f", str(image_path))
+        else:
+            raw_image = image_path
+
+        mount_root = work_dir / "mnt"
+        boot_mount = mount_root / "boot"
+        rootfs_mount = mount_root / "rootfs"
+        boot_mount.mkdir(parents=True, exist_ok=True)
+        rootfs_mount.mkdir(parents=True, exist_ok=True)
+
+        report("mount")
+        loop_dev = _run("losetup", "--find", "--show", "--partscan", str(raw_image), capture_output=True, text=True).stdout.strip()
+    except (ImageBuildError, FirstBootConfigError, subprocess.CalledProcessError, subprocess.TimeoutExpired, urllib.error.URLError, OSError) as exc:
+        for leftover in work_dir.glob("*.part"):
+            leftover.unlink(missing_ok=True)
+        return BuildResult(ok=False, error=str(exc))
+    try:
+        _wait_for_partitions(loop_dev)
         _run("mount", f"{loop_dev}p1", str(boot_mount))
         _run("mount", f"{loop_dev}p2", str(rootfs_mount))
 
@@ -651,6 +694,9 @@ def verify_installed_resources(project_root: Path, required_resources: tuple[str
     return missing
 
 
+_COMMIT_SHA_RE = re.compile(r"[0-9a-f]{40}")
+_GIT_URL_RE = re.compile(r"https://github\.com/JuanenRac/[A-Za-z0-9._-]+(?:\.git)?")
+
 _SDK_DISTRIBUTION = "hydra-umc-sdk"
 _SDK_CHECKOUT_NAME = "hydra-umc-sdk"
 _SDK_PYTHON_SRC = "clients/python/src"
@@ -712,15 +758,22 @@ def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | 
         raise ImageBuildError(
             f"{entry.name}: no real, resolved commit SHA in the plan - refusing to clone a mutable branch name into the image"
         )
+    if not _COMMIT_SHA_RE.fullmatch(entry.commit_sha):
+        raise ImageBuildError(f"{entry.name}: {entry.commit_sha!r} is not a full 40-character commit hash")
+    if not _GIT_URL_RE.fullmatch(entry.git_url):
+        raise ImageBuildError(f"{entry.name}: {entry.git_url!r} is not an https://github.com/JuanenRac/ repository URL")
     target = rootfs_mount / "opt" / "hydra-umc" / entry.name.lower()
     _run("git", "clone", entry.git_url, str(target), timeout=timeout_seconds)
-    _run("git", "-C", str(target), "checkout", entry.commit_sha, timeout=timeout_seconds)
+    _run("git", "-C", str(target), "checkout", "--detach", entry.commit_sha, "--", timeout=timeout_seconds)
     build_script = target / "build.sh"
     if not build_script.is_file():
         raise ImageBuildError(f"{entry.name}: no build.sh found - cannot install into the image")
     _ensure_sdk_importable(target, rootfs_mount, timeout_seconds=timeout_seconds, sdk_commit_sha=sdk_commit_sha)
     relative = build_script.relative_to(rootfs_mount)
-    _run("chroot", str(rootfs_mount), "/bin/bash", f"/{relative.as_posix()}", timeout=timeout_seconds)
+    _run(
+        "chroot", str(rootfs_mount), "/bin/bash", f"/{relative.as_posix()}",
+        timeout=timeout_seconds, env={**os.environ, "HYDRA_UMC_CI": "1"},
+    )
     # (P1 - closing
     # this project's own documented "real, separate future work" gap): this
     # pinned commit's own build.sh is this ecosystem's real, INCREMENTAL,
