@@ -28,6 +28,17 @@
 
 ---
 
+## 📋 En un coup d'œil
+
+| | |
+|---|---|
+| Version | `0.3.1` |
+| Maturité | Fonctionnel |
+| Tests | 132 (`pytest`) |
+| Technologie | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
+| Cible | Le PC de la personne qui l'utilise |
+| Sur matériel réel | Pas encore : aucune exécution sur du matériel réel n'est consignée pour cette version |
+
 ## 1. 🛠️ APERÇU TECHNIQUE
 
 HYDRA-UMC-OS-REBUILDER est un outil de bureau Windows/Linux - interface
