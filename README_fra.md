@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows et Linux">
 </p>
 
-> **Statut : v0.2.9, fonctionnel.** La CLI, la découverte de l'écosystème, le
+> **Statut : v0.3.0, fonctionnel.** La CLI, la découverte de l'écosystème, le
 > générateur de configuration de premier démarrage et l'interface
 > graphique sont réels et testés. La construction d'image réelle de bout
 > en bout (téléchargement → montage loop → installation en chroot →
@@ -56,7 +56,7 @@ Il fait trois choses réelles :
    `passlib`, Wi-Fi, fuseau horaire, disposition du clavier et SSH - le
    même mécanisme `firstrun.sh` réel que celui utilisé par l'écran « OS
    Customisation » de Raspberry Pi Imager sur une image Raspberry Pi OS
-   (Bookworm et ultérieur), de sorte que la carte SD résultante se
+   (Trixie et ultérieur), de sorte que la carte SD résultante se
    comporte exactement comme celle que Raspberry Pi Imager lui-même
    aurait produite. Voir
    [docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md).
@@ -118,7 +118,7 @@ Configuration du Premier Démarrage.
   trivialement testable sans root ni image réelle. `image_builder.py` est
   seul responsable d'écrire réellement ce contenu sur une partition boot
   réelle.
-- **Une configuration de premier démarrage qui enfermerait l'opérateur dehors est refusée, pas construite.** Désactiver SSH sans configurer de compte laisserait les propres images de base officielles de cet outil (aucun utilisateur par défaut depuis Bookworm) sans aucun moyen de connexion - refusé sauf si `acknowledge_no_remote_access=True` l'accepte explicitement. `describe_recovery_procedure()` indique la vraie procédure de récupération pour tout ce que la configuration laisse ouvert.
+- **Une configuration de premier démarrage qui enfermerait l'opérateur dehors est refusée, pas construite.** Désactiver SSH sans configurer de compte laisserait les propres images de base officielles de cet outil (aucun utilisateur par défaut depuis Trixie) sans aucun moyen de connexion - refusé sauf si `acknowledge_no_remote_access=True` l'accepte explicitement. `describe_recovery_procedure()` indique la vraie procédure de récupération pour tout ce que la configuration laisse ouvert.
 - **Un profil figé est une vraie recette persistée, jamais re-téléchargée.** `freeze_profile()`/`profile-build` de `profile_manifest.py` épinglent chaque projet sur le SHA exact du commit avec lequel il a été testé - un build ultérieur ne substitue jamais silencieusement ce que GitHub appelle actuellement « latest ». `diff_profile()` compare un profil figé à l'écosystème réel projet par projet (pas comme un simple booléen), car les numéros de version de cet écosystème sont un compteur kilométrique en base 10 sans sens sémantique et ne peuvent jamais être, à eux seuls, un signal honnête de compatibilité.
 - **Hachage de mot de passe SHA-512-crypt réel, pas le module `crypt` de
   la stdlib.** `crypt` ne fait qu'envelopper l'appel libc de *l'hôte*

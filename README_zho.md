@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows 与 Linux">
 </p>
 
-> **状态：v0.2.9，功能阶段。** CLI、生态系统发现、首次启动配置生成器和
+> **状态：v0.3.0，功能阶段。** CLI、生态系统发现、首次启动配置生成器和
 > 图形界面都是真实并已测试的功能。真正的端到端镜像构建流程（下载 → 环回
 > 挂载 → chroot 安装 → 卸载）已实现，但只能在具备 root 权限的真实 Linux
 > 主机上运行 - 具体的平台边界及其存在的原因见
@@ -45,7 +45,7 @@ HYDRA-UMC-OS-REBUILDER 是一款 Windows/Linux 桌面工具 - 默认为窗口化
    的构建步骤。
 3. **写入真实的首次启动配置。** 主机名、一个使用 `passlib` 真实哈希密码
    的新用户、Wi-Fi、时区、键盘布局和 SSH - 与 Raspberry Pi Imager 自身
-   "OS Customisation" 界面在 Raspberry Pi OS（Bookworm 及更新版本）镜像上
+   "OS Customisation" 界面在 Raspberry Pi OS（Trixie 及更新版本）镜像上
    使用的完全相同的真实 `firstrun.sh` 机制，因此最终生成的 SD 卡的行为与
    Raspberry Pi Imager 本身生成的完全一致。参见
    [docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md)。
@@ -94,7 +94,7 @@ HYDRA-UMC-UPDATER 相同的视觉语言（相同的深色调色板、字体排�
   文件内容（一个 `firstrun.sh` 字符串、一个 `cmdline.txt` 补丁字符串） -
   它自身从不触碰真实的镜像或文件系统，因此无需 root 或真实镜像即可轻松
   测试。只有 `image_builder.py` 负责真正把这些内容写入真实的 boot 分区。
-- **会把操作员锁在外面的首次启动配置会被拒绝，而不是被构建。** 在不配置任何账户的情况下禁用 SSH，会让本工具自己的官方基础镜像（Bookworm 及之后没有默认用户）完全没有登录途径 - 除非 `acknowledge_no_remote_access=True` 明确同意，否则会被拒绝。`describe_recovery_procedure()` 会说明配置所留下的部分的真实恢复途径。
+- **会把操作员锁在外面的首次启动配置会被拒绝，而不是被构建。** 在不配置任何账户的情况下禁用 SSH，会让本工具自己的官方基础镜像（Trixie 及之后没有默认用户）完全没有登录途径 - 除非 `acknowledge_no_remote_access=True` 明确同意，否则会被拒绝。`describe_recovery_procedure()` 会说明配置所留下的部分的真实恢复途径。
 - **冻结的配置是真实的、持久化的配方，绝不会重新获取。** `profile_manifest.py` 的 `freeze_profile()`/`profile-build` 把每个项目固定在测试时的确切提交 SHA 上 - 之后的构建绝不会悄悄替换为 GitHub 当前所称的“latest”。`diff_profile()` 按项目（而不是单一布尔值）把冻结的配置与实际生态系统比较，因为这个生态系统的版本号是没有语义化含义的十进制里程表，本身永远不能作为诚实的兼容性信号。
 - **真实的 SHA-512-crypt 密码哈希，而非标准库的 `crypt` 模块。** `crypt`
   只是包装了*主机自身*的 libc 调用（仅限 Unix，且已在 Python 3.13 中彻底

@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows y Linux">
 </p>
 
-> **Estado: v0.2.9, funcional.** La CLI, el descubrimiento del ecosistema,
+> **Estado: v0.3.0, funcional.** La CLI, el descubrimiento del ecosistema,
 > el generador de configuración de primer arranque y la interfaz gráfica
 > son reales y están probados. La construcción de imagen real de extremo a
 > extremo (descarga → montaje loop → instalación en chroot → desmontaje)
@@ -54,7 +54,7 @@ Hace tres cosas reales:
    nuevo con una contraseña con hash real de `passlib`, Wi-Fi, zona horaria,
    distribución de teclado y SSH - el mismo mecanismo `firstrun.sh` real que
    usa la propia pantalla "OS Customisation" de Raspberry Pi Imager en una
-   imagen de Raspberry Pi OS (Bookworm o posterior), así que la tarjeta SD
+   imagen de Raspberry Pi OS (Trixie o posterior), así que la tarjeta SD
    resultante se comporta exactamente igual que una que hubiera producido
    el propio Raspberry Pi Imager. Ver
    [docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md).
@@ -114,7 +114,7 @@ Configuración de Primer Arranque.
   testeable sin root ni una imagen real. Solo `image_builder.py` es
   responsable de escribir de verdad ese contenido en una partición boot
   real.
-- **Una configuración de primer arranque que dejaría fuera al operador se rechaza, no se construye.** Desactivar SSH sin configurar ninguna cuenta dejaría las propias imágenes base oficiales de esta herramienta (sin usuario por defecto desde Bookworm) sin ninguna vía de acceso - se rechaza salvo que `acknowledge_no_remote_access=True` lo acepte explícitamente. `describe_recovery_procedure()` indica la vía real de recuperación para lo que la configuración deja abierto.
+- **Una configuración de primer arranque que dejaría fuera al operador se rechaza, no se construye.** Desactivar SSH sin configurar ninguna cuenta dejaría las propias imágenes base oficiales de esta herramienta (sin usuario por defecto desde Trixie) sin ninguna vía de acceso - se rechaza salvo que `acknowledge_no_remote_access=True` lo acepte explícitamente. `describe_recovery_procedure()` indica la vía real de recuperación para lo que la configuración deja abierto.
 - **Un perfil congelado es una receta real y persistida, nunca se vuelve a descargar.** `freeze_profile()`/`profile-build` de `profile_manifest.py` fijan cada proyecto al SHA exacto del commit con el que se probó - una compilación posterior nunca sustituye en silencio lo que GitHub llame «latest» en ese momento. `diff_profile()` compara un perfil congelado con el ecosistema real proyecto a proyecto (no como un único booleano), porque los números de versión de este ecosistema son un cuentakilómetros en base 10 sin significado semántico y nunca pueden ser, por sí solos, una señal honesta de compatibilidad.
 - **Hash de contraseña SHA-512-crypt real, no el módulo `crypt` de la
   stdlib.** `crypt` solo envuelve la llamada propia de libc del *host*

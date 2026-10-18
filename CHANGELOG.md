@@ -2,8 +2,9 @@
 
 All notable work on **HYDRA-UMC-OS-REBUILDER** is summarized here, newest first.
 
-## Unreleased
+## [0.3.0] - Debian trixie is the base image
 
+- The official base image is now Raspberry Pi OS Lite 64-bit on Debian trixie (the pinned download URL and its `.sha256` sidecar check were updated); the docs and READMEs in the eight languages say trixie instead of bookworm.
 - The button that copies the log is a small icon (two sheets) instead of words, and turns green for a moment when it has copied.
 
 ## Versioning scheme
@@ -23,6 +24,10 @@ verification runs with nothing changelog-worthy); it's updated by hand when
 a change is actually worth summarizing for a human.
 
 ---
+
+## [0.3.0]
+
+- Build version synchronized with `hydra-umc.project.json` and the repository-native version source.
 
 ## [0.2.9] - The pipeline stops waiting for a person, checks its host and its input first
 

@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows and Linux">
 </p>
 
-> **Estado: v0.2.9, funcional.** A CLI, a descoberta do ecossistema, o gerador
+> **Estado: v0.3.0, funcional.** A CLI, a descoberta do ecossistema, o gerador
 > de configuração de primeiro arranque e o shell da GUI são reais e testados.
 > A construção real de imagem de ponta a ponta (descarregar → montar em loop
 > → instalar em chroot → desmontar) está implementada, mas só corre num
@@ -53,7 +53,7 @@ Faz três coisas reais:
    um utilizador novo com uma palavra-passe com hash real do `passlib`,
    Wi-Fi, fuso horário, disposição do teclado e SSH - exatamente o mesmo
    mecanismo `firstrun.sh` que o ecrã «OS Customisation» do próprio Raspberry
-   Pi Imager usa numa imagem Raspberry Pi OS (Bookworm+), pelo que o cartão SD
+   Pi Imager usa numa imagem Raspberry Pi OS (Trixie+), pelo que o cartão SD
    resultante se comporta exatamente como um que o próprio Raspberry Pi Imager
    teria produzido. Ver [docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md).
 4. **Verifica a sua própria saída antes de a promover.** Antes de a imagem
@@ -117,7 +117,7 @@ Estado do ecossistema, Construir imagem e Configuração de primeiro arranque.
 - **Uma configuração de primeiro arranque que deixaria o operador de fora é
   recusada, não construída.** Desativar o SSH sem configurar nenhuma conta
   deixa as imagens base oficiais desta ferramenta (sem utilizador por defeito
-  no Bookworm e posteriores) sem nenhum caminho de login - recusado a menos que
+  no Trixie e posteriores) sem nenhum caminho de login - recusado a menos que
   `acknowledge_no_remote_access=True` o aceite explicitamente.
   O `describe_recovery_procedure()` indica o caminho de recuperação real para o
   que a configuração deixar em aberto.

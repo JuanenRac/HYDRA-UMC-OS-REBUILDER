@@ -73,8 +73,8 @@ class BaseImageSource:
 # Pi ever re-published the same URL with a fixed image.
 KNOWN_BASE_IMAGES: tuple[BaseImageSource, ...] = (
     BaseImageSource(
-        label="Raspberry Pi OS Lite (64-bit), 2025-05-13",
-        url="https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2025-05-13/2025-05-13-raspios-bookworm-arm64-lite.img.xz",
+        label="Raspberry Pi OS Lite (64-bit, Debian trixie)",
+        url="https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2026-10-06/2026-10-06-raspios-trixie-arm64-lite.img.xz",
         sha256="",
     ),
 )

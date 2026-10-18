@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows und Linux">
 </p>
 
-> **Status: v0.2.9, funktional.** Die CLI, die Ökosystem-Erkennung, der
+> **Status: v0.3.0, funktional.** Die CLI, die Ökosystem-Erkennung, der
 > Ersteinrichtungs-Generator und die GUI sind real und getestet. Der
 > echte End-to-End-Image-Build (Download → Loop-Mount →
 > Chroot-Installation → Unmount) ist implementiert, läuft aber nur auf
@@ -55,7 +55,7 @@ Es tut drei echte Dinge:
    Benutzer mit einem echt mit `passlib` gehashten Passwort, WLAN,
    Zeitzone, Tastaturlayout und SSH - derselbe echte `firstrun.sh`-
    Mechanismus, den der eigene "OS Customisation"-Bildschirm von
-   Raspberry Pi Imager auf einem Raspberry-Pi-OS-Image (Bookworm und
+   Raspberry Pi Imager auf einem Raspberry-Pi-OS-Image (Trixie und
    neuer) verwendet, sodass sich die resultierende SD-Karte genau so
    verhält wie eine, die Raspberry Pi Imager selbst erzeugt hätte. Siehe
    [docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md).
@@ -116,7 +116,7 @@ Ersteinrichtung.
   Dateisystem selbst, sodass es ohne Root oder ein echtes Image trivial
   testbar bleibt. Nur `image_builder.py` ist dafür verantwortlich, diesen
   Inhalt tatsächlich auf eine echte Boot-Partition zu schreiben.
-- **Eine Firstboot-Konfiguration, die den Bediener aussperren würde, wird abgelehnt, nicht gebaut.** SSH zu deaktivieren, ohne dass ein Konto konfiguriert wird, lässt die eigenen offiziellen Basis-Images dieses Tools (kein Standardbenutzer ab Bookworm) ganz ohne Anmeldeweg - es wird abgelehnt, außer `acknowledge_no_remote_access=True` stimmt ausdrücklich zu. `describe_recovery_procedure()` nennt den echten Wiederherstellungsweg für alles, was die Konfiguration offen lässt.
+- **Eine Firstboot-Konfiguration, die den Bediener aussperren würde, wird abgelehnt, nicht gebaut.** SSH zu deaktivieren, ohne dass ein Konto konfiguriert wird, lässt die eigenen offiziellen Basis-Images dieses Tools (kein Standardbenutzer ab Trixie) ganz ohne Anmeldeweg - es wird abgelehnt, außer `acknowledge_no_remote_access=True` stimmt ausdrücklich zu. `describe_recovery_procedure()` nennt den echten Wiederherstellungsweg für alles, was die Konfiguration offen lässt.
 - **Ein eingefrorenes Profil ist ein echtes, gespeichertes Rezept, das nie neu abgerufen wird.** `freeze_profile()` und `profile-build` aus `profile_manifest.py` pinnen jedes Projekt auf den exakten Commit-SHA, mit dem es getestet wurde - ein späterer Build ersetzt nie stillschweigend, was GitHub gerade „latest“ nennt. `diff_profile()` vergleicht ein eingefrorenes Profil pro Projekt (nicht als einzelnen Wahrheitswert) mit dem laufenden Ökosystem, denn die Versionsnummern dieses Ökosystems sind ein Zehnersystem-Kilometerzähler ohne semantische Bedeutung und können für sich allein nie ein ehrliches Kompatibilitätssignal sein.
 - **Echtes SHA-512-Crypt-Passwort-Hashing, nicht das stdlib-Modul
   `crypt`.** `crypt` umschließt nur den eigenen libc-Aufruf des *Hosts*

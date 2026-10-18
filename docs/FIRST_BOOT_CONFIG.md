@@ -2,7 +2,7 @@
 
 This tool's "First-Boot Config" screen (and `--cli config`) reproduces the
 real mechanism Raspberry Pi Imager itself uses for its own "OS
-Customisation" dialog on a Raspberry Pi OS (Bookworm and later) image:
+Customisation" dialog on a Raspberry Pi OS (Trixie and later) image:
 
 1. A `firstrun.sh` shell script is written onto the image's **boot**
    partition.
@@ -36,7 +36,7 @@ An earlier, more common approach (still valid on Raspberry Pi OS Bullseye
 and older) drops a raw `wpa_supplicant.conf` plus a `userconf.txt`
 (`user:hashed-password`) onto the boot partition directly, read by an
 older `firstboot` systemd service baked into that image. This tool targets
-current (Bookworm+) Raspberry Pi OS, whose default network stack is
+current (Trixie+) Raspberry Pi OS, whose default network stack is
 NetworkManager, not `wpa_supplicant` directly - `raspi-config nonint
 do_wifi_ssid_passphrase` already knows how to configure whichever backend
 the target image actually uses, so this tool never needs to special-case
@@ -74,7 +74,7 @@ installation must never leave the operator locked out." This tool
 enforces the one shape of that it can actually detect on its own:
 disabling SSH (`--no-ssh`) while no account is being configured either is
 refused outright, because this tool's own official base images ship with
-no default user on Bookworm and later - that combination would leave the
+no default user on Trixie and later - that combination would leave the
 unit with no login path at all, remote or physical. Pass
 `--acknowledge-no-remote-access` to opt in when another way in is
 certain (the base image already has a working account, or physical

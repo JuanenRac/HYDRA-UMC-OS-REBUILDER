@@ -33,7 +33,7 @@ TOTAL=27
 Writes a real `firstrun.sh` (and a `cmdline-append.txt` sidecar with the
 exact token that needs appending to the image's own `cmdline.txt`) into
 `--out` - the same real mechanism Raspberry Pi Imager's own "OS
-Customisation" screen uses on a Raspberry Pi OS (Bookworm+) image. See
+Customisation" screen uses on a Raspberry Pi OS (Trixie+) image. See
 [FIRST_BOOT_CONFIG.md](FIRST_BOOT_CONFIG.md) for exactly what this script
 does and why.
 
@@ -51,7 +51,7 @@ configured, SSH enabled by default unless `--no-ssh` is given).
 
 **Recovery-procedure guard:** `--no-ssh` without `--username` is refused
 (`FirstBootConfigError`) - on this tool's own official base images (no
-default user on Bookworm and later) that combination leaves the unit
+default user on Trixie and later) that combination leaves the unit
 with no login path at all, remote or physical. Pass
 `--acknowledge-no-remote-access` to opt in when another way in is
 certain. A `--ssh-key` given without both `--username` and `--password`

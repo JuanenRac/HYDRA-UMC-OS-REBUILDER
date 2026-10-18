@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows and Linux">
 </p>
 
-> **Status: v0.2.9, functional.** The CLI, the ecosystem discovery, the
+> **Status: v0.3.0, functional.** The CLI, the ecosystem discovery, the
 > first-boot config generator and the GUI shell are real and tested. The
 > real end-to-end image build (download → loop-mount → chroot-install →
 > unmount) is implemented but only runs on a real Linux host with root -
@@ -51,7 +51,7 @@ It does three real things:
 3. **Writes real first-boot configuration.** Hostname, a new user with a
    real `passlib`-hashed password, Wi-Fi, timezone, keyboard layout and
    SSH - the exact same `firstrun.sh` mechanism Raspberry Pi Imager's own
-   "OS Customisation" screen uses on a Raspberry Pi OS (Bookworm+) image,
+   "OS Customisation" screen uses on a Raspberry Pi OS (Trixie+) image,
    so the resulting SD card behaves exactly like one Raspberry Pi Imager
    itself would have produced. See
    [docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md).
@@ -114,7 +114,7 @@ Status, Build Image, and First-Boot Config.
 - **A firstboot config that would lock the operator out is refused, not
   built.** Disabling SSH while no account is being configured either
   leaves this tool's own official base images (no default user on
-  Bookworm and later) with no login path at all - refused unless
+  Trixie and later) with no login path at all - refused unless
   `acknowledge_no_remote_access=True` explicitly opts in.
   `describe_recovery_procedure()` states the real recovery path for
   whatever the config does leave open.

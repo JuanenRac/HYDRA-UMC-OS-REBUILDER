@@ -4,7 +4,7 @@
 # GPL-3.0 - see LICENSE
 #
 # Reproduces the real mechanism Raspberry Pi Imager itself uses for its own
-# "OS Customisation" screen on a Raspberry Pi OS (Bookworm-and-later) image:
+# "OS Customisation" screen on a Raspberry Pi OS (Trixie-and-later) image:
 # a `firstrun.sh` shell script dropped on the boot partition, invoked once by
 # the kernel command line (`systemd.run=`) before the normal boot continues,
 # which configures the system with `raspi-config nonint` (the same stable,
@@ -110,7 +110,7 @@ def _validate(config: FirstBootConfig) -> None:
         # procedimiento de recuperacion; no dejar al operador fuera del
         # equipo durante la instalacion." The official Raspberry Pi OS
         # base images this tool builds from (see image_builder.py's
-        # KNOWN_BASE_IMAGES) ship with NO default account on Bookworm and
+        # KNOWN_BASE_IMAGES) ship with NO default account on Trixie and
         # later - if SSH is also explicitly disabled and no account is
         # being configured here either, the resulting unit has no login
         # path at all, remote or physical. A config that only leaves
