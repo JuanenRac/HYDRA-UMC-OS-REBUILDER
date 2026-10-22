@@ -257,6 +257,7 @@ Ce projet fait partie de l'écosystème robotique HYDRA-UMC du même auteur (Jua
 - **[URTC-FLASHER](https://github.com/JuanenRac/URTC-FLASHER)** — outil de bureau avec GUI pour flasher les cartes URTC, CAN-OTA plus SWD/JTAG puce complète.
 - **[URTC-TESTER](https://github.com/JuanenRac/URTC-TESTER)** — outil de bureau de diagnostic bus CAN en direct pour cartes URTC, un panneau par profil d'outil.
 - **[URTC-WEB-STUDIO](https://github.com/JuanenRac/URTC-WEB-STUDIO)** — alternative dans le navigateur à URTC-TESTER via la Web Serial API, sans installation locale.
+- **[URTC-GATEWAY](https://github.com/JuanenRac/URTC-GATEWAY)** — passerelle devant le bus CAN d'URTC : liste d'identifiants autorisés, limite de débit et clé de session ; logiciel testé sur ordinateur, pas encore sur un bus réel.
 
 *Nœud Vision IA (Hailo-8)*
 - **[HYDRA-UMC-VISION-NODE](https://github.com/JuanenRac/HYDRA-UMC-VISION-NODE)** — hub d'intégration pour le pipeline vision Hailo-8, avec une véritable vérification de préparation matérielle par étape.
