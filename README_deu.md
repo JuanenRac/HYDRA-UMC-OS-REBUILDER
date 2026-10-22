@@ -162,7 +162,7 @@ HYDRA-UMC-OS-REBUILDER/
 ├── build.sh / build.bat       # venv + editierbare Installation + Kompilierungsprüfung
 ├── run.sh / run.bat           # GUI standardmäßig / CLI-Einstiegspunkt
 ├── run-gui.vbs                # Windows-GUI-Launcher ohne Konsolenfenster
-├── bump_version.py            # Ökosystemweiter Odometer-Bump (pyproject.toml + __init__.py)
+├── bump_version.py            # Versionserhöhung im Kilometerzähler-Stil (nur vom expliziten `bump`-Befehl ausgeführt)
 └── bump_manifest_version.py   # Synchronisiert die Version von hydra-umc.project.json mit der nativen (--sync)
 ```
 

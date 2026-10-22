@@ -158,7 +158,7 @@ HYDRA-UMC-OS-REBUILDER/
 ├── build.sh / build.bat       # venv + 編集可能インストール + コンパイルチェック
 ├── run.sh / run.bat           # デフォルトのGUI / CLIエントリーポイント
 ├── run-gui.vbs                # コンソールウィンドウなしのWindowsグラフィカルランチャー
-├── bump_version.py            # エコシステム全体のオドメーター式バージョン更新（pyproject.toml + __init__.py）
+├── bump_version.py            # オドメーター式バージョンインクリメント（明示的な `bump` コマンドのみが実行）
 └── bump_manifest_version.py   # hydra-umc.project.jsonのバージョンをネイティブのものと同期（--sync）
 ```
 
