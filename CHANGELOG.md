@@ -4,6 +4,7 @@ All notable work on **HYDRA-UMC-OS-REBUILDER** is summarized here, newest first.
 
 ## [Unreleased]
 
+- The banner follows the animated style of the ecosystem banners, with the name, the kind and the technologies of the project.
 - Added `tools/hydra_project_tool.py`: the same `validate`, `test`, `version`, `status` and `bump` commands in every repository. The checks run with `HYDRA_UMC_CI=1` and fail if the version changes; only `bump` changes it.
 
 ## [0.3.1]
