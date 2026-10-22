@@ -1,6 +1,6 @@
 # Changelog
 
-All notable work on **HYDRA-UMC-OS-REBUILDER** is summarized here, newest first.
+All notable changes to this project are documented here.
 
 ## [Unreleased]
 
@@ -16,24 +16,6 @@ All notable work on **HYDRA-UMC-OS-REBUILDER** is summarized here, newest first.
 
 - The official base image is now Raspberry Pi OS Lite 64-bit on Debian trixie (the pinned download URL and its `.sha256` sidecar check were updated); the docs and READMEs in the eight languages say trixie instead of bookworm.
 - The button that copies the log is a small icon (two sheets) instead of words, and turns green for a moment when it has copied.
-
-## Versioning scheme
-
-`pyproject.toml`'s `version` field is bumped by `build.bat`/`build.sh` as
-their first step (`bump_version.py`, then `bump_manifest_version.py --sync`
-for the manifest), before the real build itself, matching every other
-Python tool in this ecosystem. Same base-10 "odometer" rule rather than
-semantic-versioning judgment calls:
-
-- `patch` +1 on every build
-- when `patch` would exceed 9, it resets to 0 and `minor` +1 instead (e.g. `0.0.9` -> `0.1.0`, never `0.0.10`)
-- the same carry cascades into `major` if `minor` would exceed 9
-
-This file itself is *not* auto-generated per build (most builds are routine
-verification runs with nothing changelog-worthy); it's updated by hand when
-a change is actually worth summarizing for a human.
-
----
 
 ## [0.3.0]
 
