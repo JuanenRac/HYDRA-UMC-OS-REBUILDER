@@ -4,7 +4,7 @@
 # GPL-3.0-or-later - see LICENSE
 #
 # Real, complete translations for the windowed GUI's own UI chrome, in the
-# same 7 languages and the same resolution precedence (saved choice -> OS
+# same 8 languages and the same resolution precedence (saved choice -> OS
 # locale -> English) as HYDRA-UMC-UPDATER's own i18n.py, whose pattern this
 # deliberately mirrors byte-for-byte rather than inventing a second
 # convention. `--cli` output stays English/untranslated for the same
