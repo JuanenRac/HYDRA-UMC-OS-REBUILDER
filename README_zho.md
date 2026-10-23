@@ -33,7 +33,7 @@
 |---|---|
 | 版本 | `0.3.1` |
 | 成熟度 | 可用 |
-| 测试 | 158 (`pytest`) |
+| 测试 | 167 (`pytest`) |
 | 技术栈 | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | 目标 | 使用者的电脑 |
 | 真实硬件 | 尚未：此版本没有在真实硬件上运行的记录 |
@@ -90,6 +90,7 @@ HYDRA-UMC-UPDATER 相同的视觉语言（相同的深色调色板、字体排�
 
 ## 2. 🧱 架构与设计决策
 
+- **SSH 主机密钥首次使用时固定，Wi-Fi 国家代码不再有默认值。** 远程构建会拒绝一台尚未固定其密钥的机器，并显示该密钥的 SHA-256 指纹；输入该指纹（在机器本身上核对过）后密钥即被固定，此后只接受该密钥，不同的密钥会被当作已更改的密钥而拒绝。镜像的 Wi-Fi 国家代码不再有默认值（配置 Wi-Fi 网络时 `--wifi-country` / 国家字段为必填），因为它决定机器所在国家的无线电规则。
 - **`ecosystem_plan.py` 绝不重新实现 GitHub 发现逻辑。** 它依赖
   `hydra-umc-updater` 作为真实的 Python 包
   （`hydra_umc_updater.github_client.discover_remote_projects()`），而不是

@@ -35,7 +35,7 @@
 |---|---|
 | Versión | `0.3.1` |
 | Madurez | Funcional |
-| Tests | 158 (`pytest`) |
+| Tests | 167 (`pytest`) |
 | Tecnología | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Destino | El PC de quien lo usa |
 | En hardware real | Todavía no: no consta ninguna ejecución en hardware real para esta versión |
@@ -103,6 +103,7 @@ Configuración de Primer Arranque.
 
 ## 2. 🧱 ARQUITECTURA Y DECISIONES DE DISEÑO
 
+- **Clave SSH del equipo fijada al primer uso y sin país Wi-Fi por defecto.** Una compilación remota rechaza una máquina cuya clave no ha fijado y muestra la huella SHA-256 de la clave; escribe esa huella (comprobada en la propia máquina) y la clave queda fijada: desde entonces solo se acepta esa clave y una distinta se rechaza como clave cambiada. El código de país Wi-Fi de la imagen ya no tiene valor por defecto (`--wifi-country` / el campo de país es obligatorio con una red Wi-Fi), porque fija las reglas de radio del país donde estará la máquina.
 - **`ecosystem_plan.py` nunca reimplementa el descubrimiento de GitHub.**
   Depende de `hydra-umc-updater` como paquete Python real
   (`hydra_umc_updater.github_client.discover_remote_projects()`) en lugar

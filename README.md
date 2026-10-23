@@ -34,7 +34,7 @@
 |---|---|
 | Version | `0.3.1` |
 | Maturity | Functional |
-| Tests | 158 (`pytest`) |
+| Tests | 167 (`pytest`) |
 | Stack | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Target | The PC of the person using it |
 | On real hardware | Not yet: no run on real hardware is recorded for this version |
@@ -98,6 +98,7 @@ Status, Build Image, and First-Boot Config.
 
 ## 2. 🧱 ARCHITECTURE & DESIGN DECISIONS
 
+- **SSH host key pinned on first use, and no default Wi-Fi country.** A remote build refuses a machine whose key it has not pinned and shows the key's SHA-256 fingerprint; enter that fingerprint (checked on the machine itself) and the key is pinned, after which only that key is accepted and a different one is refused as a changed key. The image's Wi-Fi country code has no default any more (`--wifi-country` / the country field is required with a Wi-Fi network), because it sets the radio rules of the country where the machine will be.
 - **`ecosystem_plan.py` never reimplements GitHub discovery.** It depends
   on `hydra-umc-updater` as a real Python package
   (`hydra_umc_updater.github_client.discover_remote_projects()`) rather

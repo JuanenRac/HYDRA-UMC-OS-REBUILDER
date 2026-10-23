@@ -35,7 +35,7 @@
 |---|---|
 | Version | `0.3.1` |
 | Reifegrad | Funktionsfähig |
-| Tests | 158 (`pytest`) |
+| Tests | 167 (`pytest`) |
 | Technik | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Ziel | Der PC der Person, die es benutzt |
 | Auf echter Hardware | Noch nicht: für diese Version ist kein Lauf auf echter Hardware vermerkt |
@@ -105,6 +105,7 @@ Ersteinrichtung.
 
 ## 2. 🧱 ARCHITEKTUR UND DESIGN-ENTSCHEIDUNGEN
 
+- **SSH-Hostschlüssel beim ersten Mal festgehalten und kein Standard-WLAN-Land.** Ein Remote-Build lehnt einen Rechner ab, dessen Schlüssel er nicht festgehalten hat, und zeigt den SHA-256-Fingerabdruck des Schlüssels; gibt man diesen Fingerabdruck ein (am Rechner selbst geprüft), wird der Schlüssel festgehalten, danach wird nur noch dieser akzeptiert und ein anderer als geänderter Schlüssel abgelehnt. Der WLAN-Ländercode des Images hat keinen Standardwert mehr (`--wifi-country` / das Länderfeld ist bei einem WLAN Pflicht), weil er die Funkregeln des Landes festlegt, in dem der Rechner steht.
 - **`ecosystem_plan.py` implementiert die GitHub-Erkennung niemals neu.**
   Es hängt von `hydra-umc-updater` als echtem Python-Paket ab
   (`hydra_umc_updater.github_client.discover_remote_projects()`) statt

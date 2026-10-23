@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The SSH host key of a remote build machine is pinned on first use.** An unknown host is refused with its SHA-256 fingerprint; entering that fingerprint (new field in the remote build form, checked on the machine itself) pins the key, and from then on a different key is refused as changed whatever is entered. Nothing is accepted silently any more.
+- **No default Wi-Fi country.** `--wifi-country` and the country field of the interface are required with a Wi-Fi network; the old default `US` set the radio rules of the wrong country for most installations.
 - **The chroot is complete**: the build mounts `/proc`, `/sys`, `/dev` and `/dev/pts` (the `/dev` binds are `rslave`, so unmounting cannot reach the host) and gives the image the host's name resolution while the projects build, preferring the real servers of systemd-resolved over its stub; the image's own `resolv.conf` (or its absence) is put back afterwards and everything is unmounted in reverse order, before the rootfs, with any failure reported and the image not promoted. Without it `pip`, `npm` and `go` failed on name resolution. Tested with a recorder; never run on a real Linux host with root.
 - **A remote build is pinned**: the rebuilder is installed on the remote host from the release tag of the version that is running (`HYDRA_UMC_REBUILDER_REMOTE_REF` names another tag or commit; a copy with no release version is refused instead of falling back to `main`), and the GUI freezes the plan the operator reviewed, sends it and builds with `profile-build`, so the remote installs exactly the commits that were reviewed.
 - 10 new tests (158 in all).

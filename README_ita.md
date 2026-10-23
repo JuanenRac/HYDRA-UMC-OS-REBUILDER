@@ -35,7 +35,7 @@
 |---|---|
 | Versione | `0.3.1` |
 | Maturità | Funzionale |
-| Test | 158 (`pytest`) |
+| Test | 167 (`pytest`) |
 | Tecnologia | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Destinazione | Il PC di chi lo usa |
 | Su hardware reale | Non ancora: per questa versione non risulta alcuna esecuzione su hardware reale |
@@ -105,6 +105,7 @@ Primo Avvio.
 
 ## 2. 🧱 ARCHITETTURA E DECISIONI DI PROGETTAZIONE
 
+- **Chiave SSH della macchina fissata al primo uso e nessun paese Wi-Fi predefinito.** Una build remota rifiuta una macchina di cui non ha fissato la chiave e mostra l'impronta SHA-256 della chiave; inserisci quell'impronta (verificata sulla macchina stessa) e la chiave viene fissata: da allora si accetta solo quella chiave e una diversa viene rifiutata come chiave cambiata. Il codice paese Wi-Fi dell'immagine non ha più un valore predefinito (`--wifi-country` / il campo paese è obbligatorio con una rete Wi-Fi), perché fissa le regole radio del paese in cui sarà la macchina.
 - **`ecosystem_plan.py` non reimplementa mai la scoperta di GitHub.**
   Dipende da `hydra-umc-updater` come vero pacchetto Python
   (`hydra_umc_updater.github_client.discover_remote_projects()`) invece
