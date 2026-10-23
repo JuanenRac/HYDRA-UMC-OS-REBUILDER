@@ -62,7 +62,7 @@ def _cmd_status(args: argparse.Namespace) -> int:
 def _cmd_config(args: argparse.Namespace) -> int:
     wifi = None
     if args.wifi_ssid:
-        wifi = WifiConfig(ssid=args.wifi_ssid, psk=args.wifi_password or "", country=args.wifi_country, hidden=args.wifi_hidden)
+        wifi = WifiConfig(ssid=args.wifi_ssid, psk=args.wifi_password or "", country=args.wifi_country or "", hidden=args.wifi_hidden)
     config = FirstBootConfig(
         hostname=args.hostname,
         username=args.username,
@@ -107,7 +107,7 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
     # `firstboot=None`, an image with no first-boot customisation at all.
     wifi = None
     if args.wifi_ssid:
-        wifi = WifiConfig(ssid=args.wifi_ssid, psk=args.wifi_password or "", country=args.wifi_country, hidden=args.wifi_hidden)
+        wifi = WifiConfig(ssid=args.wifi_ssid, psk=args.wifi_password or "", country=args.wifi_country or "", hidden=args.wifi_hidden)
     firstboot = None
     if any([args.hostname, args.username, args.password, wifi, args.timezone, args.keyboard, args.locale, args.no_ssh, args.ssh_key]):
         firstboot = FirstBootConfig(
@@ -209,7 +209,7 @@ def _cmd_profile_build(args: argparse.Namespace) -> int:
 
     wifi = None
     if args.wifi_ssid:
-        wifi = WifiConfig(ssid=args.wifi_ssid, psk=args.wifi_password or "", country=args.wifi_country, hidden=args.wifi_hidden)
+        wifi = WifiConfig(ssid=args.wifi_ssid, psk=args.wifi_password or "", country=args.wifi_country or "", hidden=args.wifi_hidden)
     firstboot = None
     if any([args.hostname, args.username, args.password, wifi, args.timezone, args.keyboard, args.locale, args.no_ssh, args.ssh_key]):
         firstboot = FirstBootConfig(
@@ -269,7 +269,7 @@ def build_parser() -> argparse.ArgumentParser:
     config_parser.add_argument("--ssh-key", help="a public key to authorize for the new user")
     config_parser.add_argument("--wifi-ssid")
     config_parser.add_argument("--wifi-password")
-    config_parser.add_argument("--wifi-country", default="US")
+    config_parser.add_argument("--wifi-country", default=None, help="two-letter Wi-Fi country code (required with --wifi-ssid; there is no default)")
     config_parser.add_argument("--wifi-hidden", action="store_true")
     config_parser.add_argument("--timezone")
     config_parser.add_argument("--keyboard")
@@ -289,7 +289,7 @@ def build_parser() -> argparse.ArgumentParser:
     build_parser_cmd.add_argument("--ssh-key", help="a public key to authorize for the new user")
     build_parser_cmd.add_argument("--wifi-ssid")
     build_parser_cmd.add_argument("--wifi-password")
-    build_parser_cmd.add_argument("--wifi-country", default="US")
+    build_parser_cmd.add_argument("--wifi-country", default=None, help="two-letter Wi-Fi country code (required with --wifi-ssid; there is no default)")
     build_parser_cmd.add_argument("--wifi-hidden", action="store_true")
     build_parser_cmd.add_argument("--timezone")
     build_parser_cmd.add_argument("--keyboard")
@@ -340,7 +340,7 @@ def build_parser() -> argparse.ArgumentParser:
     profile_build_parser.add_argument("--ssh-key", help="a public key to authorize for the new user")
     profile_build_parser.add_argument("--wifi-ssid")
     profile_build_parser.add_argument("--wifi-password")
-    profile_build_parser.add_argument("--wifi-country", default="US")
+    profile_build_parser.add_argument("--wifi-country", default=None, help="two-letter Wi-Fi country code (required with --wifi-ssid; there is no default)")
     profile_build_parser.add_argument("--wifi-hidden", action="store_true")
     profile_build_parser.add_argument("--timezone")
     profile_build_parser.add_argument("--keyboard")

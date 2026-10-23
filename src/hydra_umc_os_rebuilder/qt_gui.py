@@ -28,6 +28,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 from . import __version__, i18n
 from .ecosystem_plan import EcosystemPlanEntry, fetch_ecosystem_plan
 from .firstboot_config import FirstBootConfig, WifiConfig
+from .ssh_hostkeys import HostKeyStore, make_policy
 from .image_builder import DEFAULT_PROJECT_TIMEOUT_SECONDS, BuildProgress, check_build_platform
 from .remote_install import remote_install_requirement
 
@@ -269,7 +270,7 @@ class RebuilderBridge(QObject):
         when every field was left blank, matching main.py's own
         `_cmd_build_image` behavior for the CLI's equivalent flags."""
         wifi_ssid = (options.get("wifiSsid") or "").strip()
-        wifi = WifiConfig(ssid=wifi_ssid, psk=options.get("wifiPassword") or "", country=options.get("wifiCountry") or "US") if wifi_ssid else None
+        wifi = WifiConfig(ssid=wifi_ssid, psk=options.get("wifiPassword") or "", country=options.get("wifiCountry") or "") if wifi_ssid else None
         fields = [options.get("hostname"), options.get("fbUsername"), options.get("fbPassword"), wifi, options.get("timezone"), options.get("keyboard")]
         if not any(fields) and options.get("enableSsh", True):
             return None
@@ -451,6 +452,7 @@ class RebuilderBridge(QObject):
         password = options.get("password") or ""
         key_path = options.get("keyPath") or ""
         key_passphrase = options.get("keyPassphrase") or ""
+        host_key_fingerprint = options.get("hostKeyFingerprint") or ""
 
         def emit_line(line: str) -> None:
             # The remote CLI's own progress() printer (main.py's
@@ -491,7 +493,8 @@ class RebuilderBridge(QObject):
                 import paramiko
 
                 client = paramiko.SSHClient()
-                client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                # trust on first use with a pinned fingerprint: an unknown host is refused until its fingerprint is entered, a changed one always
+                client.set_missing_host_key_policy(make_policy(HostKeyStore(), port, host_key_fingerprint))
                 if not host or not username:
                     raise RuntimeError(i18n.text(self._lang, "lbl_build_remote_missing_host"))
                 connect_kwargs: dict = {"hostname": host, "port": port, "username": username, "timeout": 10}
@@ -722,7 +725,7 @@ class RebuilderBridge(QObject):
     ) -> str:
         from .firstboot_config import FirstBootConfigError, build_boot_partition_patch
 
-        wifi = WifiConfig(ssid=wifiSsid, psk=wifiPassword, country=wifiCountry or "US") if wifiSsid else None
+        wifi = WifiConfig(ssid=wifiSsid, psk=wifiPassword, country=wifiCountry or "") if wifiSsid else None
         config = FirstBootConfig(
             hostname=hostname or None,
             username=username or None,

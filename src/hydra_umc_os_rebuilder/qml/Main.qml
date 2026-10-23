@@ -344,7 +344,7 @@ ApplicationWindow {
                 LabelText { text: ui("lbl_wifi_password"); color: window.textMuted }
                 GameField { id: wifiPasswordField; echoMode: TextInput.Password; Layout.fillWidth: true }
                 LabelText { text: ui("lbl_wifi_country"); color: window.textMuted }
-                GameField { id: wifiCountryField; text: "US"; Layout.preferredWidth: 90 }
+                GameField { id: wifiCountryField; placeholderText: "XX"; Layout.preferredWidth: 90 }
                 LabelText { text: ui("lbl_timezone"); color: window.textMuted }
                 GameField { id: timezoneField; placeholderText: "Europe/Madrid"; Layout.fillWidth: true }
                 LabelText { text: ui("lbl_keyboard"); color: window.textMuted }
@@ -767,6 +767,7 @@ ApplicationWindow {
                                 GameField { id: remoteKeyPathField; Layout.fillWidth: true; placeholderText: ui("lbl_remote_key_path") }
                                 GameButton { text: ui("browse_button"); accent: "#265c89"; onClicked: remoteKeyDialog.open() }
                             }
+                            GameField { id: remoteFingerprintField; Layout.fillWidth: true; placeholderText: ui("lbl_remote_host_fingerprint") }
                             GameField { id: remoteKeyPassphraseField; Layout.fillWidth: true; echoMode: TextInput.Password; placeholderText: ui("lbl_remote_key_passphrase") }
                         }
                         GameField { id: remotePasswordField; visible: window.remoteAuthMethod === "password"; Layout.fillWidth: true; echoMode: TextInput.Password; placeholderText: ui("lbl_remote_password") }
@@ -799,6 +800,7 @@ ApplicationWindow {
                                 opts.password = remotePasswordField.text
                                 opts.keyPath = remoteKeyPathField.text
                                 opts.keyPassphrase = remoteKeyPassphraseField.text
+                                opts.hostKeyFingerprint = remoteFingerprintField.text
                             }
                             backend.buildImage(opts)
                         }

@@ -45,7 +45,7 @@ _COUNTRY_RE = re.compile(r"^[A-Z]{2}$")
 class WifiConfig:
     ssid: str
     psk: str  # WPA2 passphrase, plaintext in - hashed/quoted only at script-generation time
-    country: str = "US"
+    country: str = ""  # no default: the regulatory domain of the radio must be chosen by whoever builds the image
     hidden: bool = False
 
 
@@ -103,7 +103,9 @@ def _validate(config: FirstBootConfig) -> None:
     if config.wifi is not None:
         if not config.wifi.ssid:
             raise FirstBootConfigError("wifi.ssid cannot be empty")
-        if not config.wifi.country or not _COUNTRY_RE.fullmatch(config.wifi.country):
+        if not config.wifi.country:
+            raise FirstBootConfigError("the Wi-Fi country code is required (two letters, for example ES): there is no default, because it sets the radio rules of the country where the machine will be")
+        if not _COUNTRY_RE.fullmatch(config.wifi.country):
             raise FirstBootConfigError(f"invalid Wi-Fi country code: {config.wifi.country!r}")
     if not config.enable_ssh and config.username is None and not config.acknowledge_no_remote_access:
         # "cambiar identidad o acceso remoto debe preservar un
