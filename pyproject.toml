@@ -21,7 +21,7 @@ keywords = ["hydra-umc", "urtc", "raspberry-pi", "cm5", "image-builder", "provis
 # reusing it means a fix or improvement there benefits this tool too,
 # instead of two independent, silently-drifting implementations.
 dependencies = [
-    "hydra-umc-updater @ git+https://github.com/JuanenRac/HYDRA-UMC-UPDATER.git",
+    "hydra-umc-updater @ git+https://github.com/JuanenRac/HYDRA-UMC-UPDATER.git@v0.4.8",
     # Real, audited SHA-512-crypt for first-boot passwords - see
     # firstboot_config.py's own hash_password() header comment for why not
     # the stdlib crypt module.
