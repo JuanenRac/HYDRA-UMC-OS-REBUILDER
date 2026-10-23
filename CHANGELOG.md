@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **No passwords in command lines.** The first-boot password and the Wi-Fi password can come from `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` or, with `--secrets-stdin`, from one JSON object on standard input (`config`, `build-image`, `profile-build`); the flags still work and win. The remote (SSH) build of the GUI sends them on the standard input of the remote command, so they no longer appear in `ps` or in the `sudo` entry of the authentication log. Tested with a fake channel-free path; never tried against a real SSH host.
 - The dependency on `hydra-umc-updater` is pinned to a release tag instead of the moving default branch, so an image is built with the same updater code every time; a test fails if the pin is dropped or points at a branch.
 - Building no longer changes the version; raising it is the explicit `bump` command (`python tools/hydra_project_tool.py bump`). The build scripts only report the version they built, and CI fails if a build script runs a bump.
 - The build and run scripts use the Python of the `.venv` directly instead of an activate script, and create the venv with the `py` launcher when there is one; CI fails if a script activates a venv.

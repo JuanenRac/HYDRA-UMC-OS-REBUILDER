@@ -353,12 +353,59 @@ def build_parser() -> argparse.ArgumentParser:
         f"default {DEFAULT_PROJECT_TIMEOUT_SECONDS:.0f}s; 0 means unlimited (the old, unbounded behavior)",
     )
 
+    for secret_parser in (config_parser, build_parser_cmd, profile_build_parser):
+        secret_parser.add_argument(
+            "--secrets-stdin", action="store_true",
+            help='read {"password": "...", "wifiPassword": "..."} from standard input (or use HYDRA_UMC_FIRSTBOOT_PASSWORD / '
+            "HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD) so the secrets are never part of a command line",
+        )
+
     return parser
+
+
+# The two secrets of the first-boot configuration never have to travel as arguments of a command: a command line
+# is visible to every user of the machine (`ps`) and sudo writes it to the authentication log. They can come from
+# these environment variables, or as one JSON object on standard input with --secrets-stdin (the way the remote
+# build sends them). An explicit --password / --wifi-password still works and wins.
+SECRET_ENVIRONMENT = {"password": "HYDRA_UMC_FIRSTBOOT_PASSWORD", "wifi_password": "HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD"}
+
+
+def apply_secret_sources(args: argparse.Namespace, environ: dict[str, str] | None = None, stdin=None) -> None:
+    """Fills `args.password` and `args.wifi_password` from standard input and the environment when the command
+    line did not give them. Raises ValueError for a standard input that is not the expected JSON object."""
+    if not hasattr(args, "password"):
+        return
+    if getattr(args, "secrets_stdin", False):
+        stream = sys.stdin if stdin is None else stdin
+        try:
+            data = json.loads(stream.read() or "{}")
+        except ValueError as error:
+            raise ValueError(f"--secrets-stdin needs a JSON object on standard input: {error}") from error
+        if not isinstance(data, dict) or not all(isinstance(v, str) for v in data.values()):
+            raise ValueError("--secrets-stdin needs a JSON object of strings")
+        unknown = sorted(set(data) - {"password", "wifiPassword"})
+        if unknown:
+            raise ValueError(f"--secrets-stdin: unknown key(s): {', '.join(unknown)}")
+        if data.get("password") and not args.password:
+            args.password = data["password"]
+        if data.get("wifiPassword") and not args.wifi_password:
+            args.wifi_password = data["wifiPassword"]
+    import os
+
+    source = os.environ if environ is None else environ
+    for attribute, variable in SECRET_ENVIRONMENT.items():
+        if not getattr(args, attribute, None) and source.get(variable):
+            setattr(args, attribute, source[variable])
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    try:
+        apply_secret_sources(args)
+    except ValueError as error:
+        print(f"REFUSED: {error}", file=sys.stderr)
+        return 2
 
     if args.command is None:
         if not args.cli:

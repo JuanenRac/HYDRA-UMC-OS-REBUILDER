@@ -11,6 +11,7 @@
 # =============================================================================
 from __future__ import annotations
 
+import json
 import logging
 import re
 import sys
@@ -295,15 +296,26 @@ class RebuilderBridge(QObject):
 
         add("--hostname", options.get("hostname"))
         add("--username", options.get("fbUsername"))
-        add("--password", options.get("fbPassword"))
         if not options.get("enableSsh", True):
             args.append("--no-ssh")
         add("--wifi-ssid", options.get("wifiSsid"))
-        add("--wifi-password", options.get("wifiPassword"))
         add("--wifi-country", options.get("wifiCountry"))
         add("--timezone", options.get("timezone"))
         add("--keyboard", options.get("keyboard"))
+        if options.get("fbPassword") or options.get("wifiPassword"):
+            # the two passwords go to the remote command on its standard input, never in its arguments
+            args.append("--secrets-stdin")
         return args
+
+    @staticmethod
+    def _firstboot_secrets_json(options: dict) -> str | None:
+        """The two secrets as the JSON object --secrets-stdin reads; None when there is none to send."""
+        secrets = {}
+        if options.get("fbPassword"):
+            secrets["password"] = str(options["fbPassword"])
+        if options.get("wifiPassword"):
+            secrets["wifiPassword"] = str(options["wifiPassword"])
+        return json.dumps(secrets) if secrets else None
 
     @Slot("QVariantMap")
     def buildImage(self, options: dict) -> None:
@@ -400,6 +412,7 @@ class RebuilderBridge(QObject):
 
         output_path = options.get("outputPath") or "hydra-umc-cm5.img"
         firstboot_args = self._firstboot_cli_args(options)
+        firstboot_secrets = self._firstboot_secrets_json(options)
         # Real per-submodule timeout, explicit here (not just relying on
         # the remote CLI's own default) so a remote build never silently
         # runs with a different real timeout than a local one just because
@@ -585,6 +598,10 @@ class RebuilderBridge(QObject):
                     cli += " " + " ".join(firstboot_args)
 
                 _stdin, stdout, stderr = client.exec_command(cli)
+                if firstboot_secrets is not None:
+                    _stdin.write(firstboot_secrets)
+                    _stdin.flush()
+                _stdin.channel.shutdown_write()
                 channel = stdout.channel
                 channel.set_combine_stderr(True)
                 buffer = ""

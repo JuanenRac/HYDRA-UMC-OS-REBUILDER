@@ -152,6 +152,7 @@ Estado do ecossistema, Construir imagem e Configuração de primeiro arranque.
   datam do ano 2000, pelo que atacar uma cópia da imagem ou de `/etc/shadow`
   custa muito mais; o yescrypt (`$y$`) que o próprio dispositivo prefere não
   pode ser produzido de forma portável a partir do Python no Windows.
+- **As palavras-passe já não viajam como argumentos.** `--password` e `--wifi-password` continuam a funcionar, mas uma linha de comandos é visível a todos os utilizadores da máquina e o `sudo` escreve-a no registo de autenticação; a CLI lê-as por isso também de `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` ou, com `--secrets-stdin`, de um objeto JSON (`{"password": "...", "wifiPassword": "..."}`) na entrada padrão. A compilação remota (SSH) da interface envia-as assim e já não as põe no comando executado.
 
 ## 📂 ESTRUTURA DE DIRETORIAS
 
