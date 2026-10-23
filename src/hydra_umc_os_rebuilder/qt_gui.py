@@ -29,6 +29,7 @@ from . import __version__, i18n
 from .ecosystem_plan import EcosystemPlanEntry, fetch_ecosystem_plan
 from .firstboot_config import FirstBootConfig, WifiConfig
 from .image_builder import DEFAULT_PROJECT_TIMEOUT_SECONDS, BuildProgress, check_build_platform
+from .remote_install import remote_install_requirement
 
 # Matches the real "[phase] detail" lines the remote build's own CLI
 # progress() printer emits (main.py's _cmd_build_image) - see
@@ -118,6 +119,7 @@ class RebuilderBridge(QObject):
         self._logFilePath = str(log_file_path) if log_file_path else ""
         self._projects: list[EcosystemPlanEntry] = []
         self._discoveryErrors: list[str] = []
+        self._sdkCommitSha: str | None = None
         self._busy = False
         self._status = ""
         self._buildBusy = False
@@ -214,6 +216,7 @@ class RebuilderBridge(QObject):
         def worker() -> None:
             try:
                 plan = fetch_ecosystem_plan()
+                self._sdkCommitSha = plan.sdk_commit_sha
                 self._planResult.emit(list(plan.entries), list(plan.discovery_errors))
             except Exception as exc:  # pragma: no cover - network failure path, real message surfaced to the UI either way
                 self._planResult.emit([], [str(exc)])
@@ -411,6 +414,25 @@ class RebuilderBridge(QObject):
         self.buildProgressChanged.emit()
 
         output_path = options.get("outputPath") or "hydra-umc-cm5.img"
+        # The plan the operator reviewed is frozen now and sent to the remote host, which builds from
+        # exactly that profile (profile-build) instead of discovering the ecosystem again.
+        profile_json: str | None = None
+        try:
+            from .ecosystem_plan import EcosystemPlan
+            from .profile_manifest import freeze_profile, to_json
+
+            reviewed = EcosystemPlan(
+                entries=tuple(self._projects), discovery_errors=tuple(self._discoveryErrors), sdk_commit_sha=self._sdkCommitSha,
+            )
+            profile_json = json.dumps(to_json(freeze_profile(reviewed, profile_name="remote-build")))
+            install_requirement = remote_install_requirement(__version__)
+        except Exception as exc:  # a plan that cannot be frozen, or a copy that cannot be pinned, is not built remotely
+            self._buildBusy = False
+            self._buildLog = [i18n.text(self._lang, "lbl_build_failed", error=str(exc))]
+            _GUI_LOGGER.error(self._buildLog[0])
+            self.buildBusyChanged.emit()
+            self.buildLogChanged.emit()
+            return
         firstboot_args = self._firstboot_cli_args(options)
         firstboot_secrets = self._firstboot_secrets_json(options)
         # Real per-submodule timeout, explicit here (not just relying on
@@ -585,12 +607,21 @@ class RebuilderBridge(QObject):
                 venv_dir = f"{remote_tmp}/.venv"
                 run(f"python3 -m venv {shlex.quote(venv_dir)}")
                 emit_line("[install] creating a real venv and installing hydra-umc-os-rebuilder from its own GitHub repo...")
-                run(f"{shlex.quote(venv_dir)}/bin/pip install --quiet 'hydra-umc-os-rebuilder @ git+https://github.com/JuanenRac/HYDRA-UMC-OS-REBUILDER.git'")
+                run(f"{shlex.quote(venv_dir)}/bin/pip install --quiet {shlex.quote(install_requirement)}")
+                emit_line(f"[install] {install_requirement}")
+                remote_profile = f"{remote_tmp}/profile.json"
+                sftp_up = client.open_sftp()
+                try:
+                    with sftp_up.open(remote_profile, "w") as handle:
+                        handle.write(profile_json)
+                finally:
+                    sftp_up.close()
 
                 remote_img = f"{remote_tmp}/output.img"
                 remote_work = f"{remote_tmp}/work"
                 cli = (
-                    f"sudo {shlex.quote(venv_dir)}/bin/hydra-umc-os-rebuilder --cli build-image "
+                    f"sudo {shlex.quote(venv_dir)}/bin/hydra-umc-os-rebuilder --cli profile-build "
+                    f"--manifest {shlex.quote(remote_profile)} "
                     f"--out {shlex.quote(remote_img)} --work-dir {shlex.quote(remote_work)} "
                     f"--project-timeout-seconds {project_timeout_seconds!r}"
                 )

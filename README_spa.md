@@ -35,7 +35,7 @@
 |---|---|
 | Versión | `0.3.1` |
 | Madurez | Funcional |
-| Tests | 132 (`pytest`) |
+| Tests | 158 (`pytest`) |
 | Tecnología | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Destino | El PC de quien lo usa |
 | En hardware real | Todavía no: no consta ninguna ejecución en hardware real para esta versión |
@@ -129,6 +129,7 @@ Configuración de Primer Arranque.
   real.
 - **Una configuración de primer arranque que dejaría fuera al operador se rechaza, no se construye.** Desactivar SSH sin configurar ninguna cuenta dejaría las propias imágenes base oficiales de esta herramienta (sin usuario por defecto desde Trixie) sin ninguna vía de acceso - se rechaza salvo que `acknowledge_no_remote_access=True` lo acepte explícitamente. `describe_recovery_procedure()` indica la vía real de recuperación para lo que la configuración deja abierto.
 - **Las contraseñas ya no viajan como argumentos.** `--password` y `--wifi-password` siguen funcionando, pero una línea de comandos la ve cualquier usuario de la máquina y `sudo` la escribe en el registro de autenticación, así que la CLI también las lee de `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` o, con `--secrets-stdin`, de un objeto JSON (`{"password": "...", "wifiPassword": "..."}`) por la entrada estándar. La compilación remota (SSH) de la GUI las envía así y ya no las pone en el comando que ejecuta.
+- **El chroot está completo y la compilación remota va fijada.** La compilación monta `/proc`, `/sys`, `/dev` y `/dev/pts` en la imagen y le da la resolución de nombres del equipo mientras se compilan los proyectos (después se devuelve el `resolv.conf` propio de la imagen), de modo que `pip`, `npm` y `go` llegan a la red desde el chroot. Una compilación remota por SSH instala esta herramienta desde la etiqueta de versión que se está ejecutando (`HYDRA_UMC_REBUILDER_REMOTE_REF` indica otra etiqueta o commit) y compila desde el perfil congelado del plan que se revisó (`profile-build`) en lugar de volver a descubrir el ecosistema en el equipo remoto. Nada de esto se ha ejecutado aún en un equipo Linux real con root.
 - **Un perfil congelado es una receta real y persistida, nunca se vuelve a descargar.** `freeze_profile()`/`profile-build` de `profile_manifest.py` fijan cada proyecto al SHA exacto del commit con el que se probó - una compilación posterior nunca sustituye en silencio lo que GitHub llame «latest» en ese momento. `diff_profile()` compara un perfil congelado con el ecosistema real proyecto a proyecto (no como un único booleano), porque los números de versión de este ecosistema son un cuentakilómetros en base 10 sin significado semántico y nunca pueden ser, por sí solos, una señal honesta de compatibilidad.
 - **Hash de contraseña SHA-512-crypt real, no el módulo `crypt` de la
   stdlib.** `crypt` solo envuelve la llamada propia de libc del *host*

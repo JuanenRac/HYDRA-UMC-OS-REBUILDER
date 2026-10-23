@@ -35,7 +35,7 @@
 |---|---|
 | Versão | `0.3.1` |
 | Maturidade | Funcional |
-| Testes | 132 (`pytest`) |
+| Testes | 158 (`pytest`) |
 | Tecnologia | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Destino | O PC de quem o usa |
 | Em hardware real | Ainda não: não há registo de execução em hardware real para esta versão |
@@ -153,6 +153,7 @@ Estado do ecossistema, Construir imagem e Configuração de primeiro arranque.
   custa muito mais; o yescrypt (`$y$`) que o próprio dispositivo prefere não
   pode ser produzido de forma portável a partir do Python no Windows.
 - **As palavras-passe já não viajam como argumentos.** `--password` e `--wifi-password` continuam a funcionar, mas uma linha de comandos é visível a todos os utilizadores da máquina e o `sudo` escreve-a no registo de autenticação; a CLI lê-as por isso também de `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` ou, com `--secrets-stdin`, de um objeto JSON (`{"password": "...", "wifiPassword": "..."}`) na entrada padrão. A compilação remota (SSH) da interface envia-as assim e já não as põe no comando executado.
+- **O chroot está completo e a compilação remota fica fixada.** A compilação monta `/proc`, `/sys`, `/dev` e `/dev/pts` na imagem e dá-lhe a resolução de nomes do equipamento enquanto os projetos são compilados (o `resolv.conf` próprio da imagem é reposto no fim), para que `pip`, `npm` e `go` cheguem à rede a partir do chroot. Uma compilação remota por SSH instala esta ferramenta a partir da etiqueta da versão em execução (`HYDRA_UMC_REBUILDER_REMOTE_REF` indica outra etiqueta ou commit) e compila a partir do perfil congelado do plano revisto (`profile-build`) em vez de voltar a descobrir o ecossistema no equipamento remoto. Nada disto correu ainda num equipamento Linux real com root.
 
 ## 📂 ESTRUTURA DE DIRETORIAS
 

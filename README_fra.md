@@ -36,7 +36,7 @@
 |---|---|
 | Version | `0.3.1` |
 | Maturité | Fonctionnel |
-| Tests | 132 (`pytest`) |
+| Tests | 158 (`pytest`) |
 | Technologie | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Cible | Le PC de la personne qui l'utilise |
 | Sur matériel réel | Pas encore : aucune exécution sur du matériel réel n'est consignée pour cette version |
@@ -133,6 +133,7 @@ Configuration du Premier Démarrage.
   réelle.
 - **Une configuration de premier démarrage qui enfermerait l'opérateur dehors est refusée, pas construite.** Désactiver SSH sans configurer de compte laisserait les propres images de base officielles de cet outil (aucun utilisateur par défaut depuis Trixie) sans aucun moyen de connexion - refusé sauf si `acknowledge_no_remote_access=True` l'accepte explicitement. `describe_recovery_procedure()` indique la vraie procédure de récupération pour tout ce que la configuration laisse ouvert.
 - **Les mots de passe ne voyagent plus comme arguments.** `--password` et `--wifi-password` fonctionnent toujours, mais une ligne de commande est visible de tout utilisateur de la machine et `sudo` l'écrit dans le journal d'authentification ; la CLI les lit donc aussi dans `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` ou, avec `--secrets-stdin`, depuis un objet JSON (`{"password": "...", "wifiPassword": "..."}`) sur l'entrée standard. Le build distant (SSH) de l'interface les envoie ainsi et ne les met plus dans la commande exécutée.
+- **Le chroot est complet et la compilation distante est épinglée.** La compilation monte `/proc`, `/sys`, `/dev` et `/dev/pts` dans l'image et lui donne la résolution de noms de l'hôte pendant que les projets se construisent (le `resolv.conf` propre à l'image est remis ensuite), si bien que `pip`, `npm` et `go` atteignent le réseau depuis le chroot. Une compilation distante par SSH installe cet outil depuis l'étiquette de la version en cours (`HYDRA_UMC_REBUILDER_REMOTE_REF` en désigne une autre étiquette ou un commit) et construit depuis le profil figé du plan examiné (`profile-build`) au lieu de redécouvrir l'écosystème sur l'hôte distant. Rien de cela n'a encore tourné sur un hôte Linux réel avec root.
 - **Un profil figé est une vraie recette persistée, jamais re-téléchargée.** `freeze_profile()`/`profile-build` de `profile_manifest.py` épinglent chaque projet sur le SHA exact du commit avec lequel il a été testé - un build ultérieur ne substitue jamais silencieusement ce que GitHub appelle actuellement « latest ». `diff_profile()` compare un profil figé à l'écosystème réel projet par projet (pas comme un simple booléen), car les numéros de version de cet écosystème sont un compteur kilométrique en base 10 sans sens sémantique et ne peuvent jamais être, à eux seuls, un signal honnête de compatibilité.
 - **Hachage de mot de passe SHA-512-crypt réel, pas le module `crypt` de
   la stdlib.** `crypt` ne fait qu'envelopper l'appel libc de *l'hôte*

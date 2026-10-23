@@ -34,7 +34,7 @@
 |---|---|
 | Version | `0.3.1` |
 | Maturity | Functional |
-| Tests | 132 (`pytest`) |
+| Tests | 158 (`pytest`) |
 | Stack | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Target | The PC of the person using it |
 | On real hardware | Not yet: no run on real hardware is recorded for this version |
@@ -145,6 +145,7 @@ Status, Build Image, and First-Boot Config.
   `$6$...` format `chpasswd -e` expects, on every platform this tool
   itself runs on, including Windows. The hash uses 500000 rounds, not the glibc default of 5000 from the year 2000, so a copy of the image or of `/etc/shadow` costs far more to attack; the device's own preferred yescrypt (`$y$`) cannot be produced portably from Python on Windows.
 - **The passwords never travel as arguments.** `--password` and `--wifi-password` still work, but a command line is visible to every user of the machine and `sudo` writes it to the authentication log, so the CLI also reads them from `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` or, with `--secrets-stdin`, from one JSON object (`{"password": "...", "wifiPassword": "..."}`) on standard input. The remote (SSH) build of the GUI sends them that way and no longer puts them in the command it runs.
+- **The chroot is complete and the remote build is pinned.** The build mounts `/proc`, `/sys`, `/dev` and `/dev/pts` in the image and gives it the host's name resolution while the projects build (the image's own `resolv.conf` is put back afterwards), so `pip`, `npm` and `go` can reach the network from the chroot. A remote build over SSH installs this tool from the release tag of the version that is running (`HYDRA_UMC_REBUILDER_REMOTE_REF` names another tag or commit) and builds from the frozen profile of the plan that was reviewed (`profile-build`) instead of discovering the ecosystem again on the remote host. None of this has run on a real Linux host with root yet.
 
 ## 📂 DIRECTORY STRUCTURE
 

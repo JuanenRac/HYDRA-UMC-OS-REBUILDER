@@ -580,6 +580,14 @@ def _fake_subprocess_run(calls: list[list[str]]):
     return fake
 
 
+@pytest.fixture(autouse=True)
+def _host_dns_file(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The chroot gets a copy of the host's resolv.conf; a machine that has none (Windows) gets a stand-in."""
+    resolv = tmp_path_factory.mktemp("dns") / "resolv.conf"
+    resolv.write_text("nameserver 192.0.2.53\n", encoding="utf-8")
+    monkeypatch.setattr(image_builder_module.ChrootEnvironment, "HOST_RESOLV_CANDIDATES", (str(resolv),))
+
+
 def _install_pipeline_fake_run(succeeding_target: Path):
     """Real git clone/chroot/checkout sequence for ONE succeeding
     project, plus the losetup/mount calls `build_image()` itself makes -
@@ -668,6 +676,14 @@ def test_build_image_stopping_mid_install_still_cleans_up_and_never_promotes(
     # mid-install - "secret-scan" would appear in progress_phases if they had.
     assert "secret-scan" not in progress_phases
     assert "unmount" in progress_phases, "unmount is still reported even though the build failed"
+    # The chroot got its pseudo file systems before the first project was built in it, and gave them
+    # back (in reverse order) before the rootfs itself was unmounted.
+    heads = [" ".join(call[:3]) for call in run_calls]
+    first_clone = next(i for i, call in enumerate(run_calls) if call[:2] == ["git", "clone"])
+    for wanted in ("mount -t proc", "mount -t sysfs", "mount --bind /dev", "mount --bind /dev/pts"):
+        assert any(head.startswith(wanted) for head in heads[:first_clone]), wanted
+    unmounts = [call[1] for call in run_calls if call[0] == "umount"]
+    assert [Path(u).name for u in unmounts] == ["pts", "dev", "sys", "proc"]
 
 
 def test_build_image_stopping_on_a_real_subprocess_failure_also_cleans_up_and_never_promotes(

@@ -33,7 +33,7 @@
 |---|---|
 | 版本 | `0.3.1` |
 | 成熟度 | 可用 |
-| 测试 | 132 (`pytest`) |
+| 测试 | 158 (`pytest`) |
 | 技术栈 | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | 目标 | 使用者的电脑 |
 | 真实硬件 | 尚未：此版本没有在真实硬件上运行的记录 |
@@ -109,6 +109,7 @@ HYDRA-UMC-UPDATER 相同的视觉语言（相同的深色调色板、字体排�
   测试。只有 `image_builder.py` 负责真正把这些内容写入真实的 boot 分区。
 - **会把操作员锁在外面的首次启动配置会被拒绝，而不是被构建。** 在不配置任何账户的情况下禁用 SSH，会让本工具自己的官方基础镜像（Trixie 及之后没有默认用户）完全没有登录途径 - 除非 `acknowledge_no_remote_access=True` 明确同意，否则会被拒绝。`describe_recovery_procedure()` 会说明配置所留下的部分的真实恢复途径。
 - **密码不再作为参数传递。** `--password` 和 `--wifi-password` 仍然可用,但命令行对机器上的所有用户可见,而且 `sudo` 会把它写入认证日志;因此 CLI 也会从 `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` 读取,或在使用 `--secrets-stdin` 时从标准输入的一个 JSON 对象(`{"password": "...", "wifiPassword": "..."}`)读取。图形界面的远程(SSH)构建就是这样发送它们的,不再把它们放进所执行的命令中。
+- **chroot 已完整，远程构建已固定。** 构建会在镜像中挂载 `/proc`、`/sys`、`/dev` 和 `/dev/pts`，并在项目构建期间提供主机的域名解析（之后会恢复镜像自己的 `resolv.conf`），因此 `pip`、`npm` 和 `go` 能从 chroot 访问网络。通过 SSH 的远程构建会从正在运行版本的发布标签安装本工具（`HYDRA_UMC_REBUILDER_REMOTE_REF` 可指定其他标签或提交），并从已审阅计划的冻结配置（`profile-build`）构建，而不是在远程主机上重新发现生态系统。以上内容尚未在带 root 的真实 Linux 主机上运行过。
 - **冻结的配置是真实的、持久化的配方，绝不会重新获取。** `profile_manifest.py` 的 `freeze_profile()`/`profile-build` 把每个项目固定在测试时的确切提交 SHA 上 - 之后的构建绝不会悄悄替换为 GitHub 当前所称的“latest”。`diff_profile()` 按项目（而不是单一布尔值）把冻结的配置与实际生态系统比较，因为这个生态系统的版本号是没有语义化含义的十进制里程表，本身永远不能作为诚实的兼容性信号。
 - **真实的 SHA-512-crypt 密码哈希，而非标准库的 `crypt` 模块。** `crypt`
   只是包装了*主机自身*的 libc 调用（仅限 Unix，且已在 Python 3.13 中彻底

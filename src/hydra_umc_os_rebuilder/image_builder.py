@@ -317,6 +317,100 @@ def _run(*command: str, timeout: float | None = None, **kwargs) -> subprocess.Co
     return subprocess.run(command, check=True, timeout=timeout, **kwargs)
 
 
+class ChrootEnvironment:
+    """What a chrooted build needs besides the files: /proc, /sys, /dev and /dev/pts, and a working
+    resolv.conf, so that `pip install`, `npm ci` or `go mod download` can resolve names and tools
+    can read /proc.
+
+    The pseudo file systems are mounted under the rootfs and unmounted in reverse order by
+    `unmount()` (which reports what failed instead of raising); the /dev binds are made
+    `rslave` so that unmounting them can never propagate back to the host. The host's DNS
+    configuration is copied into the rootfs (preferring the real servers of systemd-resolved over
+    its 127.0.0.53 stub, which does not exist inside the chroot) and the file that was there is put
+    back by `unmount()`, so the image does not ship the build host's resolvers.
+    """
+
+    HOST_RESOLV_CANDIDATES = ("/run/systemd/resolve/resolv.conf", "/etc/resolv.conf")
+    SAVED_SUFFIX = ".hydra-build-saved"
+
+    def __init__(self, rootfs: Path, run=None, host_resolv: tuple[str, ...] | None = None) -> None:
+        self.rootfs = rootfs
+        self._run = run  # None: the module's _run, looked up at the moment of use
+        self._host_resolv = host_resolv if host_resolv is not None else self.HOST_RESOLV_CANDIDATES
+        self._mounted: list[Path] = []
+        self._resolv_installed = False
+        self._resolv_backup_kind: str | None = None  # "moved" (there was something) or "none"
+
+    def _do(self, *command: str) -> None:
+        (self._run or _run)(*command)
+
+    def _mount(self, *command: str, target: Path) -> None:
+        target.mkdir(parents=True, exist_ok=True)
+        self._do("mount", *command, str(target))
+        self._mounted.append(target)
+
+    def _bind_slave(self, source: str, target: Path) -> None:
+        target.mkdir(parents=True, exist_ok=True)
+        self._do("mount", "--bind", source, str(target))
+        self._mounted.append(target)
+        self._do("mount", "--make-rslave", str(target))
+
+    def mount(self) -> None:
+        """Mounts everything; on a failure undoes what was done and raises ImageBuildError."""
+        try:
+            self._install_resolv_conf()
+            self._mount("-t", "proc", "proc", target=self.rootfs / "proc")
+            self._mount("-t", "sysfs", "sysfs", target=self.rootfs / "sys")
+            self._bind_slave("/dev", self.rootfs / "dev")
+            self._bind_slave("/dev/pts", self.rootfs / "dev" / "pts")
+        except (subprocess.CalledProcessError, OSError) as exc:
+            problems = self.unmount()
+            detail = f" (and then: {'; '.join(problems)})" if problems else ""
+            raise ImageBuildError(f"the chroot could not be prepared: {exc}{detail}") from exc
+
+    def _install_resolv_conf(self) -> None:
+        source = next((Path(c) for c in self._host_resolv if Path(c).is_file()), None)
+        if source is None:
+            raise ImageBuildError("the host has no resolv.conf to give the chroot name resolution")
+        target = self.rootfs / "etc" / "resolv.conf"
+        saved = target.with_name(target.name + self.SAVED_SUFFIX)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if os.path.lexists(target):
+            os.replace(target, saved)  # a symlink (systemd-resolved stub) is kept as it is
+            self._resolv_backup_kind = "moved"
+        else:
+            self._resolv_backup_kind = "none"
+        shutil.copyfile(source, target)
+        self._resolv_installed = True
+
+    def _restore_resolv_conf(self) -> list[str]:
+        problems: list[str] = []
+        if not self._resolv_installed:
+            return problems
+        target = self.rootfs / "etc" / "resolv.conf"
+        saved = target.with_name(target.name + self.SAVED_SUFFIX)
+        try:
+            target.unlink(missing_ok=True)
+            if self._resolv_backup_kind == "moved" and os.path.lexists(saved):
+                os.replace(saved, target)
+        except OSError as exc:
+            problems.append(f"resolv.conf could not be put back: {exc}")
+        self._resolv_installed = False
+        return problems
+
+    def unmount(self) -> list[str]:
+        """Unmounts in reverse order and restores resolv.conf; returns what failed (empty when clean)."""
+        problems: list[str] = []
+        while self._mounted:
+            target = self._mounted.pop()
+            try:
+                self._do("umount", str(target))
+            except (subprocess.CalledProcessError, OSError) as exc:
+                problems.append(f"umount {target} failed: {exc}")
+        problems.extend(self._restore_resolv_conf())
+        return problems
+
+
 def build_image(
     *,
     source: BaseImageSource,
@@ -401,8 +495,13 @@ def build_image(
         installed: list[str] = []
         install_error: str | None = None
         secret_findings: list[str] = []
+        chroot_env = ChrootEnvironment(rootfs_mount)
+        try:
+            chroot_env.mount()
+        except ImageBuildError as exc:
+            install_error = str(exc)
         report("install", f"{len(plan)} ecosystem project(s)")
-        for entry in plan.entries:
+        for entry in (plan.entries if install_error is None else ()):
             report("install", entry.name)
             # `_install_one_project` raising
             # `ImageBuildError` (a missing commit SHA, a diverged
@@ -470,7 +569,7 @@ def build_image(
         # or mount could still be active. Every real exit code and
         # stderr is captured now, and a failure here stops promotion
         # entirely (see below) instead of being swallowed.
-        cleanup_errors: list[str] = []
+        cleanup_errors: list[str] = list(chroot_env.unmount()) if "chroot_env" in locals() else []
         for label, command in (
             ("umount boot", ["umount", str(boot_mount)]),
             ("umount rootfs", ["umount", str(rootfs_mount)]),

@@ -35,7 +35,7 @@
 |---|---|
 | Version | `0.3.1` |
 | Reifegrad | Funktionsfähig |
-| Tests | 132 (`pytest`) |
+| Tests | 158 (`pytest`) |
 | Technik | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Ziel | Der PC der Person, die es benutzt |
 | Auf echter Hardware | Noch nicht: für diese Version ist kein Lauf auf echter Hardware vermerkt |
@@ -132,6 +132,7 @@ Ersteinrichtung.
 - **Eine Firstboot-Konfiguration, die den Bediener aussperren würde, wird abgelehnt, nicht gebaut.** SSH zu deaktivieren, ohne dass ein Konto konfiguriert wird, lässt die eigenen offiziellen Basis-Images dieses Tools (kein Standardbenutzer ab Trixie) ganz ohne Anmeldeweg - es wird abgelehnt, außer `acknowledge_no_remote_access=True` stimmt ausdrücklich zu. `describe_recovery_procedure()` nennt den echten Wiederherstellungsweg für alles, was die Konfiguration offen lässt.
 - **Ein eingefrorenes Profil ist ein echtes, gespeichertes Rezept, das nie neu abgerufen wird.** `freeze_profile()` und `profile-build` aus `profile_manifest.py` pinnen jedes Projekt auf den exakten Commit-SHA, mit dem es getestet wurde - ein späterer Build ersetzt nie stillschweigend, was GitHub gerade „latest“ nennt. `diff_profile()` vergleicht ein eingefrorenes Profil pro Projekt (nicht als einzelnen Wahrheitswert) mit dem laufenden Ökosystem, denn die Versionsnummern dieses Ökosystems sind ein Zehnersystem-Kilometerzähler ohne semantische Bedeutung und können für sich allein nie ein ehrliches Kompatibilitätssignal sein.
 - **Die Passwörter werden nicht mehr als Argumente übertragen.** `--password` und `--wifi-password` funktionieren weiter, aber eine Befehlszeile ist für jeden Benutzer der Maschine sichtbar und `sudo` schreibt sie ins Authentifizierungsprotokoll; die CLI liest sie daher auch aus `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` oder mit `--secrets-stdin` aus einem JSON-Objekt (`{"password": "...", "wifiPassword": "..."}`) auf der Standardeingabe. Der Remote-Build (SSH) der GUI sendet sie so und setzt sie nicht mehr in den ausgeführten Befehl.
+- **Der Chroot ist vollständig und der Remote-Build festgelegt.** Der Build hängt `/proc`, `/sys`, `/dev` und `/dev/pts` in das Image ein und gibt ihm die Namensauflösung des Rechners, solange die Projekte gebaut werden (die eigene `resolv.conf` des Images wird danach zurückgelegt); so erreichen `pip`, `npm` und `go` aus dem Chroot das Netz. Ein Remote-Build über SSH installiert dieses Werkzeug aus dem Release-Tag der laufenden Version (`HYDRA_UMC_REBUILDER_REMOTE_REF` nennt einen anderen Tag oder Commit) und baut aus dem eingefrorenen Profil des geprüften Plans (`profile-build`), statt das Ökosystem auf dem Zielrechner neu zu ermitteln. Nichts davon lief bisher auf einem echten Linux-Rechner mit Root.
 - **Echtes SHA-512-Crypt-Passwort-Hashing, nicht das stdlib-Modul
   `crypt`.** `crypt` umschließt nur den eigenen libc-Aufruf des *Hosts*
   (nur Unix, und in Python 3.13 vollständig entfernt) - `passlib` erzeugt

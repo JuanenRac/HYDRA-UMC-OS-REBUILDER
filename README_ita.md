@@ -35,7 +35,7 @@
 |---|---|
 | Versione | `0.3.1` |
 | Maturità | Funzionale |
-| Test | 132 (`pytest`) |
+| Test | 158 (`pytest`) |
 | Tecnologia | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Destinazione | Il PC di chi lo usa |
 | Su hardware reale | Non ancora: per questa versione non risulta alcuna esecuzione su hardware reale |
@@ -132,6 +132,7 @@ Primo Avvio.
   reale.
 - **Una configurazione di primo avvio che chiuderebbe fuori l'operatore viene rifiutata, non costruita.** Disattivare SSH senza configurare alcun account lascerebbe le immagini di base ufficiali di questo stesso strumento (nessun utente predefinito da Trixie in poi) senza alcun modo di accesso - rifiutato a meno che `acknowledge_no_remote_access=True` non lo accetti esplicitamente. `describe_recovery_procedure()` indica il vero percorso di recupero per ciò che la configurazione lascia aperto.
 - **Le password non viaggiano più come argomenti.** `--password` e `--wifi-password` funzionano ancora, ma una riga di comando è visibile a ogni utente della macchina e `sudo` la scrive nel registro di autenticazione; la CLI le legge quindi anche da `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` o, con `--secrets-stdin`, da un oggetto JSON (`{"password": "...", "wifiPassword": "..."}`) sullo standard input. La build remota (SSH) della GUI le invia così e non le mette più nel comando eseguito.
+- **Il chroot è completo e la compilazione remota è fissata.** La compilazione monta `/proc`, `/sys`, `/dev` e `/dev/pts` nell'immagine e le dà la risoluzione dei nomi dell'host mentre i progetti vengono compilati (il `resolv.conf` proprio dell'immagine viene rimesso dopo), così `pip`, `npm` e `go` raggiungono la rete dal chroot. Una compilazione remota via SSH installa questo strumento dal tag della versione in esecuzione (`HYDRA_UMC_REBUILDER_REMOTE_REF` indica un altro tag o commit) e compila dal profilo congelato del piano esaminato (`profile-build`) invece di riscoprire l'ecosistema sull'host remoto. Niente di tutto ciò è ancora stato eseguito su un host Linux reale con root.
 - **Un profilo congelato è una vera ricetta persistente, mai riscaricata.** `freeze_profile()`/`profile-build` di `profile_manifest.py` fissano ogni progetto allo SHA esatto del commit con cui è stato provato - una build successiva non sostituisce mai in silenzio ciò che GitHub chiama oggi «latest». `diff_profile()` confronta un profilo congelato con l'ecosistema reale progetto per progetto (non come un singolo booleano), perché i numeri di versione di questo ecosistema sono un contachilometri in base 10 senza significato semantico e non possono mai essere, da soli, un segnale onesto di compatibilità.
 - **Hashing password SHA-512-crypt reale, non il modulo `crypt` della
   stdlib.** `crypt` avvolge solo la chiamata libc propria dell'*host*
