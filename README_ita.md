@@ -160,6 +160,7 @@ Primo Avvio.
 ```
 HYDRA-UMC-OS-REBUILDER/
 ├── src/hydra_umc_os_rebuilder/
+│   ├── __init__.py          # Versione del pacchetto
 │   ├── ecosystem_plan.py    # Piano reale progetti/versioni CM5, costruito sulla scoperta propria di hydra_umc_updater
 │   ├── firstboot_config.py  # Generatore puro firstrun.sh/cmdline.txt - nessun accesso al filesystem; protezione di recupero
 │   ├── profile_manifest.py  # Manifest di profilo di versione congelati: congelare/confrontare/aggiornare selettivamente, mai "l'ultima versione" a metà prova
@@ -167,15 +168,21 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── i18n.py               # Traduzioni reali e complete della GUI (8 lingue)
 │   ├── qt_gui.py             # Bridge Qt Quick sui moduli reali sopra, gli stessi usati dalla CLI
 │   ├── qml/Main.qml          # Shell desktop a tema: Stato dell'Ecosistema / Crea Immagine / Configurazione Primo Avvio
-│   └── main.py                # Dispatch: GUI predefinita, --cli per status/config/build-image
+│   ├── main.py                # Dispatch: GUI predefinita, --cli per status/config/build-image
+│   ├── remote_install.py      # Da cosa installa e compila una build remota (revisione fissata, non la punta di main)
+│   └── ssh_hostkeys.py        # Fiducia al primo uso della chiave SSH della macchina di build remota, con impronta fissata
 ├── tests/                    # Test reali: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
 ├── docs/
 │   ├── CLI_REFERENCE.md       # Riferimento comandi
-│   └── FIRST_BOOT_CONFIG.md   # Il meccanismo reale firstrun.sh riprodotto da questo strumento, e perché
+│   ├── FIRST_BOOT_CONFIG.md   # Il meccanismo reale firstrun.sh riprodotto da questo strumento, e perché
+│   └── MATURITY_CRITERIA.md   # Criteri di uscita della maturità (ciò che deve valere per salire di livello)
 ├── images/                    # Risorse, icona dell'app e banner
 ├── tools/
 │   ├── build_test.py          # Verifica di compilazione senza versionamento
-│   └── ci_validate.py         # Validazione manifesto/CHANGELOG/documentazione usata dalla CI
+│   ├── ci_validate.py         # Validazione manifesto/CHANGELOG/documentazione usata dalla CI
+│   ├── _doc_policy.py         # Regole di documentazione condivise dalla famiglia (copia di quella di HYDRA-UMC-SDK, mantenuta sincronizzata)
+│   ├── _readme_parity.py      # Verifica che gli otto README abbiano la stessa struttura (copia di quella di HYDRA-UMC-SDK, mantenuta sincronizzata)
+│   └── hydra_project_tool.py  # Gli stessi comandi in ogni repository: validate, test, ci, version, status, bump
 ├── build.sh / build.bat       # venv + installazione editabile + verifica compilazione
 ├── run.sh / run.bat           # GUI predefinita / punto di ingresso CLI
 ├── run-gui.vbs                # Launcher grafico Windows senza finestra console

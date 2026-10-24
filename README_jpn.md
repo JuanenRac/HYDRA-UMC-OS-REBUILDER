@@ -155,6 +155,7 @@ HYDRA-UMC-UPDATERと同じビジュアル言語（同じダークパレット、
 ```
 HYDRA-UMC-OS-REBUILDER/
 ├── src/hydra_umc_os_rebuilder/
+│   ├── __init__.py          # パッケージバージョン
 │   ├── ecosystem_plan.py    # hydra_umc_updater自身の検出機能の上に構築された、実際のCM5プロジェクト/バージョン計画
 │   ├── firstboot_config.py  # 純粋なfirstrun.sh/cmdline.txtジェネレータ - ファイルシステムへのアクセスなし、復旧手順の保護付き
 │   ├── profile_manifest.py  # 凍結されたプロファイルバージョンマニフェスト：凍結/比較/選択的更新、試用中に「最新版」へ黙って差し替わることはない
@@ -162,15 +163,21 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── i18n.py               # 実際の完全なGUI翻訳（8言語）
 │   ├── qt_gui.py             # 上記の実際のモジュール（CLIと同じもの）の上に構築されたQt Quickブリッジ
 │   ├── qml/Main.qml          # テーマ化されたデスクトップシェル：エコシステム状態 / イメージ作成 / 初回起動設定
-│   └── main.py                # ディスパッチ：デフォルトはGUI、--cliでstatus/config/build-image
+│   ├── main.py                # ディスパッチ：デフォルトはGUI、--cliでstatus/config/build-image
+│   ├── remote_install.py      # リモートビルドがインストール・ビルドする元 (固定リビジョン。main の先頭ではない)
+│   └── ssh_hostkeys.py        # リモートビルド機の SSH ホスト鍵を初回に信頼 (フィンガープリントを固定)
 ├── tests/                    # 実際のテスト：firstboot_config、ecosystem_plan、profile_manifest、image_builder、i18n、main
 ├── docs/
 │   ├── CLI_REFERENCE.md       # コマンドリファレンス
-│   └── FIRST_BOOT_CONFIG.md   # このツールが再現する実際のfirstrun.shの仕組みと、その理由
+│   ├── FIRST_BOOT_CONFIG.md   # このツールが再現する実際のfirstrun.shの仕組みと、その理由
+│   └── MATURITY_CRITERIA.md   # 成熟度の終了基準 (一段上がるために満たすべき条件)
 ├── images/                    # メディア、アプリアイコン、バナー
 ├── tools/
 │   ├── build_test.py          # バージョン管理を行わないビルド/コンパイルチェック
-│   └── ci_validate.py         # CIで使用されるマニフェスト/CHANGELOG/ドキュメントの検証
+│   ├── ci_validate.py         # CIで使用されるマニフェスト/CHANGELOG/ドキュメントの検証
+│   ├── _doc_policy.py         # ファミリー共通のドキュメント規則 (HYDRA-UMC-SDK のコピーで、同期を維持)
+│   ├── _readme_parity.py      # 8つの README が同じ構造であることの検査 (HYDRA-UMC-SDK のコピーで、同期を維持)
+│   └── hydra_project_tool.py  # すべてのリポジトリで共通のコマンド: validate、test、ci、version、status、bump
 ├── build.sh / build.bat       # venv + 編集可能インストール + コンパイルチェック
 ├── run.sh / run.bat           # デフォルトのGUI / CLIエントリーポイント
 ├── run-gui.vbs                # コンソールウィンドウなしのWindowsグラフィカルランチャー

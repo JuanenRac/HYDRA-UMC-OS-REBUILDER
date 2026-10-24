@@ -135,6 +135,7 @@ HYDRA-UMC-UPDATER 相同的视觉语言（相同的深色调色板、字体排�
 ```
 HYDRA-UMC-OS-REBUILDER/
 ├── src/hydra_umc_os_rebuilder/
+│   ├── __init__.py          # 包版本
 │   ├── ecosystem_plan.py    # 真实的 CM5 项目/版本计划，基于 hydra_umc_updater 自身的发现能力构建
 │   ├── firstboot_config.py  # 纯粹的 firstrun.sh/cmdline.txt 生成器 - 不访问文件系统；带恢复保护机制
 │   ├── profile_manifest.py  # 冻结的按方案版本清单：冻结/对比/有选择地更新，绝不在试验中途换成"最新版本"
@@ -142,15 +143,21 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── i18n.py               # 真实、完整的图形界面翻译（8 种语言）
 │   ├── qt_gui.py             # 覆盖在上述真实模块之上的 Qt Quick 桥接，与 CLI 使用的完全相同
 │   ├── qml/Main.qml          # 主题化的桌面界面：生态系统状态 / 构建镜像 / 首次启动配置
-│   └── main.py                # 分派：默认图形界面，--cli 用于 status/config/build-image
+│   ├── main.py                # 分派：默认图形界面，--cli 用于 status/config/build-image
+│   ├── remote_install.py      # 远程构建安装并构建所用的来源 (固定版本,而非 main 的最新提交)
+│   └── ssh_hostkeys.py        # 首次使用时信任远程构建机的 SSH 主机密钥,并固定其指纹
 ├── tests/                    # 真实测试：firstboot_config、ecosystem_plan、profile_manifest、image_builder、i18n、main
 ├── docs/
 │   ├── CLI_REFERENCE.md       # 命令参考
-│   └── FIRST_BOOT_CONFIG.md   # 本工具复现的真实 firstrun.sh 机制，以及原因
+│   ├── FIRST_BOOT_CONFIG.md   # 本工具复现的真实 firstrun.sh 机制，以及原因
+│   └── MATURITY_CRITERIA.md   # 成熟度退出标准 (升一级必须满足的条件)
 ├── images/                    # 素材、应用图标和横幅
 ├── tools/
 │   ├── build_test.py          # 非版本化的构建/编译检查
-│   └── ci_validate.py         # CI 使用的清单/CHANGELOG/文档校验
+│   ├── ci_validate.py         # CI 使用的清单/CHANGELOG/文档校验
+│   ├── _doc_policy.py         # 家族共享的文档规则 (HYDRA-UMC-SDK 的副本,保持同步)
+│   ├── _readme_parity.py      # 检查八个 README 结构一致 (HYDRA-UMC-SDK 的副本,保持同步)
+│   └── hydra_project_tool.py  # 每个仓库相同的命令: validate、test、ci、version、status、bump
 ├── build.sh / build.bat       # venv + 可编辑安装 + 编译检查
 ├── run.sh / run.bat           # 默认图形界面 / CLI 入口
 ├── run-gui.vbs                # 无控制台窗口的 Windows 图形启动器
