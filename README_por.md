@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows and Linux">
 </p>
 
-> **Estado: v0.3.1, funcional.** A CLI, a descoberta do ecossistema, o gerador
+> **Estado: v0.3.2, funcional.** A CLI, a descoberta do ecossistema, o gerador
 > de configuração de primeiro arranque e o shell da GUI são reais e testados.
 > A construção real de imagem de ponta a ponta (descarregar → montar em loop
 > → instalar em chroot → desmontar) está implementada, mas só corre num
@@ -33,9 +33,9 @@
 
 | | |
 |---|---|
-| Versão | `0.3.1` |
+| Versão | `0.3.2` |
 | Maturidade | Funcional |
-| Testes | 167 (`pytest`) |
+| Testes | 158 (`pytest`) |
 | Tecnologia | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Destino | O PC de quem o usa |
 | Em hardware real | Ainda não: não há registo de execução em hardware real para esta versão |

@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="WindowsとLinux">
 </p>
 
-> **ステータス: v0.3.1、機能段階。** CLI、エコシステム
+> **ステータス: v0.3.2、機能段階。** CLI、エコシステム
 > 検出、初回起動設定ジェネレータ、GUIはいずれも実際に動作しテスト済み
 > です。実際のエンドツーエンドのイメージビルド（ダウンロード → ループ
 > マウント → chrootインストール → アンマウント）は実装済みですが、root
@@ -33,9 +33,9 @@
 
 | | |
 |---|---|
-| バージョン | `0.3.1` |
+| バージョン | `0.3.2` |
 | 成熟度 | 機能する |
-| テスト | 167 (`pytest`) |
+| テスト | 158 (`pytest`) |
 | 技術 | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | 対象 | 利用者の PC |
 | 実機での確認 | まだです：このバージョンについて実機での動作記録はありません |

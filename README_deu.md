@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows und Linux">
 </p>
 
-> **Status: v0.3.1, funktional.** Die CLI, die Ökosystem-Erkennung, der
+> **Status: v0.3.2, funktional.** Die CLI, die Ökosystem-Erkennung, der
 > Ersteinrichtungs-Generator und die GUI sind real und getestet. Der
 > echte End-to-End-Image-Build (Download → Loop-Mount →
 > Chroot-Installation → Unmount) ist implementiert, läuft aber nur auf
@@ -33,9 +33,9 @@
 
 | | |
 |---|---|
-| Version | `0.3.1` |
+| Version | `0.3.2` |
 | Reifegrad | Funktionsfähig |
-| Tests | 167 (`pytest`) |
+| Tests | 158 (`pytest`) |
 | Technik | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Ziel | Der PC der Person, die es benutzt |
 | Auf echter Hardware | Noch nicht: für diese Version ist kein Lauf auf echter Hardware vermerkt |

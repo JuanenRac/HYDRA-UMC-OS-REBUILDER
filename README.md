@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows and Linux">
 </p>
 
-> **Status: v0.3.1, functional.** The CLI, the ecosystem discovery, the
+> **Status: v0.3.2, functional.** The CLI, the ecosystem discovery, the
 > first-boot config generator and the GUI shell are real and tested. The
 > real end-to-end image build (download → loop-mount → chroot-install →
 > unmount) is implemented but only runs on a real Linux host with root -
@@ -32,9 +32,9 @@
 
 | | |
 |---|---|
-| Version | `0.3.1` |
+| Version | `0.3.2` |
 | Maturity | Functional |
-| Tests | 167 (`pytest`) |
+| Tests | 158 (`pytest`) |
 | Stack | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Target | The PC of the person using it |
 | On real hardware | Not yet: no run on real hardware is recorded for this version |

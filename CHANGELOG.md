@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [0.3.2] - The SSH host key of a remote build machine is pinned on first use and no default Wi-Fi country
 
 - **The SSH host key of a remote build machine is pinned on first use.** An unknown host is refused with its SHA-256 fingerprint; entering that fingerprint (new field in the remote build form, checked on the machine itself) pins the key, and from then on a different key is refused as changed whatever is entered. Nothing is accepted silently any more.
 - **No default Wi-Fi country.** `--wifi-country` and the country field of the interface are required with a Wi-Fi network; the old default `US` set the radio rules of the wrong country for most installations.
