@@ -8,6 +8,7 @@ All notable changes to this project are documented here.
 - **The shared SDK is installed first**, before the projects that import it (the rest keep their name order).
 - **The pinned SDK commit of a frozen profile survives the commit lookup** (it was lost when the plan was resolved).
 - **First-boot Wi-Fi:** the password is passed to `raspi-config` as plain text (it was given the country code in that position).
+- **A checksum file and a content manifest next to every finished image**: `<image>.sha256` (the `sha256sum` format) and `<image>.manifest.json` (base image, projects with their versions and content hashes, builder version); documented in `docs/CLI_REFERENCE.md`.
 - The README in the eight languages says what the image contains and that no service starts by itself.
 - CI lints the Python sources with `ruff`; the six findings it reported are fixed. 5 new tests.
 

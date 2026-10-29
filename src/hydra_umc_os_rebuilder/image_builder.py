@@ -303,6 +303,33 @@ def fetch_base_image(source: BaseImageSource, dest_dir: Path, *, chunk_size: int
 DEFAULT_PROJECT_TIMEOUT_SECONDS: float = 1800.0
 
 
+def write_image_sidecars(output_path: Path, installed: tuple[str, ...], *, base_image: BaseImageSource) -> tuple[Path, Path]:
+    """Write `<image>.sha256` (the `sha256sum` format, so `sha256sum -c` checks the image) and `<image>.manifest.json`
+    (what is in the image: the base image, the installed projects with the content hash of each, and the builder version)
+    next to a finished image. Returns the two paths."""
+    from . import __version__
+
+    digest = _file_sha256(output_path)
+    checksum_path = output_path.with_name(output_path.name + ".sha256")
+    checksum_path.write_text(f"{digest}  {output_path.name}" + chr(10), encoding="utf-8")
+    projects = []
+    for item in installed:
+        name_version, _, content_hash = item.partition("#sha256:")
+        name, _, version_text = name_version.partition("@")
+        projects.append({"name": name, "version": version_text, "content_sha256": content_hash})
+    manifest = {
+        "image": output_path.name,
+        "image_sha256": digest,
+        "image_size_bytes": output_path.stat().st_size,
+        "base_image": {"label": base_image.label, "url": base_image.url, "sha256": base_image.sha256},
+        "projects": projects,
+        "builder_version": __version__,
+    }
+    manifest_path = output_path.with_name(output_path.name + ".manifest.json")
+    manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + chr(10), encoding="utf-8")
+    return checksum_path, manifest_path
+
+
 def _wait_for_partitions(loop_device: str, *, timeout_seconds: float = 15.0, sleep=None, exists=None) -> None:
     """losetup --partscan returns before udev has created /dev/loopNp1 and p2; mounting at once
     fails now and then with "special device does not exist". Waits (bounded) for both nodes."""
@@ -639,6 +666,15 @@ def build_image(
     report("finalize", str(output_path))
     output_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.move(str(raw_image), str(output_path))
+    try:
+        write_image_sidecars(output_path, tuple(installed), base_image=source)
+    except OSError as exc:
+        return BuildResult(
+            ok=False,
+            output_path=output_path,
+            error=f"image built but its checksum and content manifest could not be written: {exc}",
+            installed=tuple(installed),
+        )
 
     return BuildResult(ok=True, output_path=output_path, installed=tuple(installed))
 

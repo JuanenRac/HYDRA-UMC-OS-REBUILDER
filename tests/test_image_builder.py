@@ -932,3 +932,21 @@ def test_sdk_is_checked_out_at_the_pinned_commit(tmp_path: Path, monkeypatch) ->
     assert calls[0][:2] == ("git", "clone") and "--depth" not in calls[0]
     assert calls[1][-2:] == ("checkout", "abc123")
 
+
+def test_a_finished_image_gets_a_checksum_file_and_a_content_manifest(tmp_path: Path) -> None:
+    image = tmp_path / "out.img"
+    image.write_bytes(b"image bytes")
+    source = BaseImageSource(label="fixture", url="https://example.invalid/base.img.xz", sha256="ab" * 32)
+
+    checksum_path, manifest_path = image_builder_module.write_image_sidecars(
+        image, ("HYDRA-UMC-SDK@0.3.7#sha256:" + "cd" * 32,), base_image=source
+    )
+
+    digest = hashlib.sha256(b"image bytes").hexdigest()
+    assert checksum_path.read_text(encoding="utf-8") == f"{digest}  out.img" + chr(10)
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["image_sha256"] == digest
+    assert manifest["image_size_bytes"] == len(b"image bytes")
+    assert manifest["base_image"]["sha256"] == "ab" * 32
+    assert manifest["projects"] == [{"name": "HYDRA-UMC-SDK", "version": "0.3.7", "content_sha256": "cd" * 32}]
+    assert manifest["builder_version"]

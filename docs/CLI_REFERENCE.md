@@ -133,3 +133,12 @@ curates this list once per profile, and `profile-build` checks it for
 real against the actual post-build tree, catching a UI asset or runtime
 module a project's own `build.sh` silently stopped producing, before an
 incomplete image is ever promoted.
+
+## Files written next to a finished image
+
+A successful `build-image` or `profile-build` writes two files beside the image, named after it:
+
+- `<image>.sha256`, one line in the `sha256sum` format, so `sha256sum -c <image>.sha256` checks the image after a copy or a download.
+- `<image>.manifest.json`: the image name, its SHA-256 and size, the base image it was built from (label, URL and pinned SHA-256), every installed project with its version and the content hash of what landed on disk, and the version of this tool.
+
+If the two files cannot be written the build is reported as failed, although the image itself has been moved to its place.
