@@ -142,3 +142,7 @@ A successful `build-image` or `profile-build` writes two files beside the image,
 - `<image>.manifest.json`: the image name, its SHA-256 and size, the base image it was built from (label, URL and pinned SHA-256), every installed project with its version and the content hash of what landed on disk, and the version of this tool.
 
 If the two files cannot be written the build is reported as failed, although the image itself has been moved to its place.
+
+## Making room in the image
+
+The official image is made to fit a small card, and installing the projects (virtual environments, `node_modules`, build folders) can fill its root file system. `build-image --grow-mb N` and `profile-build --grow-mb N` make the image N MiB larger before it is mounted: the file is extended, partition 2 is grown to the end (`parted resizepart`), the file system is checked (`e2fsck -f`) and grown (`resize2fs`). The default is 0, the size of the base image. The step is covered by tests that check the commands and their order; it has not been run against a real image yet.

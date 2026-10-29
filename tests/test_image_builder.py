@@ -950,3 +950,43 @@ def test_a_finished_image_gets_a_checksum_file_and_a_content_manifest(tmp_path: 
     assert manifest["base_image"]["sha256"] == "ab" * 32
     assert manifest["projects"] == [{"name": "HYDRA-UMC-SDK", "version": "0.3.7", "content_sha256": "cd" * 32}]
     assert manifest["builder_version"]
+
+
+def test_the_image_file_is_extended_by_the_requested_size(tmp_path: Path) -> None:
+    image = tmp_path / "base.img"
+    image.write_bytes(b"x" * 1000)
+    image_builder_module.extend_image_file(image, 3)
+    assert image.stat().st_size == 1000 + 3 * 1024 * 1024
+    assert image.read_bytes()[:1000] == b"x" * 1000
+    with pytest.raises(ImageBuildError):
+        image_builder_module.extend_image_file(image, 0)
+
+
+def test_the_root_partition_is_grown_in_the_order_resize_check_resize(monkeypatch: pytest.MonkeyPatch) -> None:
+    calls: list[tuple[str, ...]] = []
+    monkeypatch.setattr(image_builder_module, "_run", lambda *command, **kwargs: calls.append(command))
+    monkeypatch.setattr(image_builder_module, "_wait_for_partitions", lambda loop_dev, **kwargs: calls.append(("wait", loop_dev)))
+
+    class Done:
+        returncode = 1  # e2fsck repaired something: still fine
+
+    monkeypatch.setattr(image_builder_module.subprocess, "run", lambda command, **kwargs: calls.append(tuple(command)) or Done())
+    image_builder_module.grow_root_partition("/dev/loop7")
+    assert calls == [
+        ("parted", "--script", "/dev/loop7", "resizepart", "2", "100%"),
+        ("wait", "/dev/loop7"),
+        ("e2fsck", "-f", "-y", "/dev/loop7p2"),
+        ("resize2fs", "/dev/loop7p2"),
+    ]
+
+
+def test_a_failed_file_system_check_stops_the_growth(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(image_builder_module, "_run", lambda *command, **kwargs: None)
+    monkeypatch.setattr(image_builder_module, "_wait_for_partitions", lambda loop_dev, **kwargs: None)
+
+    class Broken:
+        returncode = 4
+
+    monkeypatch.setattr(image_builder_module.subprocess, "run", lambda command, **kwargs: Broken())
+    with pytest.raises(ImageBuildError, match="e2fsck"):
+        image_builder_module.grow_root_partition("/dev/loop7")

@@ -134,6 +134,7 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
         output_path=Path(args.out),
         progress=progress,
         project_timeout_seconds=args.project_timeout_seconds or None,
+        grow_mb=args.grow_mb,
     )
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
@@ -236,6 +237,7 @@ def _cmd_profile_build(args: argparse.Namespace) -> int:
         output_path=Path(args.out),
         progress=progress,
         project_timeout_seconds=args.project_timeout_seconds or None,
+        grow_mb=args.grow_mb,
     )
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
@@ -301,6 +303,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="real per-submodule timeout (clone/checkout/chrooted build.sh) in seconds - "
         f"default {DEFAULT_PROJECT_TIMEOUT_SECONDS:.0f}s; 0 means unlimited (the old, unbounded behavior)",
     )
+    build_parser_cmd.add_argument(
+        "--grow-mb",
+        type=int,
+        default=0,
+        help="make the image this many MiB larger and grow its root partition and file system before the projects are installed "
+        "(default 0: the size of the base image)",
+    )
 
     # freeze/diff/update/build a named, persisted, tested combination
     # of components - see profile_manifest.py's own module docstring.
@@ -351,6 +360,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_PROJECT_TIMEOUT_SECONDS,
         help="real per-submodule timeout (clone/checkout/chrooted build.sh) in seconds - "
         f"default {DEFAULT_PROJECT_TIMEOUT_SECONDS:.0f}s; 0 means unlimited (the old, unbounded behavior)",
+    )
+    profile_build_parser.add_argument(
+        "--grow-mb",
+        type=int,
+        default=0,
+        help="make the image this many MiB larger and grow its root partition and file system before the projects are installed "
+        "(default 0: the size of the base image)",
     )
 
     for secret_parser in (config_parser, build_parser_cmd, profile_build_parser):

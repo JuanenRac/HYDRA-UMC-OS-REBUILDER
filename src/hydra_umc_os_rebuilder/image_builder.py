@@ -330,6 +330,30 @@ def write_image_sidecars(output_path: Path, installed: tuple[str, ...], *, base_
     return checksum_path, manifest_path
 
 
+def extend_image_file(raw_image: Path, grow_mb: int) -> None:
+    """Make the raw image `grow_mb` MiB larger (the new space is a hole in the file until something is written there).
+    The official image is made to fit a small card: with the `venv`, `node_modules` and `target` folders of dozens of
+    projects installed into it, the root file system would run out of room. The partition and the file system are grown by
+    `grow_root_partition` once the image is attached to a loop device."""
+    if grow_mb <= 0:
+        raise ImageBuildError("the growth of the image must be greater than zero")
+    new_size = raw_image.stat().st_size + grow_mb * 1024 * 1024
+    with open(raw_image, "r+b") as handle:
+        handle.truncate(new_size)
+
+
+def grow_root_partition(loop_dev: str) -> None:
+    """Grow partition 2 of the attached image to the end of the (extended) file and its ext4 file system with it:
+    `parted resizepart`, a forced `e2fsck` (required by `resize2fs`; exit code 1 only means that it repaired
+    something) and `resize2fs`."""
+    _run("parted", "--script", loop_dev, "resizepart", "2", "100%")
+    _wait_for_partitions(loop_dev)
+    check = subprocess.run(["e2fsck", "-f", "-y", f"{loop_dev}p2"], check=False, stdin=subprocess.DEVNULL)
+    if check.returncode not in (0, 1):
+        raise ImageBuildError(f"e2fsck of the root partition failed (exit {check.returncode}); the image was not grown")
+    _run("resize2fs", f"{loop_dev}p2")
+
+
 def _wait_for_partitions(loop_device: str, *, timeout_seconds: float = 15.0, sleep=None, exists=None) -> None:
     """losetup --partscan returns before udev has created /dev/loopNp1 and p2; mounting at once
     fails now and then with "special device does not exist". Waits (bounded) for both nodes."""
@@ -459,6 +483,7 @@ def build_image(
     output_path: Path,
     progress=None,
     project_timeout_seconds: float | None = DEFAULT_PROJECT_TIMEOUT_SECONDS,
+    grow_mb: int = 0,
 ) -> BuildResult:
     """The real end-to-end pipeline. `progress`, if given, is called with a
     BuildProgress at each real phase transition - never a fake percentage,
@@ -520,8 +545,19 @@ def build_image(
         boot_mount.mkdir(parents=True, exist_ok=True)
         rootfs_mount.mkdir(parents=True, exist_ok=True)
 
+        if grow_mb > 0:
+            report("grow", f"{grow_mb} MiB")
+            extend_image_file(raw_image, grow_mb)
+
         report("mount")
         loop_dev = _run("losetup", "--find", "--show", "--partscan", str(raw_image), capture_output=True, text=True).stdout.strip()
+        if grow_mb > 0:
+            try:
+                _wait_for_partitions(loop_dev)
+                grow_root_partition(loop_dev)
+            except BaseException:
+                subprocess.run(["losetup", "-d", loop_dev], check=False)
+                raise
     except (ImageBuildError, FirstBootConfigError, subprocess.CalledProcessError, subprocess.TimeoutExpired, urllib.error.URLError, OSError) as exc:
         for leftover in work_dir.glob("*.part"):
             leftover.unlink(missing_ok=True)
