@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The layout of the README is checked in the CI:** the validator runs `tools/universal_readme_check.py` and lists, as a warning, what differs from the universal layout of the README.
 - **The base image is pinned by its SHA-256.** The download is checked against the digest recorded in the tool instead of one taken from the same server, and a download kept by an earlier build with that digest is reused instead of fetched again.
 - **The shared SDK is installed first**, before the projects that import it (the rest keep their name order).
 - **The pinned SDK commit of a frozen profile survives the commit lookup** (it was lost when the plan was resolved).
