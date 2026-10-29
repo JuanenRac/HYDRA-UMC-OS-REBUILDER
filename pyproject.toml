@@ -25,7 +25,7 @@ dependencies = [
     # Real, audited SHA-512-crypt for first-boot passwords - see
     # firstboot_config.py's own hash_password() header comment for why not
     # the stdlib crypt module.
-    "passlib>=1.7,<2",
+    "passlib>=1.7.4,<2",
 ]
 
 [project.optional-dependencies]
