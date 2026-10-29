@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+- **The base image is pinned by its SHA-256.** The download is checked against the digest recorded in the tool instead of one taken from the same server, and a download kept by an earlier build with that digest is reused instead of fetched again.
+- **The shared SDK is installed first**, before the projects that import it (the rest keep their name order).
+- **The pinned SDK commit of a frozen profile survives the commit lookup** (it was lost when the plan was resolved).
+- **First-boot Wi-Fi:** the password is passed to `raspi-config` as plain text (it was given the country code in that position).
+- The README in the eight languages says what the image contains and that no service starts by itself.
+- CI lints the Python sources with `ruff`; the six findings it reported are fixed. 5 new tests.
+
 ## [0.3.2] - The SSH host key of a remote build machine is pinned on first use and no default Wi-Fi country
 
 - **The SSH host key of a remote build machine is pinned on first use.** An unknown host is refused with its SHA-256 fingerprint; entering that fingerprint (new field in the remote build form, checked on the machine itself) pins the key, and from then on a different key is refused as changed whatever is entered. Nothing is accepted silently any more.

@@ -62,6 +62,8 @@ imagen fresca de tarjeta SD/eMMC, con la versión real más reciente de cada
 proyecto del ecosistema ya instalada, y dejarme configurar Wi-Fi/usuario/
 hostname/SSH antes de grabarla."**
 
+**Qué contiene la imagen:** las copias de los proyectos en `/opt/hydra-umc/<nombre>` en las versiones del plan y lo que generó la compilación de cada proyecto. No crea usuarios de servicio ni unidades de systemd ni prepara `/etc/hydra-umc`, así que ningún servicio arranca solo en el primer arranque; los scripts de aprovisionamiento de HYDRA-UMC-OS siguen teniendo que ejecutarse en la placa.
+
 Hace tres cosas reales:
 
 1. **Consulta GitHub.** Cada repositorio del ecosistema HYDRA-UMC/URTC cuyo

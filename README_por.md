@@ -62,6 +62,8 @@ que um desdobramento real de uma CM5 acaba sempre por precisar de resposta:
 atual de cada projeto do ecossistema já instalada, e deixe-me definir
 Wi-Fi/utilizador/nome do anfitrião/SSH antes de a gravar.»**
 
+**O que a imagem contém:** as cópias dos projetos em `/opt/hydra-umc/<nome>` nas versões previstas e o que a compilação de cada projeto lá produziu. Não cria utilizadores de serviço nem unidades systemd e não prepara o `/etc/hydra-umc`, pelo que nenhum serviço arranca sozinho no primeiro arranque; os scripts de aprovisionamento do HYDRA-UMC-OS continuam a ter de ser executados na placa.
+
 Faz três coisas reais:
 
 1. **Consulta o GitHub.** Cada repositório do ecossistema HYDRA-UMC/URTC cujo

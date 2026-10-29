@@ -61,6 +61,8 @@ card/eMMC image, with the most current real version of every ecosystem
 project already on it, and let me set Wi-Fi/user/hostname/SSH before I
 write it."**
 
+**What the image contains:** the project checkouts under `/opt/hydra-umc/<name>` at the planned versions and whatever each project's own build produced there. It does not create service users or systemd units and does not set up `/etc/hydra-umc`, so no service starts by itself on first boot; the provisioning scripts of HYDRA-UMC-OS still have to be run on the board.
+
 It does three real things:
 
 1. **Checks GitHub.** Every repository in the HYDRA-UMC/URTC ecosystem

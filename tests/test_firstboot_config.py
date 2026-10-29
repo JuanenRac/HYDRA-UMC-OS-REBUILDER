@@ -97,7 +97,7 @@ def test_ssh_authorized_key_is_appended_when_username_and_password_given() -> No
 def test_wifi_block_uses_raspi_config_nonint() -> None:
     script = build_firstrun_script(FirstBootConfig(wifi=WifiConfig(ssid="MyNet", psk="hunter22", country="ES")))
     assert "do_wifi_country 'ES'" in script
-    assert "do_wifi_ssid_passphrase 'MyNet' 'hunter22' 0 'ES'" in script
+    assert "do_wifi_ssid_passphrase 'MyNet' 'hunter22' 0 1" in script
 
 
 def test_wifi_requires_a_valid_country_code() -> None:

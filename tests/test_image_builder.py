@@ -20,7 +20,6 @@ from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlan, EcosystemPlanEn
 from hydra_umc_os_rebuilder.image_builder import (
     DEFAULT_PROJECT_TIMEOUT_SECONDS,
     BaseImageSource,
-    BuildProgress,
     ImageBuildError,
     PlatformCheck,
     _hash_directory_tree,
@@ -116,6 +115,35 @@ def test_fetch_base_image_verifies_against_the_real_sidecar_when_pinned_hash_is_
     dest = fetch_base_image(source, tmp_path)
     assert dest.read_bytes() == _FixtureHandler.image_bytes
     assert not (tmp_path / "image.img.part").exists()
+
+
+def test_fetch_base_image_reuses_a_kept_download_with_the_expected_digest(
+    fixture_server: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    digest = hashlib.sha256(_FixtureHandler.image_bytes).hexdigest()
+    source = BaseImageSource(label="fixture", url=f"{fixture_server}/image.img", sha256=digest)
+    first = fetch_base_image(source, tmp_path)
+
+    def no_network(*args, **kwargs):
+        raise AssertionError("a verified download is not fetched again")
+
+    monkeypatch.setattr(image_builder_module.urllib.request, "urlopen", no_network)
+    monkeypatch.setattr(image_builder_module, "_remote_content_length", no_network)
+    assert fetch_base_image(source, tmp_path) == first
+
+
+def test_fetch_base_image_downloads_again_when_the_kept_file_is_not_the_pinned_one(
+    fixture_server: str, tmp_path: Path
+) -> None:
+    (tmp_path / "image.img").write_bytes(b"left over from something else")
+    digest = hashlib.sha256(_FixtureHandler.image_bytes).hexdigest()
+    source = BaseImageSource(label="fixture", url=f"{fixture_server}/image.img", sha256=digest)
+    assert fetch_base_image(source, tmp_path).read_bytes() == _FixtureHandler.image_bytes
+
+
+def test_the_known_base_image_is_pinned_to_a_sha256() -> None:
+    for known in image_builder_module.KNOWN_BASE_IMAGES:
+        assert len(known.sha256) == 64 and set(known.sha256) <= set("0123456789abcdef")
 
 
 def test_fetch_base_image_rejects_a_tampered_download(fixture_server: str, tmp_path: Path) -> None:

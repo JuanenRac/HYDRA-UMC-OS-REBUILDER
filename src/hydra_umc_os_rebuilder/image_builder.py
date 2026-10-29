@@ -64,18 +64,17 @@ class BaseImageSource:
 # short, explicit list (not an auto-scraped "latest") so a build is always
 # reproducible against a base the operator can see and pin.
 #
-# `sha256=""` here is deliberate, not a stub left unfinished: Raspberry
-# Pi's own downloads server publishes a real `<url>.sha256` sidecar next
-# to every image (confirmed live: a plain `<hash>  <filename>` line, the
-# same format `sha256sum` itself produces) - `fetch_base_image()` fetches
-# and parses THAT as the real expected digest rather than this list
-# hand-copying a value that would silently go stale the moment Raspberry
-# Pi ever re-published the same URL with a fixed image.
+# `sha256` pins the digest of the exact download, so a build is reproducible
+# even if Raspberry Pi re-publishes the same URL: the download is checked
+# against this value, never against a digest taken from the same server.
+# An entry whose `sha256` is empty (used by tests and by a base image the
+# operator adds) falls back to the publisher's `<url>.sha256` sidecar, which
+# proves the transfer was intact but not who published the file.
 KNOWN_BASE_IMAGES: tuple[BaseImageSource, ...] = (
     BaseImageSource(
         label="Raspberry Pi OS Lite (64-bit, Debian trixie)",
         url="https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2026-10-06/2026-10-06-raspios-trixie-arm64-lite.img.xz",
-        sha256="",
+        sha256="483db18a48da399b5b7022ffae9a07bc6d99daab30e593aedac09b69ff422843",
     ),
 )
 
@@ -233,6 +232,14 @@ def _xz_uncompressed_size(path: Path) -> int | None:
     return None
 
 
+def _file_sha256(path: Path, chunk_size: int = 1 << 20) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(chunk_size), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def fetch_base_image(source: BaseImageSource, dest_dir: Path, *, chunk_size: int = 1 << 20) -> Path:
     """Real download with a real streaming sha256 check - never trusts
     Content-Length alone, and never leaves a partially-written file at the
@@ -257,6 +264,11 @@ def fetch_base_image(source: BaseImageSource, dest_dir: Path, *, chunk_size: int
     or the one it just fetched."""
     expected = source.sha256 or fetch_reference_sha256(source.url)
     dest_dir.mkdir(parents=True, exist_ok=True)
+    cached = dest_dir / Path(source.url).name
+    if cached.is_file() and _file_sha256(cached) == expected:
+        # A download kept by an earlier build that still has the expected
+        # digest: nothing to fetch again.
+        return cached
     content_length = _remote_content_length(source.url)
     if content_length is not None:
         _require_free_space(dest_dir, content_length, f"downloading {source.label}")

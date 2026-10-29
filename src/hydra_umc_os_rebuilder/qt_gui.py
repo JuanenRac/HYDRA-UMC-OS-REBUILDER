@@ -290,7 +290,6 @@ class RebuilderBridge(QObject):
         flags for the remote (SSH) build path - main.py's own build-image
         subcommand now accepts these directly (see that file's own
         comment for why this is new)."""
-        import shlex
 
         args: list[str] = []
 

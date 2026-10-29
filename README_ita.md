@@ -63,6 +63,8 @@ versione reale più recente di ogni progetto dell'ecosistema già
 installata, e lasciami configurare Wi-Fi/utente/hostname/SSH prima di
 scriverla."**
 
+**Cosa contiene l'immagine:** le copie dei progetti in `/opt/hydra-umc/<nome>` alle versioni previste e ciò che la compilazione di ciascun progetto vi ha prodotto. Non crea utenti di servizio né unità systemd e non prepara `/etc/hydra-umc`, quindi nessun servizio parte da solo al primo avvio; gli script di provisioning di HYDRA-UMC-OS vanno comunque eseguiti sulla scheda.
+
 Fa tre cose reali:
 
 1. **Interroga GitHub.** Ogni repository dell'ecosistema HYDRA-UMC/URTC il

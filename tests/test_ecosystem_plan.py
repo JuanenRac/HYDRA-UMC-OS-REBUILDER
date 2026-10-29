@@ -103,6 +103,19 @@ def test_plan_is_sorted_by_name_case_insensitively() -> None:
     assert [entry.name for entry in plan.entries] == ["Alpha-Project", "zebra-project"]
 
 
+def test_the_shared_sdk_is_installed_before_the_projects_that_import_it() -> None:
+    discovery = RemoteDiscovery(
+        projects=(
+            _status("Alpha-Project", _V("1.0.0"), _manifest("Alpha-Project", "1.0.0", "cm5")),
+            _status("HYDRA-UMC-SDK", _V("0.3.6"), _manifest("HYDRA-UMC-SDK", "0.3.6", "cm5")),
+            _status("Beta-Project", _V("1.0.0"), _manifest("Beta-Project", "1.0.0", "cm5")),
+        ),
+        errors=(),
+    )
+    plan = build_plan(discovery)
+    assert [entry.name for entry in plan.entries] == ["HYDRA-UMC-SDK", "Alpha-Project", "Beta-Project"]
+
+
 # =============================================================================
 # (P1):
 # resolve_commit_shas() real network pass - a real local fixture HTTP
@@ -184,6 +197,24 @@ def test_resolve_commit_shas_fills_in_the_real_immutable_sha(fake_github_commits
     assert len(resolved.entries) == 1
     assert resolved.entries[0].commit_sha == "a" * 40
     assert resolved.discovery_errors == ()
+
+
+def test_resolve_commit_shas_keeps_the_pinned_sdk_commit(fake_github_commits) -> None:
+    fake_github_commits.shas = {"JuanenRac/HYDRA-UMC-SERVER/main": "a" * 40}
+    plan = EcosystemPlan(
+        entries=(
+            EcosystemPlanEntry(
+                name="HYDRA-UMC-SERVER", version="0.4.8", role="api", stack="node",
+                git_url="https://github.com/JuanenRac/HYDRA-UMC-SERVER.git",
+            ),
+        ),
+        discovery_errors=(),
+        sdk_commit_sha="b" * 40,
+    )
+
+    resolved = resolve_commit_shas(plan)
+
+    assert resolved.sdk_commit_sha == "b" * 40
 
 
 def test_resolve_commit_shas_excludes_an_entry_it_cannot_resolve_a_real_sha_for(fake_github_commits) -> None:

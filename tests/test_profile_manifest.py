@@ -11,7 +11,6 @@ import pytest
 
 from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlan, EcosystemPlanEntry
 from hydra_umc_os_rebuilder.profile_manifest import (
-    ProfileManifest,
     ProfileManifestError,
     diff_profile,
     freeze_profile,

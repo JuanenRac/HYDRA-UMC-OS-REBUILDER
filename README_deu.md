@@ -62,6 +62,8 @@ frisches SD-Karten-/eMMC-Image, mit der aktuellsten echten Version jedes
 Ökosystem-Projekts bereits installiert, und lass mich WLAN/Benutzer/
 Hostname/SSH einstellen, bevor ich es schreibe."**
 
+**Was das Image enthält:** die Projektkopien unter `/opt/hydra-umc/<Name>` in den geplanten Versionen und das, was der eigene Build jedes Projekts dort erzeugt hat. Es legt weder Dienstbenutzer noch systemd-Units an und richtet `/etc/hydra-umc` nicht ein; beim ersten Start startet also kein Dienst von selbst, und die Provisionierungsskripte von HYDRA-UMC-OS müssen weiterhin auf dem Board ausgeführt werden.
+
 Es tut drei echte Dinge:
 
 1. **Prüft GitHub.** Jedes Repository im HYDRA-UMC/URTC-Ökosystem, dessen

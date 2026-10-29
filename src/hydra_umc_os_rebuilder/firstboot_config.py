@@ -191,7 +191,7 @@ def build_firstrun_script(config: FirstBootConfig) -> str:
         hidden_flag = "1" if config.wifi.hidden else "0"
         lines.append(
             f"raspi-config nonint do_wifi_ssid_passphrase {_sh_quote(config.wifi.ssid)} "
-            f"{_sh_quote(config.wifi.psk)} {hidden_flag} {_sh_quote(config.wifi.country)}"
+            f"{_sh_quote(config.wifi.psk)} {hidden_flag} 1"
         )
 
     if config.username and config.password:

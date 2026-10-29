@@ -26,7 +26,6 @@ from dataclasses import dataclass, replace
 
 from hydra_umc_updater.github_client import (
     RemoteDiscovery,
-    RemoteStatus,
     describe_http_error,
     discover_remote_projects,
     is_primary_rate_limited,
@@ -124,7 +123,9 @@ def build_plan(discovery: RemoteDiscovery, *, owner: str = "JuanenRac") -> Ecosy
                 git_url=_git_url(owner, manifest.name),
             )
         )
-    entries.sort(key=lambda entry: entry.name.casefold())
+    # The shared SDK goes first so the projects that import it find it already
+    # installed; everything else keeps the case-insensitive name order.
+    entries.sort(key=lambda entry: (not entry.name.upper().endswith("-SDK"), entry.name.casefold()))
     return EcosystemPlan(entries=tuple(entries), discovery_errors=discovery.errors)
 
 
@@ -190,14 +191,13 @@ def resolve_commit_shas(plan: EcosystemPlan, *, owner: str = "JuanenRac", token:
     """
     resolved: list[EcosystemPlanEntry] = []
     errors = list(plan.discovery_errors)
-    for index, entry in enumerate(plan.entries):
+    for entry in plan.entries:
         try:
             sha = _fetch_commit_sha(owner, entry.name, entry.branch, token=token)
         except GitHubRateLimitedError as exc:
-            # `index` itself is the entry that just hit the limit (a real
-            # attempt, not a skipped one) - counted together with every
-            # entry after it under "excluded", since neither ever made it
-            # into `resolved` either way.
+            # The entry that just hit the limit (a real attempt, not a
+            # skipped one) is counted together with every entry after it
+            # under "excluded", since neither ever made it into `resolved`.
             excluded = len(plan.entries) - len(resolved)
             errors.append(
                 f"GitHub commit-SHA resolution stopped after {len(resolved)} of {len(plan.entries)} project(s) resolved - "
@@ -210,7 +210,7 @@ def resolve_commit_shas(plan: EcosystemPlan, *, owner: str = "JuanenRac", token:
             )
             continue
         resolved.append(replace(entry, commit_sha=sha))
-    return EcosystemPlan(entries=tuple(resolved), discovery_errors=tuple(errors))
+    return EcosystemPlan(entries=tuple(resolved), discovery_errors=tuple(errors), sdk_commit_sha=plan.sdk_commit_sha)
 
 
 def fetch_ecosystem_plan(*, owner: str = "JuanenRac", token: str | None = None) -> EcosystemPlan:

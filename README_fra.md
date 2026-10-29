@@ -63,6 +63,8 @@ une image fraîche de carte SD/eMMC, avec la version réelle la plus récente
 de chaque projet de l'écosystème déjà installée, et laisse-moi configurer
 le Wi-Fi/utilisateur/hostname/SSH avant de l'écrire. »**
 
+**Ce que contient l'image :** les copies des projets sous `/opt/hydra-umc/<nom>` aux versions prévues et ce que la compilation propre à chaque projet y a produit. Elle ne crée ni utilisateurs de service ni unités systemd et ne prépare pas `/etc/hydra-umc` ; aucun service ne démarre donc tout seul au premier démarrage, et les scripts de provisionnement de HYDRA-UMC-OS doivent toujours être exécutés sur la carte.
+
 Il fait trois choses réelles :
 
 1. **Interroge GitHub.** Chaque dépôt de l'écosystème HYDRA-UMC/URTC dont
