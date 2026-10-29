@@ -990,3 +990,10 @@ def test_a_failed_file_system_check_stops_the_growth(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(image_builder_module.subprocess, "run", lambda command, **kwargs: Broken())
     with pytest.raises(ImageBuildError, match="e2fsck"):
         image_builder_module.grow_root_partition("/dev/loop7")
+
+
+def test_the_remote_pip_install_has_its_own_longer_timeout() -> None:
+    source = (Path(__file__).resolve().parent.parent / "src" / "hydra_umc_os_rebuilder" / "qt_gui.py").read_text(encoding="utf-8")
+    assert "REMOTE_INSTALL_TIMEOUT_SECONDS = 1800.0" in source
+    assert "timeout=REMOTE_INSTALL_TIMEOUT_SECONDS" in source
+    assert "def run(command: str, *, check: bool = True, timeout: float = 30)" in source

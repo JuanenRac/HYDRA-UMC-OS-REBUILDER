@@ -50,6 +50,10 @@ _REMOTE_LOG_LINE_RE = re.compile(r"^\[(?P<phase>[\w-]+)\]\s*(?P<detail>.*)$")
 # GUI spends minutes creating a venv and pip installing over the network.
 _MIN_REMOTE_FREE_KB = 6 * 1024 * 1024  # 6GB
 
+# `pip install` of this tool from its git repository can stay silent for minutes (`--quiet`) on a slow host or
+# without a pip cache; the 30 s of an ordinary remote command would cut it with a socket timeout.
+REMOTE_INSTALL_TIMEOUT_SECONDS = 1800.0
+
 #: Real, plain-text log file, one per real GUI run - the QML build log
 #: (a ListView, not a selectable text box) can't be copy-pasted out of
 #: the running app, found live: a real Windows build failure had no way
@@ -507,8 +511,8 @@ class RebuilderBridge(QObject):
                         connect_kwargs["passphrase"] = key_passphrase
                 client.connect(**connect_kwargs)
 
-                def run(command: str, *, check: bool = True) -> str:
-                    _stdin, stdout, stderr = client.exec_command(command, timeout=30)
+                def run(command: str, *, check: bool = True, timeout: float = 30) -> str:
+                    _stdin, stdout, stderr = client.exec_command(command, timeout=timeout)
                     out = stdout.read().decode("utf-8", errors="replace")
                     err = stderr.read().decode("utf-8", errors="replace")
                     status = stdout.channel.recv_exit_status()
@@ -609,7 +613,10 @@ class RebuilderBridge(QObject):
                 venv_dir = f"{remote_tmp}/.venv"
                 run(f"python3 -m venv {shlex.quote(venv_dir)}")
                 emit_line("[install] creating a real venv and installing hydra-umc-os-rebuilder from its own GitHub repo...")
-                run(f"{shlex.quote(venv_dir)}/bin/pip install --quiet {shlex.quote(install_requirement)}")
+                run(
+                    f"{shlex.quote(venv_dir)}/bin/pip install --quiet {shlex.quote(install_requirement)}",
+                    timeout=REMOTE_INSTALL_TIMEOUT_SECONDS,
+                )
                 emit_line(f"[install] {install_requirement}")
                 remote_profile = f"{remote_tmp}/profile.json"
                 sftp_up = client.open_sftp()

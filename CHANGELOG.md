@@ -10,6 +10,7 @@ All notable changes to this project are documented here.
 - **First-boot Wi-Fi:** the password is passed to `raspi-config` as plain text (it was given the country code in that position).
 - **A checksum file and a content manifest next to every finished image**: `<image>.sha256` (the `sha256sum` format) and `<image>.manifest.json` (base image, projects with their versions and content hashes, builder version); documented in `docs/CLI_REFERENCE.md`.
 - **Room for the projects.** `build-image --grow-mb N` and `profile-build --grow-mb N` extend the image file, grow the root partition and its file system before mounting (default 0, the size of the base image); documented in `docs/CLI_REFERENCE.md`. Tested on the commands and their order, not on a real image yet.
+- **A remote build no longer fails while `pip` installs this tool on a slow host**: that step has its own 30-minute limit instead of the 30 seconds of an ordinary remote command.
 - The README in the eight languages says what the image contains and that no service starts by itself.
 - CI lints the Python sources with `ruff`; the six findings it reported are fixed. 5 new tests.
 
