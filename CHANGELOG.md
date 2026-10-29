@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **README in the universal layout:** the README and its seven translations follow the layout that the four families share (22 sections in a fixed order), with an architecture picture and a repository-structure picture drawn from `docs/architecture.json` and `docs/structure.json`; the CI validator checks both pictures and the file tree.
+
 - **The layout of the README is checked in the CI:** the validator runs `tools/universal_readme_check.py` and lists, as a warning, what differs from the universal layout of the README.
 - **The base image is pinned by its SHA-256.** The download is checked against the digest recorded in the tool instead of one taken from the same server, and a download kept by an earlier build with that digest is reused instead of fetched again.
 - **The shared SDK is installed first**, before the projects that import it (the rest keep their name order).
@@ -267,9 +269,8 @@ re-resolving "latest" mid-trial, and folds the real post-build content
 hashes back into it. `diff_profile()` compares a frozen profile against
 the current live ecosystem per project - a real commit update, a role or
 stack change, a project no longer targeting cm5 at all - never a single
-pass/fail boolean (this ecosystem's own version numbers are a base-10
-odometer with no semantic-versioning meaning, so a version diff alone
-was never going to be an honest compatibility signal). `refreeze_selected()`
+pass/fail boolean (a version diff alone was never going to be an honest
+compatibility signal). `refreeze_selected()`
 updates only the named projects in a profile, leaving every other one
 pinned exactly as it was tested - updating one client no longer forces
 refreezing the whole set.

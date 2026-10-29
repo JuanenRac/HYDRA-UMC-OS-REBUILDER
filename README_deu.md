@@ -1,33 +1,34 @@
+<!-- =============================================================================
+HYDRA-UMC-OS-REBUILDER - Builds a ready-to-flash CM5 image
+Copyright (C) JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+GPL-3.0-or-later - see LICENSE
+============================================================================= -->
+
 <p align="center">
-  <img src="images/HYDRA_UMC_BANNER.svg" alt="HYDRA-UMC-OS-REBUILDER Banner" width="100%">
+  <img src="images/HYDRA_UMC_BANNER.svg" alt="HYDRA-UMC-OS-REBUILDER banner" width="100%">
 </p>
 
-# 🏗️ HYDRA-UMC-OS-REBUILDER
+# 📀 HYDRA-UMC-OS-REBUILDER
 
 <p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | 🇩🇪 <b>Deutsch</b> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 📀 Ein flashbereites, vollständig aktuelles CM5-Image erstellen
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licencia-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
-  <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Python">
-  <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="PySide6 Qt Quick Desktop-GUI">
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Windows und Linux">
+  <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
+  <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Language">
+  <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="Desktop">
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
+  <img src="https://img.shields.io/badge/Tests-177%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.3.2-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
-
-> **Status: v0.3.2, funktional.** Die CLI, die Ökosystem-Erkennung, der
-> Ersteinrichtungs-Generator und die GUI sind real und getestet. Der
-> echte End-to-End-Image-Build (Download → Loop-Mount →
-> Chroot-Installation → Unmount) ist implementiert, läuft aber nur auf
-> einem echten Linux-Host mit Root-Rechten - siehe
-> [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) für die genaue
-> Plattformgrenze und warum sie existiert.
-
-**Ehrlichkeitscheck - was heute wirklich läuft:** die CLI (`main.py`), die dynamische Ökosystem-Erkennung, die den eigenen GitHub-Client von `hydra_umc_updater` wiederverwendet statt ihn ein zweites Mal zu implementieren (`ecosystem_plan.py`), der reine `firstrun.sh`/`cmdline.txt`-Generator ohne Dateisystemzugriff und mit einer eigenen Absicherung gegen das Aussperren des Betreibers (`firstboot_config.py`), die eingefrorenen Profil-Versionsmanifeste - eine bereits getestete Komponentenkombination einfrieren/vergleichen/selektiv aktualisieren statt immer aus dem aktuell Neuesten neu zu bauen (`profile_manifest.py`), die GUI-Übersetzungen in 8 Sprachen (`i18n.py`) und die Qt-Quick-Desktop-Oberfläche (`qt_gui.py`, `qml/Main.qml`) sind real und getestet (132 Tests, `pytest`). Die Pipeline von `image_builder.py` (Download/Prüfsummenverifikation/Loop-Mount/Chroot-Installation/Unmount), ihr Inhalts-Hash pro Projekt für das, was tatsächlich auf der Platte gelandet ist, und ihr Scan vor der Freigabe auf ein durchgesickertes WLAN-Passwort/einen privaten SSH-Schlüssel/eine Shell-Historie/eine `.env`-Datei sind echter Code, abgesichert durch `check_build_platform()` - sie laufen nur auf einem echten Linux-Host mit Root-Rechten und `losetup`/`chroot` im `PATH` und wurden in dieser Umgebung noch nie end-to-end gegen einen echten SD-/eMMC-Schreibvorgang einer CM5 ausgeführt; unter Windows oder mit einem Nicht-Root-Linux-Benutzer bricht `build-image` sofort mit `BUILD_BLOCKED reason=...` ab, statt einen Erfolg vorzutäuschen. `status`/`config` wurden dagegen echt gegen die Live-GitHub-Erkennung getestet. Siehe `CHANGELOG.md` für genau das, was bisher ausgeliefert wurde, und die ROADMAP weiter unten für das, was noch offen ist.
 
 ---
 
 > **Stand von Sicherheit (Safety) und Security:** Dieses Ökosystem ist kein zertifiziertes Sicherheitssystem. Es gibt noch keinen Hardware-E-STOP-Pfad, keine von der Firmware durchgesetzten Grenzen oder Verriegelungen und keinen verifizierten Bewegungsbefehl; Firmware-Images werden mit CRC32 und einem HMAC-SHA256 mit gemeinsamem Schlüssel geprüft, nicht mit einer asymmetrischen Signatur; TLS und gegenseitiges TLS sind optional und standardmäßig aus; noch keine eigene Platine wurde bestückt oder getestet. Lesen Sie die [Sicherheitsbasis](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md) und das [Bedrohungsmodell](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md), bevor Sie sich für die Sicherheit einer Person auf eine Aussage hier verlassen.
+
+---
 
 ## 📋 Auf einen Blick
 
@@ -35,10 +36,12 @@
 |---|---|
 | Version | `0.3.2` |
 | Reifegrad | Funktionsfähig |
-| Tests | 158 (`pytest`) |
+| Tests | 177 (`python -m pytest -q tests`) |
 | Technik | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Ziel | Der PC der Person, die es benutzt |
 | Auf echter Hardware | Noch nicht: für diese Version ist kein Lauf auf echter Hardware vermerkt |
+
+**Springe zu:** [Überblick](#-überblick) · [Architektur](#-architektur) · [Schnellstart](#-schnellstart) · [Tests](#-tests) · [Struktur des Repositorys](#-struktur-des-repositorys) · [Verwandte Projekte](#-verwandte-projekte)
 
 ## 🚦 Projektstatus
 
@@ -49,11 +52,11 @@ Jede Zeile ist ein Teil dieses Repositorys, und die Ampel sagt, wie weit er heut
 | Bereich | Stand | Was das hier bedeutet |
 |---|---|---|
 | Software | 🟡 | Funktioniert für seinen Hauptzweck; die Ehrlichkeitsprüfung oben nennt, was noch fehlt |
-| Tests | 🟢 | 158 automatische Tests, bei jeder Änderung ausgeführt |
+| Tests | 🟢 | 177 automatische Tests, bei jeder Änderung ausgeführt |
 | Echte Hardware | 🔴 | Noch nicht: für diese Version ist kein Lauf auf echter Hardware vermerkt |
 | Dokumentation | 🟢 | README in acht Sprachen, bei jeder Änderung gegen das Manifest geprüft |
 
-## 1. 🛠️ TECHNISCHER ÜBERBLICK
+## 🎯 Überblick
 
 HYDRA-UMC-OS-REBUILDER ist ein Windows/Linux-Desktop-Tool - standardmäßig
 mit Fenster-GUI, vollständige CLI mit `--cli` - das die Frage beantwortet,
@@ -118,7 +121,17 @@ Sprache wie HYDRA-UMC-UPDATER (gleiche dunkle Palette, Typografie und
 Komponenten-Set) auf drei Tabs: Ökosystem-Status, Image erstellen und
 Ersteinrichtung.
 
-## 2. 🧱 ARCHITEKTUR UND DESIGN-ENTSCHEIDUNGEN
+## 🧩 Rolle in HYDRA-UMC
+
+**HYDRA-UMC-OS-REBUILDER** baut ein frisches CM5-Image, auf dem die aktuelle Version jedes Ökosystem-Projekts schon liegt, und schreibt die Einstellungen für den ersten Start (WLAN, Benutzer, Hostname, SSH), bevor das Image geflasht wird. Die Plattformschicht, die dieses Image trägt, beschreibt `HYDRA-UMC-OS`.
+
+## 🏛️ Architektur
+
+<p align="center">
+  <img src="images/architecture.svg" alt="HYDRA-UMC-OS-REBUILDER architecture" width="100%">
+</p>
+
+### ARCHITEKTUR UND DESIGN-ENTSCHEIDUNGEN
 
 - **SSH-Hostschlüssel beim ersten Mal festgehalten und kein Standard-WLAN-Land.** Ein Remote-Build lehnt einen Rechner ab, dessen Schlüssel er nicht festgehalten hat, und zeigt den SHA-256-Fingerabdruck des Schlüssels; gibt man diesen Fingerabdruck ein (am Rechner selbst geprüft), wird der Schlüssel festgehalten, danach wird nur noch dieser akzeptiert und ein anderer als geänderter Schlüssel abgelehnt. Der WLAN-Ländercode des Images hat keinen Standardwert mehr (`--wifi-country` / das Länderfeld ist bei einem WLAN Pflicht), weil er die Funkregeln des Landes festlegt, in dem der Rechner steht.
 - **`ecosystem_plan.py` implementiert die GitHub-Erkennung niemals neu.**
@@ -146,7 +159,7 @@ Ersteinrichtung.
   testbar bleibt. Nur `image_builder.py` ist dafür verantwortlich, diesen
   Inhalt tatsächlich auf eine echte Boot-Partition zu schreiben.
 - **Eine Firstboot-Konfiguration, die den Bediener aussperren würde, wird abgelehnt, nicht gebaut.** SSH zu deaktivieren, ohne dass ein Konto konfiguriert wird, lässt die eigenen offiziellen Basis-Images dieses Tools (kein Standardbenutzer ab Trixie) ganz ohne Anmeldeweg - es wird abgelehnt, außer `acknowledge_no_remote_access=True` stimmt ausdrücklich zu. `describe_recovery_procedure()` nennt den echten Wiederherstellungsweg für alles, was die Konfiguration offen lässt.
-- **Ein eingefrorenes Profil ist ein echtes, gespeichertes Rezept, das nie neu abgerufen wird.** `freeze_profile()` und `profile-build` aus `profile_manifest.py` pinnen jedes Projekt auf den exakten Commit-SHA, mit dem es getestet wurde - ein späterer Build ersetzt nie stillschweigend, was GitHub gerade „latest“ nennt. `diff_profile()` vergleicht ein eingefrorenes Profil pro Projekt (nicht als einzelnen Wahrheitswert) mit dem laufenden Ökosystem, denn die Versionsnummern dieses Ökosystems sind ein Zehnersystem-Kilometerzähler ohne semantische Bedeutung und können für sich allein nie ein ehrliches Kompatibilitätssignal sein.
+- **Ein eingefrorenes Profil ist ein echtes, gespeichertes Rezept, das nie neu abgerufen wird.** `freeze_profile()` und `profile-build` aus `profile_manifest.py` pinnen jedes Projekt auf den exakten Commit-SHA, mit dem es getestet wurde - ein späterer Build ersetzt nie stillschweigend, was GitHub gerade „latest“ nennt. `diff_profile()` vergleicht ein eingefrorenes Profil pro Projekt (nicht als einzelnen Wahrheitswert) mit dem laufenden Ökosystem.
 - **Die Passwörter werden nicht mehr als Argumente übertragen.** `--password` und `--wifi-password` funktionieren weiter, aber eine Befehlszeile ist für jeden Benutzer der Maschine sichtbar und `sudo` schreibt sie ins Authentifizierungsprotokoll; die CLI liest sie daher auch aus `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` oder mit `--secrets-stdin` aus einem JSON-Objekt (`{"password": "...", "wifiPassword": "..."}`) auf der Standardeingabe. Der Remote-Build (SSH) der GUI sendet sie so und setzt sie nicht mehr in den ausgeführten Befehl.
 - **Der Chroot ist vollständig und der Remote-Build festgelegt.** Der Build hängt `/proc`, `/sys`, `/dev` und `/dev/pts` in das Image ein und gibt ihm die Namensauflösung des Rechners, solange die Projekte gebaut werden (die eigene `resolv.conf` des Images wird danach zurückgelegt); so erreichen `pip`, `npm` und `go` aus dem Chroot das Netz. Ein Remote-Build über SSH installiert dieses Werkzeug aus dem Release-Tag der laufenden Version (`HYDRA_UMC_REBUILDER_REMOTE_REF` nennt einen anderen Tag oder Commit) und baut aus dem eingefrorenen Profil des geprüften Plans (`profile-build`), statt das Ökosystem auf dem Zielrechner neu zu ermitteln. Nichts davon lief bisher auf einem echten Linux-Rechner mit Root.
 - **Echtes SHA-512-Crypt-Passwort-Hashing, nicht das stdlib-Modul
@@ -156,42 +169,23 @@ Ersteinrichtung.
   byte-identisch dasselbe echte `$6$...`-Format, das `chpasswd -e`
   erwartet. Der Hash verwendet 500000 Runden statt der glibc-Vorgabe von 5000 aus dem Jahr 2000, sodass ein Angriff auf eine Kopie des Images oder von `/etc/shadow` deutlich teurer ist; das vom Gerät selbst bevorzugte yescrypt (`$y$`) lässt sich unter Windows nicht portabel aus Python erzeugen.
 
-## 📂 VERZEICHNISSTRUKTUR
+## 🚀 Schnellstart
 
-```
-HYDRA-UMC-OS-REBUILDER/
-├── src/hydra_umc_os_rebuilder/
-│   ├── __init__.py          # Paketversion
-│   ├── ecosystem_plan.py    # Echter CM5-Projekt-/Versionsplan, aufgebaut auf der eigenen Erkennung von hydra_umc_updater
-│   ├── firstboot_config.py  # Reiner firstrun.sh/cmdline.txt-Generator - kein Dateisystemzugriff; Absicherung gegen Aussperrung
-│   ├── profile_manifest.py  # Eingefrorene Profil-Versionsmanifeste: einfrieren/vergleichen/selektiv aktualisieren, nie "das Neueste" mitten im Test
-│   ├── image_builder.py     # Echte Download-/Loop-Mount-/Chroot-Installations-Pipeline, auf Linux/Root beschränkt
-│   ├── i18n.py               # Echte, vollständige GUI-Übersetzungen (8 Sprachen)
-│   ├── qt_gui.py             # Qt-Quick-Brücke über die echten CLI-seitigen Module oben
-│   ├── qml/Main.qml          # Themenbasierte Desktop-Oberfläche: Ökosystem-Status / Image erstellen / Ersteinrichtung
-│   ├── main.py                # Dispatch: GUI standardmäßig, --cli für status/config/build-image
-│   ├── remote_install.py      # Woraus ein Remote-Build installiert und baut (festgelegte Revision, nicht die Spitze von main)
-│   └── ssh_hostkeys.py        # Vertrauen beim ersten Gebrauch des SSH-Hostschlüssels einer Remote-Build-Maschine, mit festem Fingerabdruck
-├── tests/                    # Echte Tests: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
-├── docs/
-│   ├── CLI_REFERENCE.md       # Befehlsreferenz
-│   ├── FIRST_BOOT_CONFIG.md   # Der echte firstrun.sh-Mechanismus, den dieses Tool nachbildet, und warum
-│   └── MATURITY_CRITERIA.md   # Austrittskriterien der Reifestufe (was gelten muss, um eine Stufe aufzusteigen)
-├── images/                    # Medien, App-Icon und Banner
-├── tools/
-│   ├── build_test.py          # Nicht-versionierende Kompilierungsprüfung
-│   ├── ci_validate.py         # Manifest-/CHANGELOG-/Doku-Validierung, von der CI verwendet
-│   ├── _doc_policy.py         # Von der Familie geteilte Dokumentationsregeln (Kopie der von HYDRA-UMC-SDK, synchron gehalten)
-│   ├── _readme_parity.py      # Prüfung, dass die acht READMEs dieselbe Struktur haben (Kopie der von HYDRA-UMC-SDK, synchron gehalten)
-│   └── hydra_project_tool.py  # Dieselben Befehle in jedem Repository: validate, test, ci, version, status, bump
-├── build.sh / build.bat       # venv + editierbare Installation + Kompilierungsprüfung
-├── run.sh / run.bat           # GUI standardmäßig / CLI-Einstiegspunkt
-├── run-gui.vbs                # Windows-GUI-Launcher ohne Konsolenfenster
-├── bump_version.py            # Versionserhöhung im Kilometerzähler-Stil (nur vom expliziten `bump`-Befehl ausgeführt)
-└── bump_manifest_version.py   # Synchronisiert die Version von hydra-umc.project.json mit der nativen (--sync)
+Benötigt Python 3.10 oder neuer.
+
+```bash
+./build.sh             # Linux, macOS (build.bat on Windows)
+./run.sh               # windowed GUI
+./run.sh --cli status  # latest real version of every project
 ```
 
-## ⚙️ BUILD- UND AUSFÜHRUNGSANLEITUNG
+## 🧪 Tests
+
+177 automatische Tests laufen mit `python -m pytest -q tests`. Sie brauchen weder Hardware noch etwas außerhalb dieses Rechners.
+
+Die CI führt `HYDRA_UMC_CI=1 python tools/ci_validate.py` aus; das prüft das Manifest, die Dokumente, die acht READMEs und die Bilder.
+
+## 🏗️ Build und Veröffentlichung
 
 ```bash
 chmod +x build.sh   # einmalig
@@ -226,7 +220,51 @@ echten Linux-Host mit Root - siehe
   genau wie `hydra-umc-updater` selbst.
 - **Die Projektanzahl schrumpft bei wiederholten Aktualisierungen weiter (z. B. 42 -> 9 -> 0), auch nach einem Neustart der App** - ein echter, zuvor nicht gemeldeter Fehler: Das Auflösen des echten Commit-SHA jedes Projekts verbraucht einen `api.github.com`-Aufruf PRO PROJEKT, bei einem *unauthentifizierten* Budget von 60 Anfragen PRO STUNDE, das mit allem anderen geteilt wird, was dieses Tool (und `hydra-umc-updater`) tut - bei über 50 echten Ökosystem-Projekten kann eine einzige Aktualisierung es aufbrauchen, und es ist GitHubs eigenes Stundenfenster (nicht der Zustand dieser App), das zurückgesetzt werden muss, was ein Neustart nicht erledigt. Behoben, damit dies ehrlich gemeldet wird, statt stillschweigend weniger Projekte aufzulisten: Das gelbe Banner unter der Projektliste nennt genau, wie viele Projekte vor der Grenze aufgelöst wurden und wann GitHubs Limit zurückgesetzt wird (siehe `ecosystem_plan.GitHubRateLimitedError`). Vor dem Start dieses Tools die Umgebungsvariable `GITHUB_TOKEN` setzen (ein einfacher persönlicher GitHub-Zugriffstoken, für öffentliche Repositorys sind keine Berechtigungen nötig), um das Budget auf 5000/Stunde zu erhöhen - sowohl die Repository-Liste als auch die Auflösung des Commit-SHA pro Projekt berücksichtigen ihn nun einheitlich.
 
-## 🚀 ROADMAP
+## 📂 Struktur des Repositorys
+
+<p align="center">
+  <img src="images/repository-structure.svg" alt="Repository structure of HYDRA-UMC-OS-REBUILDER" width="100%">
+</p>
+
+<details>
+<summary>Textversion des Baums</summary>
+
+```text
+HYDRA-UMC-OS-REBUILDER/
+├── src/hydra_umc_os_rebuilder/   Quellcode
+│   ├── __init__.py               Paketversion
+│   ├── ecosystem_plan.py         Echter CM5-Projekt-/Versionsplan, aufgebaut auf der eigenen Erkennung von hydra_umc_updater
+│   ├── firstboot_config.py       Reiner firstrun.sh/cmdline.txt-Generator - kein Dateisystemzugriff; Absicherung gegen Aussperrung
+│   ├── profile_manifest.py       Eingefrorene Profil-Versionsmanifeste: einfrieren/vergleichen/selektiv aktualisieren, nie "das Neueste" mitten im Test
+│   ├── image_builder.py          Echte Download-/Loop-Mount-/Chroot-Installations-Pipeline, auf Linux/Root beschränkt
+│   ├── i18n.py                   Echte, vollständige GUI-Übersetzungen (8 Sprachen)
+│   ├── qt_gui.py                 Qt-Quick-Brücke über die CLI-Module
+│   ├── qml/Main.qml              Themenbasierte Desktop-Oberfläche: Ökosystem-Status / Image erstellen / Ersteinrichtung
+│   ├── main.py                   Dispatch: GUI standardmäßig, --cli für status/config/build-image
+│   ├── remote_install.py         Woraus ein Remote-Build installiert und baut (festgelegte Revision, nicht die Spitze von main)
+│   └── ssh_hostkeys.py           Vertrauen beim ersten Gebrauch des SSH-Hostschlüssels einer Remote-Build-Maschine, mit festem Fingerabdruck
+├── tests/                        Echte Tests: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
+├── docs/                         Dokumente des Projekts
+├── images/                       Medien, App-Icon und Banner
+├── tools/                        Projektwerkzeuge und CI-Prüfungen
+├── .github/                      CI-Workflow und Issue-Vorlagen
+├── build.sh / build.bat          venv + editierbare Installation + Kompilierungsprüfung
+├── run.sh / run.bat              GUI standardmäßig / CLI-Einstiegspunkt
+├── run-gui.vbs                   Windows-GUI-Launcher ohne Konsolenfenster
+├── bump_version.py               ausdrückliche Versionserhöhung
+├── bump_manifest_version.py      Synchronisiert die Version von hydra-umc.project.json mit der nativen (--sync)
+├── CHANGELOG.md                  was sich in jeder Version geändert hat
+├── build-test.sh                 Build-Prüfung ohne Änderungen
+├── hydra-umc.project.json        Manifest: Version, Reifegrad, Familie
+├── pyproject.toml                Paketmetadaten
+└── test.sh                       führt die Tests aus
+```
+
+</details>
+
+## 🗺️ Roadmap und bekannte Grenzen
+
+**Bekannte Grenzen heute**
 
 - Cloud-init-Unterstützung als alternativer Ersteinrichtungs-Mechanismus
   für ein Nicht-Pi-Basisimage, neben dem aktuellen `firstrun.sh`-Pfad.
@@ -239,6 +277,10 @@ echten Linux-Host mit Root - siehe
   Doppelklick-Installation ohne `pip`/venv-Schritt.
 - Ein GUI-Kontrollkästchen für `acknowledge_no_remote_access` - heute zeigt die GUI die echte Meldung von `FirstBootConfigError` ehrlich an (kein Absturz, kein stilles Nichtstun), hat aber kein eigenes Bedienelement zum Zustimmen, nur die CLI/API.
 - Ein GUI-Panel über `profile_manifest.py` (Einfrieren/Vergleichen/Aktualisieren aus der Desktop-Oberfläche, nicht nur über die CLI).
+
+## 🌍 Sprachen
+
+Diese README und die Dokumente des Repositorys gibt es in acht Sprachen: Englisch, Spanisch, Deutsch, Französisch, Italienisch, Japanisch, Chinesisch und Portugiesisch (Portugal). Sie entstehen gemeinsam, und die CI prüft, dass die acht Dateien dieselben Abschnitte und dieselben Links haben.
 
 ## 🔗 Verwandte Projekte
 
@@ -329,22 +371,28 @@ Dieses Projekt ist Teil des HYDRA-UMC-Robotik-Ökosystems desselben Autors (Juan
 - **[URTC-SMART-RACK](https://github.com/JuanenRac/URTC-SMART-RACK)** — Firmware für ein Board-Montage-Rack mit echter Werkzeug-ID-Dekodierung und Smart-Idle-Vorheizlogik.
 - **[URTC-VISION-TOOL](https://github.com/JuanenRac/URTC-VISION-TOOL)** — Firmware plus ein echter Python-Vision-Begleiter für einen thermischen/RGB-Inspektionswerkzeugkopf.
 
----
+## 📚 Dokumentation
 
-## 📚 Dokumentation und Community
+Hier steht mehr:
 
-- **[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)** — jeder `--cli`-Unterbefehl, mit echter Beispielausgabe.
-- **[docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md)** — der echte `firstrun.sh`-Mechanismus, den dieses Tool nachbildet, und warum.
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — Technologie-Stack und Coding-Richtlinien für einen Pull Request.
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** — die in dieser Community erwarteten Verhaltensstandards.
-- **[SECURITY.md](SECURITY.md)** — wie man eine Schwachstelle meldet, und die echten Sicherheitsschwerpunkte dieses Projekts.
-- **[SUPPORT.md](SUPPORT.md)** — wo man Fragen stellt und Bugs meldet.
+* **[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)** — jeder `--cli`-Unterbefehl, mit echter Beispielausgabe.
+* **[docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md)** — der echte `firstrun.sh`-Mechanismus, den dieses Tool nachbildet, und warum.
+* [Sicherheitsgrundlage des Ökosystems](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)
+* [Bedrohungsmodell des Ökosystems](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)
+* [Änderungsprotokoll dieses Repositorys](CHANGELOG.md)
+* [Lizenz dieses Repositorys](LICENSE.md)
+
+## 🤝 Mitwirken und Community
+
+* Führe vor einem Pull Request `HYDRA_UMC_CI=1 py -3 tools/ci_validate.py` (oder `HYDRA_UMC_CI=1 python3 tools/ci_validate.py`) aus: Es muss `CI_VALIDATION=PASS` ausgeben. Führe dafür nicht `build.sh` oder `build.bat` aus; Bauen ist keine Prüfung.
+* Die acht READMEs entstehen aus einer einzigen Quelle in HYDRA-UMC-DOCS; bearbeite sie nicht von Hand. Ändere die Quelle und schreibe sie mit `tools/make_readmes.py` neu.
+* Behaupte in einer README nichts, was nicht gelaufen ist: Schreibe „simuliert“ oder „nicht auf Hardware erprobt“, wo das stimmt.
+* Siehe [CONTRIBUTING.md](CONTRIBUTING.md), den [Verhaltenskodex](CODE_OF_CONDUCT.md), [SECURITY.md](SECURITY.md) und [SUPPORT.md](SUPPORT.md).
 
 ## 👤 AUTOR
-**JuanenRac** (Electro Hobby 3D)
-📧 electrohobby3d@gmail.com
-📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
+
+**JuanenRac (Electro Hobby 3D)** · electrohobby3d@gmail.com
 
 ## 📜 LIZENZ
 
-GPL-3.0-or-later (Software) / CC BY-SA 4.0 (Dokumentation) - siehe [LICENSE.md](LICENSE.md).
+GPL-3.0-or-later - [LICENSE](LICENSE).

@@ -119,10 +119,8 @@ hydra-umc-os-rebuilder --cli profile-build --manifest profiles/cm5-production.js
 
 `profile-diff`'s findings are per-project and typed (`UPDATED`,
 `ROLE_CHANGED`, `STACK_CHANGED`, `ADDED`, `DROPPED_FROM_CM5`) rather than
-a single yes/no answer - this ecosystem's own version numbers are a
-base-10 odometer with no semantic-versioning meaning (see this repo's
-own `CHANGELOG.md`, "Versioning scheme"), so a version diff alone was
-never going to be an honest compatibility signal by itself.
+a single yes/no answer - a version diff alone was never going to be an honest
+compatibility signal by itself.
 
 `profile-set-required-resources` ("Verificación del contenido
 distribuido fuera del checkout") is deliberately per-profile, not a

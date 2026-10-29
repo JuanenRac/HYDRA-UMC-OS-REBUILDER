@@ -1,0 +1,153 @@
+{
+  "repo": "HYDRA-UMC-OS-REBUILDER",
+  "ecosystem": "hydra",
+  "tagline": "Resolve the current version of every project, stage it in an image, and write the first-boot settings.",
+  "description": "HYDRA-UMC-OS-REBUILDER resolves the latest real version of each ecosystem project from GitHub, builds a CM5 image on Linux, writes the first-boot configuration, freezes profiles and can install remotely over SSH.",
+  "columns": [
+    "WHO USES IT",
+    "THIS REPOSITORY",
+    "WHAT IT USES"
+  ],
+  "nodes": [
+    {
+      "id": "user",
+      "column": 0,
+      "level": "external",
+      "title": "The person flashing",
+      "lines": [
+        "a CM5 with the GUI",
+        "or with --cli"
+      ]
+    },
+    {
+      "id": "gh",
+      "column": 2,
+      "level": "external",
+      "title": "GitHub",
+      "lines": [
+        "latest real version",
+        "of each project"
+      ]
+    },
+    {
+      "id": "cm5",
+      "column": 2,
+      "level": "untested",
+      "title": "A CM5",
+      "lines": [
+        "flashed, or reached",
+        "over SSH"
+      ],
+      "code": [
+        "src/hydra_umc_os_rebuilder/remote_install.py"
+      ]
+    },
+    {
+      "id": "gui",
+      "column": 1,
+      "level": "tested",
+      "title": "qt_gui.py / main.py",
+      "lines": [
+        "windowed GUI and the",
+        "--cli subcommands"
+      ],
+      "code": [
+        "src/hydra_umc_os_rebuilder/qt_gui.py",
+        "src/hydra_umc_os_rebuilder/main.py"
+      ]
+    },
+    {
+      "id": "plan",
+      "column": 1,
+      "level": "tested",
+      "title": "ecosystem_plan.py",
+      "lines": [
+        "which version of which",
+        "project goes in"
+      ],
+      "code": [
+        "src/hydra_umc_os_rebuilder/ecosystem_plan.py"
+      ]
+    },
+    {
+      "id": "img",
+      "column": 1,
+      "level": "tested",
+      "title": "image_builder.py",
+      "lines": [
+        "chroot and image build",
+        "(Linux, root only)"
+      ],
+      "code": [
+        "src/hydra_umc_os_rebuilder/image_builder.py"
+      ]
+    },
+    {
+      "id": "prof",
+      "column": 1,
+      "level": "tested",
+      "title": "profile_manifest.py",
+      "lines": [
+        "freeze, diff and update a",
+        "tested combination"
+      ],
+      "code": [
+        "src/hydra_umc_os_rebuilder/profile_manifest.py"
+      ]
+    },
+    {
+      "id": "boot",
+      "column": 1,
+      "level": "tested",
+      "title": "firstboot_config.py",
+      "lines": [
+        "Wi-Fi, user, host name,",
+        "SSH keys"
+      ],
+      "code": [
+        "src/hydra_umc_os_rebuilder/firstboot_config.py",
+        "src/hydra_umc_os_rebuilder/ssh_hostkeys.py"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "user",
+      "to": "gui",
+      "level": "tested"
+    },
+    {
+      "from": "gui",
+      "to": "plan",
+      "level": "tested"
+    },
+    {
+      "from": "plan",
+      "to": "gh",
+      "level": "external",
+      "label": "versions"
+    },
+    {
+      "from": "plan",
+      "to": "prof",
+      "level": "tested"
+    },
+    {
+      "from": "prof",
+      "to": "img",
+      "level": "tested"
+    },
+    {
+      "from": "img",
+      "to": "boot",
+      "level": "tested"
+    },
+    {
+      "from": "boot",
+      "to": "cm5",
+      "level": "untested",
+      "label": "image"
+    }
+  ],
+  "footer": "The image build runs on Linux as root; no image has been written to a CM5 by this release."
+}

@@ -1,33 +1,34 @@
+<!-- =============================================================================
+HYDRA-UMC-OS-REBUILDER - Builds a ready-to-flash CM5 image
+Copyright (C) JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+GPL-3.0-or-later - see LICENSE
+============================================================================= -->
+
 <p align="center">
-  <img src="images/HYDRA_UMC_BANNER.svg" alt="HYDRA-UMC-OS-REBUILDER バナー" width="100%">
+  <img src="images/HYDRA_UMC_BANNER.svg" alt="HYDRA-UMC-OS-REBUILDER banner" width="100%">
 </p>
 
-# 🏗️ HYDRA-UMC-OS-REBUILDER
+# 📀 HYDRA-UMC-OS-REBUILDER
 
 <p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | 🇯🇵 <b>日本語</b> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 📀 書き込み可能な、完全に最新のCM5イメージを構築する
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licencia-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
-  <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Python">
-  <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="PySide6 Qt Quick デスクトップGUI">
-  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="WindowsとLinux">
+  <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
+  <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Language">
+  <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="Desktop">
+  <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
+  <img src="https://img.shields.io/badge/Tests-177%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.3.2-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
-
-> **ステータス: v0.3.2、機能段階。** CLI、エコシステム
-> 検出、初回起動設定ジェネレータ、GUIはいずれも実際に動作しテスト済み
-> です。実際のエンドツーエンドのイメージビルド（ダウンロード → ループ
-> マウント → chrootインストール → アンマウント）は実装済みですが、root
-> 権限を持つ実際のLinuxホスト上でのみ動作します - 正確なプラットフォーム
-> の境界とその理由については
-> [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) を参照してください。
-
-**正直な現状確認 - 実際に今動くもの:** CLI（`main.py`）、`hydra_umc_updater` 自身のGitHubクライアントを再利用し二重実装を避けている動的なエコシステム検出（`ecosystem_plan.py`）、ファイルシステムに一切アクセスせず、操作者を締め出さないための独自の保護機構を備えた純粋な `firstrun.sh`/`cmdline.txt` ジェネレータ（`firstboot_config.py`）、既にテスト済みのコンポーネントの組み合わせを凍結/比較/選択的に更新する、凍結されたプロファイルバージョンマニフェスト - 常に最新版から再構築するのではなく（`profile_manifest.py`）、8言語対応のGUI翻訳（`i18n.py`）、そしてQt Quickデスクトップシェル（`qt_gui.py`、`qml/Main.qml`）は本物であり、テスト済みです（132件のテスト、`pytest`）。`image_builder.py` のダウンロード／チェックサム検証／ループマウント／chrootインストール／アンマウントのパイプライン、実際にディスクに書き込まれた内容に対するプロジェクトごとのコンテンツハッシュ、そして昇格前に漏洩したWi-Fiパスワード／秘密のSSH鍵／シェル履歴／`.env`ファイルを検出するスキャンは本物のコードであり、`check_build_platform()` によってゲートされています - これらはroot権限を持つ実際のLinuxホストで、かつ `losetup`/`chroot` が `PATH` 上にある場合にのみ実行され、この環境では実際のCM5のSD/eMMC書き込みに対してエンドツーエンドで実行されたことはありません。WindowsまたはrootではないLinuxユーザーでは、`build-image` は成功したふりをする代わりに即座に `BUILD_BLOCKED reason=...` で終了します。`status`/`config` は実際のライブGitHub検出に対して本当にテストされています。これまでに実際に出荷されたものの詳細は `CHANGELOG.md` を、残っている未完了事項は下記のROADMAPを参照してください。
 
 ---
 
 > **安全性とセキュリティの現状:** このエコシステムは認証された安全システムではありません。ハードウェアの E-STOP 経路、ファームウェアが強制する制限やインターロック、検証済みの動作コマンドはまだありません。ファームウェアイメージは CRC32 と共有鍵の HMAC-SHA256 で検査しており、非対称署名ではありません。TLS と相互 TLS は任意で、既定では無効です。独自基板はまだ実装も試験もされていません。ここに書かれた内容を人の安全のために頼る前に、[セキュリティベースライン](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)と[脅威モデル](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)をお読みください。
+
+---
 
 ## 📋 ひと目で
 
@@ -35,10 +36,12 @@
 |---|---|
 | バージョン | `0.3.2` |
 | 成熟度 | 機能する |
-| テスト | 158 (`pytest`) |
+| テスト | 177 (`python -m pytest -q tests`) |
 | 技術 | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | 対象 | 利用者の PC |
 | 実機での確認 | まだです：このバージョンについて実機での動作記録はありません |
+
+**移動：** [概要](#-概要) · [アーキテクチャ](#-アーキテクチャ) · [クイックスタート](#-クイックスタート) · [テスト](#-テスト) · [リポジトリの構成](#-リポジトリの構成) · [関連プロジェクト](#-関連プロジェクト)
 
 ## 🚦 プロジェクトの状況
 
@@ -49,11 +52,11 @@
 | 領域 | 状態 | ここでの意味 |
 |---|---|---|
 | ソフトウェア | 🟡 | 主な目的では動作します。足りない点は上の正直さの確認に書かれています |
-| テスト | 🟢 | 自動テスト 158 件。変更のたびに実行されます |
+| テスト | 🟢 | 自動テスト 177 件。変更のたびに実行されます |
 | 実機 | 🔴 | まだです：このバージョンについて実機での動作記録はありません |
 | ドキュメント | 🟢 | 8 言語の README。変更のたびにマニフェストと照合されます |
 
-## 1. 🛠️ 技術概要
+## 🎯 概要
 
 HYDRA-UMC-OS-REBUILDERは、実際のCM5導入が最終的に必ず必要とする質問に
 答えるWindows/Linuxデスクトップツールです - デフォルトはウィンドウ型
@@ -115,7 +118,17 @@ HYDRA-UMC-UPDATERと同じビジュアル言語（同じダークパレット、
 コンポーネントセット）を再利用し、エコシステム状態・イメージ作成・初回
 起動設定の3つのタブに分かれています。
 
-## 2. 🧱 アーキテクチャと設計判断
+## 🧩 HYDRA-UMC での役割
+
+**HYDRA-UMC-OS-REBUILDER** は、エコシステムの各プロジェクトの最新版を最初から収めた新しい CM5 イメージを作り、イメージを書き込む前に初回起動の設定（Wi-Fi、ユーザー、ホスト名、SSH）を書き出します。そのイメージが載せるプラットフォーム層は `HYDRA-UMC-OS` が説明しています。
+
+## 🏛️ アーキテクチャ
+
+<p align="center">
+  <img src="images/architecture.svg" alt="HYDRA-UMC-OS-REBUILDER architecture" width="100%">
+</p>
+
+### アーキテクチャと設計判断
 
 - **SSH ホストキーは初回に固定し、Wi-Fi の国コードに既定値はありません。** リモートビルドは、キーを固定していないマシンを拒否し、そのキーの SHA-256 フィンガープリントを表示します。マシン上で確認したそのフィンガープリントを入力するとキーが固定され、以後はそのキーだけが受け入れられ、異なるキーは変更されたキーとして拒否されます。イメージの Wi-Fi 国コードには既定値がなくなりました（Wi-Fi ネットワークを指定する場合は `--wifi-country` / 国フィールドが必須）。マシンが置かれる国の電波規則を決めるためです。
 - **`ecosystem_plan.py` はGitHub検出を決して再実装しません。** マニフェスト
@@ -144,7 +157,7 @@ HYDRA-UMC-UPDATERと同じビジュアル言語（同じダークパレット、
 - **オペレーターを締め出してしまうファーストブート設定は、構築されずに拒否されます。** アカウントを設定せずに SSH を無効にすると、このツール自身の公式ベースイメージ（Trixie 以降はデフォルトユーザーなし）にログイン手段が全くなくなります。`acknowledge_no_remote_access=True` で明示的に了承しない限り拒否されます。`describe_recovery_procedure()` は、設定が開けたままにするものについての実際の復旧手順を示します。
 - **パスワードは引数として渡されなくなりました。** `--password` と `--wifi-password` は引き続き使えますが、コマンドラインはマシンの全ユーザーに見え、`sudo` は認証ログに書き込みます。そのため CLI は `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD`、または `--secrets-stdin` を指定したときは標準入力の JSON オブジェクト(`{"password": "...", "wifiPassword": "..."}`)からも読み取ります。GUI のリモート(SSH)ビルドはこの方法で送信し、実行するコマンドには含めません。
 - **chroot が完全になり、リモートビルドは固定されます。** ビルドはイメージに `/proc`、`/sys`、`/dev`、`/dev/pts` をマウントし、プロジェクトのビルド中はホストの名前解決を与えます(終了後にイメージ自身の `resolv.conf` を戻します)。これにより `pip`、`npm`、`go` が chroot からネットワークに届きます。SSH 経由のリモートビルドは、実行中のバージョンのリリースタグからこのツールをインストールし(`HYDRA_UMC_REBUILDER_REMOTE_REF` で別のタグやコミットを指定可能)、リモートでエコシステムを再探索せず、確認済みプランの固定プロファイル(`profile-build`)からビルドします。これらはまだ root 権限の実 Linux ホストで実行されていません。
-- **凍結されたプロファイルは、永続化された本物のレシピであり、再取得されません。** `profile_manifest.py` の `freeze_profile()`/`profile-build` は、各プロジェクトをテストした正確なコミット SHA に固定します。後のビルドが、GitHub が現在「latest」と呼ぶものに黙って置き換えることはありません。`diff_profile()` は、凍結されたプロファイルを現在のエコシステムとプロジェクトごとに（単一の真偽値ではなく）比較します。このエコシステムのバージョン番号は意味的バージョニングを持たない 10 進のオドメーターであり、それだけで正直な互換性の指標にはなり得ないためです。
+- **凍結されたプロファイルは、永続化された本物のレシピであり、再取得されません。** `profile_manifest.py` の `freeze_profile()`/`profile-build` は、各プロジェクトをテストした正確なコミット SHA に固定します。後のビルドが、GitHub が現在「latest」と呼ぶものに黙って置き換えることはありません。`diff_profile()` は、凍結されたプロファイルを現在のエコシステムとプロジェクトごとに（単一の真偽値ではなく）比較します。
 - **標準ライブラリの `crypt` モジュールではなく、実際のSHA-512-crypt
   パスワードハッシュを使用。** `crypt` は*ホスト自身*のlibc呼び出しを
   ラップするだけなので（Unix専用で、Python 3.13で完全に削除されました）、
@@ -152,42 +165,23 @@ HYDRA-UMC-UPDATERと同じビジュアル言語（同じダークパレット、
   含む）で `chpasswd -e` が期待するのとバイト単位で同一の実際の
   `$6$...` 形式を生成します。ハッシュは glibc の既定値である 2000 年当時の 5000 ラウンドではなく 500000 ラウンドを使うため、イメージのコピーや `/etc/shadow` を攻撃するコストがはるかに高くなります。デバイス自身が好む yescrypt（`$y$`）は、Windows 上の Python からは移植可能な形で生成できません。
 
-## 📂 ディレクトリ構成
+## 🚀 クイックスタート
 
-```
-HYDRA-UMC-OS-REBUILDER/
-├── src/hydra_umc_os_rebuilder/
-│   ├── __init__.py          # パッケージバージョン
-│   ├── ecosystem_plan.py    # hydra_umc_updater自身の検出機能の上に構築された、実際のCM5プロジェクト/バージョン計画
-│   ├── firstboot_config.py  # 純粋なfirstrun.sh/cmdline.txtジェネレータ - ファイルシステムへのアクセスなし、復旧手順の保護付き
-│   ├── profile_manifest.py  # 凍結されたプロファイルバージョンマニフェスト：凍結/比較/選択的更新、試用中に「最新版」へ黙って差し替わることはない
-│   ├── image_builder.py     # 実際のダウンロード/ループマウント/chrootインストールのパイプライン、Linux/rootに限定
-│   ├── i18n.py               # 実際の完全なGUI翻訳（8言語）
-│   ├── qt_gui.py             # 上記の実際のモジュール（CLIと同じもの）の上に構築されたQt Quickブリッジ
-│   ├── qml/Main.qml          # テーマ化されたデスクトップシェル：エコシステム状態 / イメージ作成 / 初回起動設定
-│   ├── main.py                # ディスパッチ：デフォルトはGUI、--cliでstatus/config/build-image
-│   ├── remote_install.py      # リモートビルドがインストール・ビルドする元 (固定リビジョン。main の先頭ではない)
-│   └── ssh_hostkeys.py        # リモートビルド機の SSH ホスト鍵を初回に信頼 (フィンガープリントを固定)
-├── tests/                    # 実際のテスト：firstboot_config、ecosystem_plan、profile_manifest、image_builder、i18n、main
-├── docs/
-│   ├── CLI_REFERENCE.md       # コマンドリファレンス
-│   ├── FIRST_BOOT_CONFIG.md   # このツールが再現する実際のfirstrun.shの仕組みと、その理由
-│   └── MATURITY_CRITERIA.md   # 成熟度の終了基準 (一段上がるために満たすべき条件)
-├── images/                    # メディア、アプリアイコン、バナー
-├── tools/
-│   ├── build_test.py          # バージョン管理を行わないビルド/コンパイルチェック
-│   ├── ci_validate.py         # CIで使用されるマニフェスト/CHANGELOG/ドキュメントの検証
-│   ├── _doc_policy.py         # ファミリー共通のドキュメント規則 (HYDRA-UMC-SDK のコピーで、同期を維持)
-│   ├── _readme_parity.py      # 8つの README が同じ構造であることの検査 (HYDRA-UMC-SDK のコピーで、同期を維持)
-│   └── hydra_project_tool.py  # すべてのリポジトリで共通のコマンド: validate、test、ci、version、status、bump
-├── build.sh / build.bat       # venv + 編集可能インストール + コンパイルチェック
-├── run.sh / run.bat           # デフォルトのGUI / CLIエントリーポイント
-├── run-gui.vbs                # コンソールウィンドウなしのWindowsグラフィカルランチャー
-├── bump_version.py            # オドメーター式バージョンインクリメント（明示的な `bump` コマンドのみが実行）
-└── bump_manifest_version.py   # hydra-umc.project.jsonのバージョンをネイティブのものと同期（--sync）
+Python 3.10 以上が必要です。
+
+```bash
+./build.sh             # Linux, macOS (build.bat on Windows)
+./run.sh               # windowed GUI
+./run.sh --cli status  # latest real version of every project
 ```
 
-## ⚙️ ビルドと実行ガイド
+## 🧪 テスト
+
+`python -m pytest -q tests` で自動テスト 177 件を実行します。 ハードウェアも、このマシンの外にあるものも必要ありません。
+
+CI は `HYDRA_UMC_CI=1 python tools/ci_validate.py` を実行し、マニフェスト、文書、8 つの README、図を検査します。
+
+## 🏗️ ビルドとリリース
 
 ```bash
 chmod +x build.sh   # 初回のみ
@@ -221,7 +215,51 @@ Windowsの場合：`build.bat` を実行後、`run.bat`（GUI）/
   `hydra-umc-updater` 自身と同様です。
 - **更新を繰り返すとプロジェクト数が減り続ける（例：42 -> 9 -> 0）、アプリを再起動しても同じ** - これまで報告されていなかった本物のバグです。各プロジェクトの実際のコミット SHA の解決は、プロジェクトごとに `api.github.com` を 1 回呼び出し、このツール（と `hydra-umc-updater`）の他の処理と共有する *未認証* の 1 時間あたり 60 リクエストの予算を消費します。50 を超える実際のエコシステムのプロジェクトがあると、1 回の更新で使い切ることがあり、リセットされるのはこのアプリの状態ではなく GitHub 側の 1 時間の枠で、再起動では解決しません。黙ってプロジェクトを減らして表示する代わりに正直に報告するよう修正しました：プロジェクト一覧の下の琥珀色のバナーが、上限までに解決できたプロジェクト数と GitHub の上限がリセットされる時刻を正確に示します（`ecosystem_plan.GitHubRateLimitedError` を参照）。このツールを起動する前に環境変数 `GITHUB_TOKEN`（公開リポジトリには権限不要の通常の GitHub 個人アクセストークン）を設定すると、予算が 1 時間あたり 5000 に増えます。リポジトリ一覧とプロジェクトごとのコミット SHA 解決の両方が一貫してこれを使用します。
 
-## 🚀 ロードマップ
+## 📂 リポジトリの構成
+
+<p align="center">
+  <img src="images/repository-structure.svg" alt="Repository structure of HYDRA-UMC-OS-REBUILDER" width="100%">
+</p>
+
+<details>
+<summary>ツリーのテキスト版</summary>
+
+```text
+HYDRA-UMC-OS-REBUILDER/
+├── src/hydra_umc_os_rebuilder/   ソースコード
+│   ├── __init__.py               パッケージバージョン
+│   ├── ecosystem_plan.py         hydra_umc_updater自身の検出機能の上に構築された、実際のCM5プロジェクト/バージョン計画
+│   ├── firstboot_config.py       純粋なfirstrun.sh/cmdline.txtジェネレータ - ファイルシステムへのアクセスなし、復旧手順の保護付き
+│   ├── profile_manifest.py       凍結されたプロファイルバージョンマニフェスト：凍結/比較/選択的更新、試用中に「最新版」へ黙って差し替わることはない
+│   ├── image_builder.py          実際のダウンロード/ループマウント/chrootインストールのパイプライン、Linux/rootに限定
+│   ├── i18n.py                   実際の完全なGUI翻訳（8言語）
+│   ├── qt_gui.py                 CLI モジュール上の Qt Quick ブリッジ
+│   ├── qml/Main.qml              テーマ化されたデスクトップシェル：エコシステム状態 / イメージ作成 / 初回起動設定
+│   ├── main.py                   ディスパッチ：デフォルトはGUI、--cliでstatus/config/build-image
+│   ├── remote_install.py         リモートビルドがインストール・ビルドする元 (固定リビジョン。main の先頭ではない)
+│   └── ssh_hostkeys.py           リモートビルド機の SSH ホスト鍵を初回に信頼 (フィンガープリントを固定)
+├── tests/                        実際のテスト：firstboot_config、ecosystem_plan、profile_manifest、image_builder、i18n、main
+├── docs/                         プロジェクトの文書
+├── images/                       メディア、アプリアイコン、バナー
+├── tools/                        プロジェクトのツールと CI の検査
+├── .github/                      CI ワークフローと Issue テンプレート
+├── build.sh / build.bat          venv + 編集可能インストール + コンパイルチェック
+├── run.sh / run.bat              デフォルトのGUI / CLIエントリーポイント
+├── run-gui.vbs                   コンソールウィンドウなしのWindowsグラフィカルランチャー
+├── bump_version.py               明示的なバージョン更新
+├── bump_manifest_version.py      hydra-umc.project.jsonのバージョンをネイティブのものと同期（--sync）
+├── CHANGELOG.md                  各バージョンの変更点
+├── build-test.sh                 変更を伴わないビルド確認
+├── hydra-umc.project.json        マニフェスト：バージョン、成熟度、ファミリー
+├── pyproject.toml                パッケージのメタデータ
+└── test.sh                       テストを実行
+```
+
+</details>
+
+## 🗺️ ロードマップと既知の制限
+
+**現時点の既知の制限**
 
 - 現在の `firstrun.sh` パスと並行して、Pi以外のベースイメージ向けの
   代替の初回起動メカニズムとしてcloud-initをサポート。
@@ -233,6 +271,10 @@ Windowsの場合：`build.bat` を実行後、`run.bat`（GUI）/
   スタンドアロンGUI実行ファイル（PyInstaller）。
 - `acknowledge_no_remote_access` 用の GUI チェックボックス - 現在 GUI は `FirstBootConfigError` の実際のメッセージを正直に表示します（クラッシュも無言の無動作もありません）が、了承するための専用コントロールはなく、CLI/API のみが可能です。
 - `profile_manifest.py` に対する GUI パネル（CLI だけでなくデスクトップシェルから凍結/比較/更新）。
+
+## 🌍 言語
+
+この README とリポジトリの文書は、英語・スペイン語・ドイツ語・フランス語・イタリア語・日本語・中国語・ポルトガル語（ポルトガル）の 8 言語で提供されています。8 つのファイルは同時に書かれ、同じ節と同じリンクを持つことを CI が確認します。
 
 ## 🔗 関連プロジェクト
 
@@ -323,22 +365,28 @@ Windowsの場合：`build.bat` を実行後、`run.bat`（GUI）/
 - **[URTC-SMART-RACK](https://github.com/JuanenRac/URTC-SMART-RACK)** — 実際のツールID解読とSmart Idle予熱ロジックを備えた、ボード取り付けラック用ファームウェア。
 - **[URTC-VISION-TOOL](https://github.com/JuanenRac/URTC-VISION-TOOL)** — サーマル/RGB検査ツールヘッド向けの実際のPythonビジョンコンパニオンを備えたファームウェア。
 
----
+## 📚 ドキュメント
 
-## 📚 ドキュメントとコミュニティ
+さらに読むには：
 
-- **[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)** — 実際のサンプル出力付きの、すべての `--cli` サブコマンド。
-- **[docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md)** — このツールが再現する実際の `firstrun.sh` の仕組みと、その理由。
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — プルリクエストのための技術スタックとコーディングガイドライン。
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** — このコミュニティで期待される行動基準。
-- **[SECURITY.md](SECURITY.md)** — 脆弱性の報告方法と、このプロジェクトの実際のセキュリティ重点分野。
-- **[SUPPORT.md](SUPPORT.md)** — 質問や不具合報告をどこで行うか。
+* **[docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md)** — 実際のサンプル出力付きの、すべての `--cli` サブコマンド。
+* **[docs/FIRST_BOOT_CONFIG.md](docs/FIRST_BOOT_CONFIG.md)** — このツールが再現する実際の `firstrun.sh` の仕組みと、その理由。
+* [エコシステムのセキュリティ基準](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)
+* [エコシステムの脅威モデル](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)
+* [このリポジトリの変更履歴](CHANGELOG.md)
+* [このリポジトリのライセンス](LICENSE.md)
+
+## 🤝 コントリビュートとコミュニティ
+
+* プルリクエストの前に `HYDRA_UMC_CI=1 py -3 tools/ci_validate.py`（または `HYDRA_UMC_CI=1 python3 tools/ci_validate.py`）を実行してください。`CI_VALIDATION=PASS` と表示される必要があります。この確認に `build.sh` や `build.bat` は使わないでください。ビルドは検査ではありません。
+* 8 つの README は HYDRA-UMC-DOCS の 1 つのソースから書かれます。手で編集しないでください。ソースを変更し、`tools/make_readmes.py` で書き直します。
+* 実行していないことを README に書かないでください。事実であれば「シミュレーションのみ」「実機では未確認」と書きます。
+* [CONTRIBUTING.md](CONTRIBUTING.md)、[行動規範](CODE_OF_CONDUCT.md)、[SECURITY.md](SECURITY.md)、[SUPPORT.md](SUPPORT.md) を参照してください。
 
 ## 👤 作者
-**JuanenRac**（Electro Hobby 3D）
-📧 electrohobby3d@gmail.com
-📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
+
+**JuanenRac (Electro Hobby 3D)** · electrohobby3d@gmail.com
 
 ## 📜 ライセンス
 
-GPL-3.0-or-later（ソフトウェア）/ CC BY-SA 4.0（ドキュメント） - 詳細は [LICENSE.md](LICENSE.md) を参照してください。
+GPL-3.0-or-later - [LICENSE](LICENSE).

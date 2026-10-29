@@ -1,0 +1,619 @@
+{
+  "repo": "HYDRA-UMC-OS-REBUILDER",
+  "ecosystem": "hydra",
+  "svg": "en",
+  "exempt": [
+    "CODE_OF_CONDUCT.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "SUPPORT.md",
+    "LICENSE",
+    "LICENSE.md",
+    "build-test.bat",
+    "test.bat"
+  ],
+  "cards": [
+    {
+      "name": "src/hydra_umc_os_rebuilder/",
+      "span": 3,
+      "accent": "a",
+      "rows": [
+        {
+          "name": "__init__.py",
+          "desc": {
+            "en": "Package version",
+            "es": "Versión del paquete",
+            "de": "Paketversion",
+            "fr": "Version du paquet",
+            "it": "Versione del pacchetto",
+            "ja": "パッケージバージョン",
+            "zh": "包版本",
+            "pt": "Versão do pacote"
+          },
+          "tree_desc": {
+            "en": "Package version",
+            "es": "Versión del paquete",
+            "de": "Paketversion",
+            "fr": "Version du paquet",
+            "it": "Versione del pacchetto",
+            "ja": "パッケージバージョン",
+            "zh": "包版本",
+            "pt": "Versão do pacote"
+          }
+        },
+        {
+          "name": "ecosystem_plan.py",
+          "desc": {
+            "en": "Real CM5 project/version plan",
+            "es": "Plan real de proyectos/versiones CM5",
+            "de": "Echter CM5-Projekt-/Versionsplan",
+            "fr": "Plan réel projets/versions CM5",
+            "it": "Piano reale progetti/versioni CM5",
+            "ja": "hydra_umc_updater自身の検出",
+            "zh": "真实的 CM5 项目/版本计划",
+            "pt": "Plano real de projetos/versões da CM5"
+          },
+          "tree_desc": {
+            "en": "Real CM5 project/version plan, built on hydra_umc_updater's own discovery",
+            "es": "Plan real de proyectos/versiones CM5, construido sobre el descubrimiento propio de hydra_umc_updater",
+            "de": "Echter CM5-Projekt-/Versionsplan, aufgebaut auf der eigenen Erkennung von hydra_umc_updater",
+            "fr": "Plan réel projets/versions CM5, construit sur la découverte propre de hydra_umc_updater",
+            "it": "Piano reale progetti/versioni CM5, costruito sulla scoperta propria di hydra_umc_updater",
+            "ja": "hydra_umc_updater自身の検出機能の上に構築された、実際のCM5プロジェクト/バージョン計画",
+            "zh": "真实的 CM5 项目/版本计划，基于 hydra_umc_updater 自身的发现能力构建",
+            "pt": "Plano real de projetos/versões da CM5, construído sobre a própria descoberta do hydra_umc_updater"
+          }
+        },
+        {
+          "name": "firstboot_config.py",
+          "desc": {
+            "en": "Pure firstrun.sh/cmdline.txt generator",
+            "es": "Generador puro de firstrun.sh/cmdline.txt",
+            "de": "Reiner firstrun.sh/cmdline.txt-Generator",
+            "fr": "Générateur pur firstrun.sh/cmdline.txt",
+            "it": "Generatore puro firstrun.sh/cmdline.txt",
+            "ja": "純粋なfirstrun.sh/cmdline",
+            "zh": "纯粹的 firstrun.sh/cmdlin",
+            "pt": "Gerador puro de firstrun.sh/cmdline.txt"
+          },
+          "tree_desc": {
+            "en": "Pure firstrun.sh/cmdline.txt generator - no filesystem access; recovery-procedure guard",
+            "es": "Generador puro de firstrun.sh/cmdline.txt - sin acceso al sistema de archivos; protección de recuperación",
+            "de": "Reiner firstrun.sh/cmdline.txt-Generator - kein Dateisystemzugriff; Absicherung gegen Aussperrung",
+            "fr": "Générateur pur firstrun.sh/cmdline.txt - aucun accès au système de fichiers ; protection de récupération",
+            "it": "Generatore puro firstrun.sh/cmdline.txt - nessun accesso al filesystem; protezione di recupero",
+            "ja": "純粋なfirstrun.sh/cmdline.txtジェネレータ - ファイルシステムへのアクセスなし、復旧手順の保護付き",
+            "zh": "纯粹的 firstrun.sh/cmdline.txt 生成器 - 不访问文件系统；带恢复保护机制",
+            "pt": "Gerador puro de firstrun.sh/cmdline.txt - sem acesso ao sistema de ficheiros; proteção do procedimento de recuperação"
+          }
+        },
+        {
+          "name": "profile_manifest.py",
+          "desc": {
+            "en": "Frozen per-profile version manifests",
+            "es": "Manifiestos de perfil de versión congelados",
+            "de": "Eingefrorene Profil-Versionsmanifeste",
+            "fr": "Manifestes de profil de version figés",
+            "it": "Manifest di profilo di versione congelati",
+            "ja": "凍結されたプロファイルバージョンマニフェスト",
+            "zh": "冻结的按方案版本清单：冻结/对比/有选择地更",
+            "pt": "Manifestos de versão congelados por perfil"
+          },
+          "tree_desc": {
+            "en": "Frozen per-profile version manifests: freeze/diff/selectively update, never \"latest\" mid-trial",
+            "es": "Manifiestos de perfil de versión congelados: congelar/comparar/actualizar selectivamente, nunca \"lo último\" a mitad de ensayo",
+            "de": "Eingefrorene Profil-Versionsmanifeste: einfrieren/vergleichen/selektiv aktualisieren, nie \"das Neueste\" mitten im Test",
+            "fr": "Manifestes de profil de version figés : figer/comparer/mettre à jour sélectivement, jamais \"la dernière version\" en cours d'essai",
+            "it": "Manifest di profilo di versione congelati: congelare/confrontare/aggiornare selettivamente, mai \"l'ultima versione\" a metà prova",
+            "ja": "凍結されたプロファイルバージョンマニフェスト：凍結/比較/選択的更新、試用中に「最新版」へ黙って差し替わることはない",
+            "zh": "冻结的按方案版本清单：冻结/对比/有选择地更新，绝不在试验中途换成\"最新版本\"",
+            "pt": "Manifestos de versão congelados por perfil: congelar/comparar/atualizar seletivamente, nunca «mais recente» a meio de um ensaio"
+          }
+        },
+        {
+          "name": "image_builder.py",
+          "desc": {
+            "en": "Real download/loop-mount/chroot-install",
+            "es": "Pipeline real de descarga/montaje",
+            "de": "Echte",
+            "fr": "Pipeline réel téléchargement/montage",
+            "it": "Pipeline reale download/montaggio",
+            "ja": "実際のダウンロード/ループマウント/chro",
+            "zh": "真实的下载/环回挂载/chroot 安装流程",
+            "pt": "Pipeline real de descarregar/montar em"
+          },
+          "tree_desc": {
+            "en": "Real download/loop-mount/chroot-install pipeline, Linux/root-gated",
+            "es": "Pipeline real de descarga/montaje loop/instalación en chroot, limitado a Linux/root",
+            "de": "Echte Download-/Loop-Mount-/Chroot-Installations-Pipeline, auf Linux/Root beschränkt",
+            "fr": "Pipeline réel téléchargement/montage loop/installation chroot, limité à Linux/root",
+            "it": "Pipeline reale download/montaggio loop/installazione chroot, limitata a Linux/root",
+            "ja": "実際のダウンロード/ループマウント/chrootインストールのパイプライン、Linux/rootに限定",
+            "zh": "真实的下载/环回挂载/chroot 安装流程，仅限 Linux/root",
+            "pt": "Pipeline real de descarregar/montar em loop/instalar em chroot, protegido por Linux/root"
+          }
+        },
+        {
+          "name": "i18n.py",
+          "desc": {
+            "en": "Real, complete GUI translations",
+            "es": "Traducciones reales y completas de la GUI",
+            "de": "Echte, vollständige GUI-Übersetzungen",
+            "fr": "Traductions réelles et complètes de la GUI",
+            "it": "Traduzioni reali e complete della GUI",
+            "ja": "実際の完全なGUI翻訳（8言語）",
+            "zh": "真实、完整的图形界面翻译（8 种语言）",
+            "pt": "Traduções reais e completas da GUI"
+          },
+          "tree_desc": {
+            "en": "Real, complete GUI translations (8 languages)",
+            "es": "Traducciones reales y completas de la GUI (8 idiomas)",
+            "de": "Echte, vollständige GUI-Übersetzungen (8 Sprachen)",
+            "fr": "Traductions réelles et complètes de la GUI (8 langues)",
+            "it": "Traduzioni reali e complete della GUI (8 lingue)",
+            "ja": "実際の完全なGUI翻訳（8言語）",
+            "zh": "真实、完整的图形界面翻译（8 种语言）",
+            "pt": "Traduções reais e completas da GUI (8 idiomas)"
+          }
+        },
+        {
+          "name": "qt_gui.py",
+          "desc": {
+            "en": "Qt Quick bridge over the CLI modules",
+            "es": "puente Qt Quick sobre los módulos de la CLI",
+            "de": "Qt-Quick-Brücke über die CLI-Module",
+            "fr": "pont Qt Quick sur les modules de la CLI",
+            "it": "ponte Qt Quick sui moduli della CLI",
+            "ja": "CLI モジュール上の Qt Quick ブ",
+            "zh": "CLI 模块之上的 Qt Quick 桥",
+            "pt": "ponte Qt Quick sobre os módulos da CLI"
+          },
+          "tree_desc": {
+            "en": "Qt Quick bridge over the CLI modules",
+            "es": "puente Qt Quick sobre los módulos de la CLI",
+            "de": "Qt-Quick-Brücke über die CLI-Module",
+            "fr": "pont Qt Quick sur les modules de la CLI",
+            "it": "ponte Qt Quick sui moduli della CLI",
+            "ja": "CLI モジュール上の Qt Quick ブリッジ",
+            "zh": "CLI 模块之上的 Qt Quick 桥",
+            "pt": "ponte Qt Quick sobre os módulos da CLI"
+          }
+        },
+        {
+          "name": "qml/Main.qml",
+          "desc": {
+            "en": "Themed desktop shell",
+            "es": "Interfaz temática de escritorio",
+            "de": "Themenbasierte Desktop-Oberfläche",
+            "fr": "Interface de bureau thématique",
+            "it": "Shell desktop a tema",
+            "ja": "テーマ化されたデスクトップシェル",
+            "zh": "主题化的桌面界面：生态系统状态 / 构建镜像",
+            "pt": "Shell de desktop com tema"
+          },
+          "tree_desc": {
+            "en": "Themed desktop shell: Ecosystem Status / Build Image / First-Boot Config",
+            "es": "Interfaz temática de escritorio: Estado del Ecosistema / Crear Imagen / Configuración de Primer Arranque",
+            "de": "Themenbasierte Desktop-Oberfläche: Ökosystem-Status / Image erstellen / Ersteinrichtung",
+            "fr": "Interface de bureau thématique : État de l'Écosystème / Créer l'Image / Configuration du Premier Démarrage",
+            "it": "Shell desktop a tema: Stato dell'Ecosistema / Crea Immagine / Configurazione Primo Avvio",
+            "ja": "テーマ化されたデスクトップシェル：エコシステム状態 / イメージ作成 / 初回起動設定",
+            "zh": "主题化的桌面界面：生态系统状态 / 构建镜像 / 首次启动配置",
+            "pt": "Shell de desktop com tema: Estado do ecossistema / Construir imagem / Configuração de primeiro arranque"
+          }
+        },
+        {
+          "name": "main.py",
+          "desc": {
+            "en": "Dispatch: GUI by default",
+            "es": "Despacho: GUI por defecto",
+            "de": "Dispatch: GUI standardmäßig",
+            "fr": "Répartition : GUI par défaut",
+            "it": "Dispatch: GUI predefinita",
+            "ja": "ディスパッチ：デフォルトはGUI",
+            "zh": "分派：默认图形界面，--cli 用于 sta",
+            "pt": "Despacho: GUI por defeito"
+          },
+          "tree_desc": {
+            "en": "Dispatch: GUI by default, --cli for status/config/build-image",
+            "es": "Despacho: GUI por defecto, --cli para status/config/build-image",
+            "de": "Dispatch: GUI standardmäßig, --cli für status/config/build-image",
+            "fr": "Répartition : GUI par défaut, --cli pour status/config/build-image",
+            "it": "Dispatch: GUI predefinita, --cli per status/config/build-image",
+            "ja": "ディスパッチ：デフォルトはGUI、--cliでstatus/config/build-image",
+            "zh": "分派：默认图形界面，--cli 用于 status/config/build-image",
+            "pt": "Despacho: GUI por defeito, --cli para status/config/build-image"
+          }
+        },
+        {
+          "name": "remote_install.py",
+          "desc": {
+            "en": "What a remote build installs and builds from",
+            "es": "De qué instala y compila una compilación",
+            "de": "Woraus ein Remote-Build installiert und baut",
+            "fr": "Ce qu'une compilation distante installe et",
+            "it": "Da cosa installa e compila una build remota",
+            "ja": "リモートビルドがインストール・ビルドする元",
+            "zh": "远程构建安装并构建所用的来源",
+            "pt": "De onde uma compilação remota instala e"
+          },
+          "tree_desc": {
+            "en": "What a remote build installs and builds from (pinned, not the tip of main)",
+            "es": "De qué instala y compila una compilación remota (revisión fijada, no la punta de main)",
+            "de": "Woraus ein Remote-Build installiert und baut (festgelegte Revision, nicht die Spitze von main)",
+            "fr": "Ce qu'une compilation distante installe et compile (révision épinglée, pas la pointe de main)",
+            "it": "Da cosa installa e compila una build remota (revisione fissata, non la punta di main)",
+            "ja": "リモートビルドがインストール・ビルドする元 (固定リビジョン。main の先頭ではない)",
+            "zh": "远程构建安装并构建所用的来源 (固定版本,而非 main 的最新提交)",
+            "pt": "De onde uma compilação remota instala e compila (revisão fixada, não a ponta de main)"
+          }
+        },
+        {
+          "name": "ssh_hostkeys.py",
+          "desc": {
+            "en": "Trust on first use of the SSH host key of a",
+            "es": "Confianza en el primer uso de la clave SSH",
+            "de": "Vertrauen beim ersten Gebrauch des",
+            "fr": "Confiance au premier usage de la clé SSH de",
+            "it": "Fiducia al primo uso della chiave SSH della",
+            "ja": "リモートビルド機の SSH ホスト鍵を初回に",
+            "zh": "首次使用时信任远程构建机的 SSH 主机密钥",
+            "pt": "Confiança na primeira utilização da chave"
+          },
+          "tree_desc": {
+            "en": "Trust on first use of the SSH host key of a remote build machine, with a pinned fingerprint",
+            "es": "Confianza en el primer uso de la clave SSH de la máquina de compilación remota, con huella fijada",
+            "de": "Vertrauen beim ersten Gebrauch des SSH-Hostschlüssels einer Remote-Build-Maschine, mit festem Fingerabdruck",
+            "fr": "Confiance au premier usage de la clé SSH de la machine de compilation distante, avec empreinte épinglée",
+            "it": "Fiducia al primo uso della chiave SSH della macchina di build remota, con impronta fissata",
+            "ja": "リモートビルド機の SSH ホスト鍵を初回に信頼 (フィンガープリントを固定)",
+            "zh": "首次使用时信任远程构建机的 SSH 主机密钥,并固定其指纹",
+            "pt": "Confiança na primeira utilização da chave SSH da máquina de compilação remota, com impressão digital fixada"
+          }
+        }
+      ],
+      "tree_head": {
+        "en": "source code",
+        "es": "código fuente",
+        "de": "Quellcode",
+        "fr": "code source",
+        "it": "codice sorgente",
+        "ja": "ソースコード",
+        "zh": "源代码",
+        "pt": "código-fonte"
+      },
+      "sub": {
+        "en": "source code",
+        "es": "código fuente",
+        "de": "Quellcode",
+        "fr": "code source",
+        "it": "codice sorgente",
+        "ja": "ソースコード",
+        "zh": "源代码",
+        "pt": "código-fonte"
+      },
+      "columns": 2
+    },
+    {
+      "name": {
+        "en": "folders",
+        "es": "carpetas",
+        "de": "Ordner",
+        "fr": "dossiers",
+        "it": "cartelle",
+        "ja": "フォルダ",
+        "zh": "文件夹",
+        "pt": "pastas"
+      },
+      "kind": "group",
+      "span": 3,
+      "accent": "b",
+      "columns": 2,
+      "rows": [
+        {
+          "name": "tests/",
+          "desc": {
+            "en": "Real tests: firstboot_config",
+            "es": "Tests reales: firstboot_config",
+            "de": "Echte Tests: firstboot_config",
+            "fr": "Tests réels : firstboot_config",
+            "it": "Test reali: firstboot_config",
+            "ja": "実際のテスト：firstboot_confi",
+            "zh": "真实测试：firstboot_config",
+            "pt": "Testes reais: firstboot_config"
+          },
+          "tree_desc": {
+            "en": "Real tests: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main",
+            "es": "Tests reales: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main",
+            "de": "Echte Tests: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main",
+            "fr": "Tests réels : firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main",
+            "it": "Test reali: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main",
+            "ja": "実際のテスト：firstboot_config、ecosystem_plan、profile_manifest、image_builder、i18n、main",
+            "zh": "真实测试：firstboot_config、ecosystem_plan、profile_manifest、image_builder、i18n、main",
+            "pt": "Testes reais: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main"
+          }
+        },
+        {
+          "name": "docs/",
+          "desc": {
+            "en": "documents of the project",
+            "es": "documentos del proyecto",
+            "de": "Dokumente des Projekts",
+            "fr": "documents du projet",
+            "it": "documenti del progetto",
+            "ja": "プロジェクトの文書",
+            "zh": "项目文档",
+            "pt": "documentos do projeto"
+          },
+          "tree_desc": {
+            "en": "documents of the project",
+            "es": "documentos del proyecto",
+            "de": "Dokumente des Projekts",
+            "fr": "documents du projet",
+            "it": "documenti del progetto",
+            "ja": "プロジェクトの文書",
+            "zh": "项目文档",
+            "pt": "documentos do projeto"
+          }
+        },
+        {
+          "name": "images/",
+          "desc": {
+            "en": "Media, app icon and banner",
+            "es": "Recursos, icono de la app y banner",
+            "de": "Medien, App-Icon und Banner",
+            "fr": "Ressources, icône de l'app et bannière",
+            "it": "Risorse, icona dell'app e banner",
+            "ja": "メディア、アプリアイコン、バナー",
+            "zh": "素材、应用图标和横幅",
+            "pt": "Multimédia, ícone da aplicação e faixa"
+          },
+          "tree_desc": {
+            "en": "Media, app icon and banner",
+            "es": "Recursos, icono de la app y banner",
+            "de": "Medien, App-Icon und Banner",
+            "fr": "Ressources, icône de l'app et bannière",
+            "it": "Risorse, icona dell'app e banner",
+            "ja": "メディア、アプリアイコン、バナー",
+            "zh": "素材、应用图标和横幅",
+            "pt": "Multimédia, ícone da aplicação e faixa"
+          }
+        },
+        {
+          "name": "tools/",
+          "desc": {
+            "en": "project tools and CI checks",
+            "es": "herramientas del proyecto y comprobaciones",
+            "de": "Projektwerkzeuge und CI-Prüfungen",
+            "fr": "outils du projet et vérifications de la CI",
+            "it": "strumenti del progetto e controlli della CI",
+            "ja": "プロジェクトのツールと CI の検査",
+            "zh": "项目工具和 CI 检查",
+            "pt": "ferramentas do projeto e verificações da CI"
+          },
+          "tree_desc": {
+            "en": "project tools and CI checks",
+            "es": "herramientas del proyecto y comprobaciones del CI",
+            "de": "Projektwerkzeuge und CI-Prüfungen",
+            "fr": "outils du projet et vérifications de la CI",
+            "it": "strumenti del progetto e controlli della CI",
+            "ja": "プロジェクトのツールと CI の検査",
+            "zh": "项目工具和 CI 检查",
+            "pt": "ferramentas do projeto e verificações da CI"
+          }
+        },
+        {
+          "name": ".github/",
+          "desc": {
+            "en": "CI workflow and issue templates",
+            "es": "flujo de CI y plantillas de incidencias",
+            "de": "CI-Workflow und Issue-Vorlagen",
+            "fr": "workflow de CI et modèles de tickets",
+            "it": "workflow di CI e modelli di segnalazione",
+            "ja": "CI ワークフローと Issue テンプレート",
+            "zh": "CI 工作流和 Issue 模板",
+            "pt": "fluxo de CI e modelos de problemas"
+          }
+        }
+      ]
+    },
+    {
+      "name": {
+        "en": "project files",
+        "es": "ficheros del proyecto",
+        "de": "Projektdateien",
+        "fr": "fichiers du projet",
+        "it": "file del progetto",
+        "ja": "プロジェクトのファイル",
+        "zh": "项目文件",
+        "pt": "ficheiros do projeto"
+      },
+      "kind": "group",
+      "span": 3,
+      "accent": "c",
+      "columns": 2,
+      "rows": [
+        {
+          "name": "build.sh / build.bat",
+          "desc": {
+            "en": "venv + editable install + compile-check",
+            "es": "venv + instalación editable + comprobación",
+            "de": "venv + editierbare Installation +",
+            "fr": "venv + installation éditable + vérification",
+            "it": "venv + installazione editabile + verifica",
+            "ja": "venv + 編集可能インストール + コン",
+            "zh": "venv + 可编辑安装 + 编译检查",
+            "pt": "venv + instalação editável + verificação de"
+          },
+          "tree_desc": {
+            "en": "venv + editable install + compile-check",
+            "es": "venv + instalación editable + comprobación de compilación",
+            "de": "venv + editierbare Installation + Kompilierungsprüfung",
+            "fr": "venv + installation éditable + vérification de compilation",
+            "it": "venv + installazione editabile + verifica compilazione",
+            "ja": "venv + 編集可能インストール + コンパイルチェック",
+            "zh": "venv + 可编辑安装 + 编译检查",
+            "pt": "venv + instalação editável + verificação de compilação"
+          }
+        },
+        {
+          "name": "run.sh / run.bat",
+          "desc": {
+            "en": "GUI default / CLI entry point",
+            "es": "GUI por defecto / punto de entrada CLI",
+            "de": "GUI standardmäßig / CLI-Einstiegspunkt",
+            "fr": "GUI par défaut / point d'entrée CLI",
+            "it": "GUI predefinita / punto di ingresso CLI",
+            "ja": "デフォルトのGUI / CLIエントリーポイ",
+            "zh": "默认图形界面 / CLI 入口",
+            "pt": "GUI por defeito / ponto de entrada da CLI"
+          },
+          "tree_desc": {
+            "en": "GUI default / CLI entry point",
+            "es": "GUI por defecto / punto de entrada CLI",
+            "de": "GUI standardmäßig / CLI-Einstiegspunkt",
+            "fr": "GUI par défaut / point d'entrée CLI",
+            "it": "GUI predefinita / punto di ingresso CLI",
+            "ja": "デフォルトのGUI / CLIエントリーポイント",
+            "zh": "默认图形界面 / CLI 入口",
+            "pt": "GUI por defeito / ponto de entrada da CLI"
+          }
+        },
+        {
+          "name": "run-gui.vbs",
+          "desc": {
+            "en": "Windows graphical launcher with no console",
+            "es": "Lanzador gráfico en Windows sin ventana de",
+            "de": "Windows-GUI-Launcher ohne Konsolenfenster",
+            "fr": "Lanceur graphique Windows sans fenêtre de",
+            "it": "Launcher grafico Windows senza finestra",
+            "ja": "コンソールウィンドウなしのWindowsグラ",
+            "zh": "无控制台窗口的 Windows 图形启动器",
+            "pt": "Lançador gráfico para Windows sem janela de"
+          },
+          "tree_desc": {
+            "en": "Windows graphical launcher with no console window",
+            "es": "Lanzador gráfico en Windows sin ventana de consola",
+            "de": "Windows-GUI-Launcher ohne Konsolenfenster",
+            "fr": "Lanceur graphique Windows sans fenêtre de console",
+            "it": "Launcher grafico Windows senza finestra console",
+            "ja": "コンソールウィンドウなしのWindowsグラフィカルランチャー",
+            "zh": "无控制台窗口的 Windows 图形启动器",
+            "pt": "Lançador gráfico para Windows sem janela de consola"
+          }
+        },
+        {
+          "name": "bump_version.py",
+          "desc": {
+            "en": "explicit version bump",
+            "es": "Incremento de versión tipo cuentakilómetros",
+            "de": "ausdrückliche Versionserhöhung",
+            "fr": "Incrément de version type compteur",
+            "it": "Incremento di versione stile contachilometri",
+            "ja": "明示的なバージョン更新",
+            "zh": "显式提升版本",
+            "pt": "Subida de versão ao estilo conta-quilómetros"
+          },
+          "tree_desc": {
+            "en": "explicit version bump",
+            "es": "Incremento de versión tipo cuentakilómetros (solo lo ejecuta el comando `bump` explícito)",
+            "de": "ausdrückliche Versionserhöhung",
+            "fr": "Incrément de version type compteur kilométrique (exécuté seulement par la commande `bump` explicite)",
+            "it": "Incremento di versione stile contachilometri (eseguito solo dal comando `bump` esplicito)",
+            "ja": "明示的なバージョン更新",
+            "zh": "显式提升版本",
+            "pt": "Subida de versão ao estilo conta-quilómetros (executada só pelo comando `bump` explícito)"
+          }
+        },
+        {
+          "name": "bump_manifest_version.py",
+          "desc": {
+            "en": "Syncs hydra-umc.project.json's version to",
+            "es": "Sincroniza la versión de",
+            "de": "Synchronisiert die Version von",
+            "fr": "Synchronise la version de",
+            "it": "Sincronizza la versione di",
+            "ja": "hydra-umc.project.json",
+            "zh": "将 hydra-umc.project.js",
+            "pt": "Sincroniza a versão do"
+          },
+          "tree_desc": {
+            "en": "Syncs hydra-umc.project.json's version to the native one (--sync)",
+            "es": "Sincroniza la versión de hydra-umc.project.json con la nativa (--sync)",
+            "de": "Synchronisiert die Version von hydra-umc.project.json mit der nativen (--sync)",
+            "fr": "Synchronise la version de hydra-umc.project.json avec la version native (--sync)",
+            "it": "Sincronizza la versione di hydra-umc.project.json con quella nativa (--sync)",
+            "ja": "hydra-umc.project.jsonのバージョンをネイティブのものと同期（--sync）",
+            "zh": "将 hydra-umc.project.json 的版本与原生版本同步（--sync）",
+            "pt": "Sincroniza a versão do hydra-umc.project.json com a nativa (--sync)"
+          }
+        },
+        {
+          "name": "CHANGELOG.md",
+          "desc": {
+            "en": "what changed in each version",
+            "es": "qué cambió en cada versión",
+            "de": "was sich in jeder Version geändert hat",
+            "fr": "ce qui a changé à chaque version",
+            "it": "cosa è cambiato in ogni versione",
+            "ja": "各バージョンの変更点",
+            "zh": "每个版本的变更",
+            "pt": "o que mudou em cada versão"
+          }
+        },
+        {
+          "name": "build-test.sh",
+          "desc": {
+            "en": "non-mutating build check",
+            "es": "comprobación de compilación sin cambios",
+            "de": "Build-Prüfung ohne Änderungen",
+            "fr": "vérification de build sans modification",
+            "it": "controllo di build senza modifiche",
+            "ja": "変更を伴わないビルド確認",
+            "zh": "不修改内容的构建检查",
+            "pt": "verificação de compilação sem alterações"
+          }
+        },
+        {
+          "name": "hydra-umc.project.json",
+          "desc": {
+            "en": "manifest: version, maturity, family",
+            "es": "manifiesto: versión, madurez, familia",
+            "de": "Manifest: Version, Reifegrad, Familie",
+            "fr": "manifeste : version, maturité, famille",
+            "it": "manifesto: versione, maturità, famiglia",
+            "ja": "マニフェスト：バージョン、成熟度、ファミリー",
+            "zh": "清单：版本、成熟度、系列",
+            "pt": "manifesto: versão, maturidade, família"
+          }
+        },
+        {
+          "name": "pyproject.toml",
+          "desc": {
+            "en": "package metadata",
+            "es": "metadatos del paquete",
+            "de": "Paketmetadaten",
+            "fr": "métadonnées du paquet",
+            "it": "metadati del pacchetto",
+            "ja": "パッケージのメタデータ",
+            "zh": "包的元数据",
+            "pt": "metadados do pacote"
+          }
+        },
+        {
+          "name": "test.sh",
+          "desc": {
+            "en": "runs the tests",
+            "es": "ejecuta las pruebas",
+            "de": "führt die Tests aus",
+            "fr": "lance les tests",
+            "it": "esegue i test",
+            "ja": "テストを実行",
+            "zh": "运行测试",
+            "pt": "executa os testes"
+          }
+        }
+      ]
+    }
+  ]
+}
