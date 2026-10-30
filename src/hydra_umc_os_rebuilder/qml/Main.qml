@@ -773,6 +773,7 @@ ApplicationWindow {
                         GameField { id: remotePasswordField; visible: window.remoteAuthMethod === "password"; Layout.fillWidth: true; echoMode: TextInput.Password; placeholderText: ui("lbl_remote_password") }
                     }
 
+                    GameCheck { id: publicImageCheck; text: ui("lbl_public_image"); checked: false }
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 8
@@ -787,7 +788,7 @@ ApplicationWindow {
                         onClicked: {
                             var opts = {
                                 target: window.buildTarget,
-                                outputPath: outputPathField.text,
+                                outputPath: outputPathField.text, publicImage: publicImageCheck.checked,
                                 hostname: hostnameField.text, fbUsername: usernameField.text, fbPassword: passwordField.text,
                                 enableSsh: sshCheck.checked, wifiSsid: wifiSsidField.text, wifiPassword: wifiPasswordField.text,
                                 wifiCountry: wifiCountryField.text, timezone: timezoneField.text, keyboard: keyboardField.text

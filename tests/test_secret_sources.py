@@ -74,6 +74,32 @@ class RemoteBuildDoesNotPutSecretsInTheCommandTests(unittest.TestCase):
         self.assertIsNone(bridge._firstboot_secrets_json({"hostname": "cm5"}))
         self.assertNotIn("--secrets-stdin", bridge._firstboot_cli_args({"hostname": "cm5"}))
 
+    def test_the_public_image_box_is_off_by_default_and_becomes_the_switch(self):
+        bridge = self.bridge()
+        self.assertNotIn("--public-image", bridge._firstboot_cli_args({"hostname": "cm5"}))
+        self.assertNotIn("--public-image", bridge._firstboot_cli_args({"publicImage": False}))
+        self.assertIn("--public-image", bridge._firstboot_cli_args({"publicImage": True}))
+
+
+class PublicImageBoxTests(unittest.TestCase):
+    def test_the_window_has_the_box_unticked_and_sends_it(self):
+        from pathlib import Path
+
+        root = Path(__file__).resolve().parent.parent / "src" / "hydra_umc_os_rebuilder"
+        qml = (root / "qml" / "Main.qml").read_text(encoding="utf-8")
+        self.assertIn('id: publicImageCheck; text: ui("lbl_public_image"); checked: false', qml)
+        self.assertIn("publicImage: publicImageCheck.checked", qml)
+        gui = (root / "qt_gui.py").read_text(encoding="utf-8")
+        self.assertIn('public_image = bool(options.get("publicImage"))', gui)
+        self.assertIn("public_image=public_image", gui)
+
+    def test_the_text_of_the_box_exists_in_every_language(self):
+        from hydra_umc_os_rebuilder import i18n
+
+        for code in i18n.TRANSLATIONS:
+            with self.subTest(code):
+                self.assertTrue(i18n.TRANSLATIONS[code]["lbl_public_image"].strip())
+
 
 if __name__ == "__main__":
     unittest.main()

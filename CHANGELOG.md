@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A "Public image" box in the build window:** the box (off by default, with its text in all eight languages) turns on the public-image checks for a local build and adds `--public-image` to the command of a remote build.
 - **`--public-image` for images meant to be distributed:** `build-image` and `profile-build` take a switch (off by default) that refuses a first-boot configuration (its script keeps the Wi-Fi password and the account hash in clear on the boot partition) and makes the secret scan also look at the boot partition (first-boot script, Wi-Fi, account and cloud-init seed files) and at the installed projects (`.env` files and generated `data` folders); any finding stops the image from being promoted, as the existing scan already does. Without the switch nothing changes.
 
 ## [0.3.3] - The base image pinned by its digest, a checksum file next to every image, room for the projects and the universal README

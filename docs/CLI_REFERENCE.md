@@ -143,7 +143,7 @@ If the two files cannot be written the build is reported as failed, although the
 
 ## Images meant to be distributed
 
-`build-image --public-image` and `profile-build --public-image` (off by default) refuse a first-boot configuration and extend the secret scan to the boot partition and to the installed projects (`.env` files, generated `data` folders). A finding stops the image from being promoted. Leave the switch off for an image personalised for your own devices.
+`build-image --public-image` and `profile-build --public-image` (off by default) refuse a first-boot configuration and extend the secret scan to the boot partition and to the installed projects (`.env` files, generated `data` folders). A finding stops the image from being promoted. Leave the switch off for an image personalised for your own devices. The **Public image** box of the build window (off by default) does the same for a local build and adds the switch to a remote one.
 
 ## Making room in the image
 

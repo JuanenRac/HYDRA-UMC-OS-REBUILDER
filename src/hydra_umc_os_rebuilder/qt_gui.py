@@ -312,6 +312,8 @@ class RebuilderBridge(QObject):
         if options.get("fbPassword") or options.get("wifiPassword"):
             # the two passwords go to the remote command on its standard input, never in its arguments
             args.append("--secrets-stdin")
+        if options.get("publicImage"):
+            args.append("--public-image")  # a switch of the build, not a first-boot field: off unless the box is ticked
         return args
 
     @staticmethod
@@ -364,6 +366,7 @@ class RebuilderBridge(QObject):
         plan_errors = list(self._discoveryErrors)
         output_path = options.get("outputPath") or ""
         firstboot = self._firstboot_config_from_options(options)
+        public_image = bool(options.get("publicImage"))
 
         def worker() -> None:
             from .ecosystem_plan import EcosystemPlan
@@ -383,6 +386,7 @@ class RebuilderBridge(QObject):
                     work_dir=work_dir,
                     output_path=out_path,
                     progress=progress,
+                    public_image=public_image,
                 )
                 self._buildResult.emit(result.ok, result.error or "", result.output_path)
             except ImageBuildError as exc:
