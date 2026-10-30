@@ -184,6 +184,14 @@ O **HYDRA-UMC-OS-REBUILDER** constrói uma imagem nova da CM5 com a versão atua
 - **As palavras-passe já não viajam como argumentos.** `--password` e `--wifi-password` continuam a funcionar, mas uma linha de comandos é visível a todos os utilizadores da máquina e o `sudo` escreve-a no registo de autenticação; a CLI lê-as por isso também de `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` ou, com `--secrets-stdin`, de um objeto JSON (`{"password": "...", "wifiPassword": "..."}`) na entrada padrão. A compilação remota (SSH) da interface envia-as assim e já não as põe no comando executado.
 - **O chroot está completo e a compilação remota fica fixada.** A compilação monta `/proc`, `/sys`, `/dev` e `/dev/pts` na imagem e dá-lhe a resolução de nomes do equipamento enquanto os projetos são compilados (o `resolv.conf` próprio da imagem é reposto no fim), para que `pip`, `npm` e `go` cheguem à rede a partir do chroot. Uma compilação remota por SSH instala esta ferramenta a partir da etiqueta da versão em execução (`HYDRA_UMC_REBUILDER_REMOTE_REF` indica outra etiqueta ou commit) e compila a partir do perfil congelado do plano revisto (`profile-build`) em vez de voltar a descobrir o ecossistema no equipamento remoto. Nada disto correu ainda num equipamento Linux real com root.
 
+## 🖼️ Capturas de ecrã
+
+Capturadas a 1920×1080 numa bancada de testes, com dados de exemplo e sem qualquer instalação real por trás.
+
+<table>
+<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="A janela: os projetos da CM5 encontrados para a imagem com a sua versão, função e pilha, as opções de construção e o registo." width="100%"><br><sub>A janela: os projetos da CM5 encontrados para a imagem com a sua versão, função e pilha, as opções de construção e o registo.</sub></td></tr>
+</table>
+
 ## 🔒 Segurança e proteção
 
 `--public-image` (em `build-image` e `profile-build`, e a caixa **Imagem pública** da janela de construção; desligada por predefinição) recusa qualquer configuração de primeiro arranque e procura também credenciais na partição de arranque (`firstrun.sh`, `wpa_supplicant.conf`, `userconf*`, `custom.toml`, `user-data`, `network-config`) e em `/opt/hydra-umc` (ficheiros `.env` e pastas de dados com ficheiros); qualquer deteção impede a promoção da imagem. Não foi experimentada com uma imagem real, porque isso requer Linux.

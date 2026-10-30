@@ -147,6 +147,14 @@ HYDRA-UMC-UPDATER 相同的视觉语言（相同的深色调色板、字体排�
   移除） - `passlib` 在本工具运行的任何平台（包括 Windows）上都能生成与
   `chpasswd -e` 期望完全一致的真实 `$6$...` 格式。哈希使用 500000 轮，而不是 glibc 自 2000 年起的默认 5000 轮，因此攻击一份镜像副本或 `/etc/shadow` 的成本要高得多；设备自身偏好的 yescrypt（`$y$`）无法在 Windows 上通过 Python 以可移植的方式生成。
 
+## 🖼️ 屏幕截图
+
+在测试台上以 1920×1080 截取，使用示例数据，背后没有真实的安装。
+
+<table>
+<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="窗口：为镜像找到的 CM5 项目及其版本、角色和技术栈，构建选项和构建日志。" width="100%"><br><sub>窗口：为镜像找到的 CM5 项目及其版本、角色和技术栈，构建选项和构建日志。</sub></td></tr>
+</table>
+
 ## 🔒 安全与防护
 
 `--public-image`（用于 `build-image` 和 `profile-build`，以及构建窗口中的 **公开镜像** 复选框；默认关闭）会拒绝任何首次启动配置，并扫描引导分区（`firstrun.sh`、`wpa_supplicant.conf`、`userconf*`、`custom.toml`、`user-data`、`network-config`）和 `/opt/hydra-umc`（`.env` 文件及含文件的数据文件夹）中的凭据；只要有发现，镜像就不会被提升。由于需要 Linux，尚未在真实镜像上试过。

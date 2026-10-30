@@ -166,6 +166,14 @@ Configuración de Primer Arranque.
   el mismo formato real `$6$...` byte a byte que espera `chpasswd -e`, en
   cualquier plataforma donde corra esta herramienta, incluyendo Windows. El hash usa 500000 rondas, no las 5000 por defecto de glibc, que datan del año 2000, de modo que atacar una copia de la imagen o de `/etc/shadow` cuesta mucho más; el yescrypt (`$y$`) que prefiere el propio dispositivo no puede generarse de forma portable desde Python en Windows.
 
+## 🖼️ Capturas de pantalla
+
+Capturadas a 1920×1080 en un banco de pruebas, con datos de ejemplo y sin ninguna instalación real detrás.
+
+<table>
+<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="La ventana: los proyectos de la CM5 encontrados para la imagen con su versión, función y pila, las opciones de construcción y el registro." width="100%"><br><sub>La ventana: los proyectos de la CM5 encontrados para la imagen con su versión, función y pila, las opciones de construcción y el registro.</sub></td></tr>
+</table>
+
 ## 🔒 Seguridad y protección
 
 `--public-image` (en `build-image` y `profile-build`, y la casilla **Imagen pública** de la ventana de construcción; apagada por defecto) rechaza cualquier configuración de primer arranque y además busca credenciales en la partición de arranque (`firstrun.sh`, `wpa_supplicant.conf`, `userconf*`, `custom.toml`, `user-data`, `network-config`) y en `/opt/hydra-umc` (ficheros `.env` y carpetas de datos con ficheros); cualquier hallazgo impide promover la imagen. No se ha probado con una imagen real, porque requiere Linux.

@@ -177,6 +177,14 @@ Status, Build Image, and First-Boot Config.
 - **The passwords never travel as arguments.** `--password` and `--wifi-password` still work, but a command line is visible to every user of the machine and `sudo` writes it to the authentication log, so the CLI also reads them from `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` or, with `--secrets-stdin`, from one JSON object (`{"password": "...", "wifiPassword": "..."}`) on standard input. The remote (SSH) build of the GUI sends them that way and no longer puts them in the command it runs.
 - **The chroot is complete and the remote build is pinned.** The build mounts `/proc`, `/sys`, `/dev` and `/dev/pts` in the image and gives it the host's name resolution while the projects build (the image's own `resolv.conf` is put back afterwards), so `pip`, `npm` and `go` can reach the network from the chroot. A remote build over SSH installs this tool from the release tag of the version that is running (`HYDRA_UMC_REBUILDER_REMOTE_REF` names another tag or commit) and builds from the frozen profile of the plan that was reviewed (`profile-build`) instead of discovering the ecosystem again on the remote host. None of this has run on a real Linux host with root yet.
 
+## 🖼️ Screenshots
+
+Captured at 1920×1080 on a test bench, with sample data and no real installation behind them.
+
+<table>
+<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="The window: the CM5 projects found for the image with their version, role and stack, the build options and the build log." width="100%"><br><sub>The window: the CM5 projects found for the image with their version, role and stack, the build options and the build log.</sub></td></tr>
+</table>
+
 ## 🔒 Security & Safety
 
 `--public-image` (on `build-image` and `profile-build`, and the **Public image** box of the build window; off by default) refuses any first-boot configuration and also scans the boot partition (`firstrun.sh`, `wpa_supplicant.conf`, `userconf*`, `custom.toml`, `user-data`, `network-config`) and `/opt/hydra-umc` (`.env` files and data folders with files) for credentials; any finding stops the image from being promoted. It has not been tried on a real image, because that needs Linux.

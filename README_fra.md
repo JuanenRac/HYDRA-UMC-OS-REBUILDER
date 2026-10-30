@@ -170,6 +170,14 @@ Configuration du Premier Démarrage.
   qu'attend `chpasswd -e`, sur toute plateforme où tourne cet outil, y
   compris Windows. Le hachage utilise 500000 tours, et non les 5000 par défaut de glibc, qui datent de l'an 2000, si bien qu'attaquer une copie de l'image ou de `/etc/shadow` coûte beaucoup plus cher ; le yescrypt (`$y$`) que préfère l'appareil lui-même ne peut pas être produit de façon portable depuis Python sous Windows.
 
+## 🖼️ Captures d'écran
+
+Capturées en 1920×1080 sur un banc d'essai, avec des données d'exemple et sans installation réelle derrière.
+
+<table>
+<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="La fenêtre : les projets de la CM5 trouvés pour l'image avec leur version, leur rôle et leur pile, les options de construction et le journal." width="100%"><br><sub>La fenêtre : les projets de la CM5 trouvés pour l'image avec leur version, leur rôle et leur pile, les options de construction et le journal.</sub></td></tr>
+</table>
+
 ## 🔒 Sécurité et protection
 
 `--public-image` (sur `build-image` et `profile-build`, et la case **Image publique** de la fenêtre de construction ; décochée par défaut) refuse toute configuration du premier démarrage et recherche aussi des identifiants dans la partition de démarrage (`firstrun.sh`, `wpa_supplicant.conf`, `userconf*`, `custom.toml`, `user-data`, `network-config`) et dans `/opt/hydra-umc` (fichiers `.env` et dossiers de données contenant des fichiers) ; tout résultat empêche de promouvoir l'image. Il n'a pas été essayé sur une image réelle, car cela demande Linux.

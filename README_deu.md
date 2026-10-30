@@ -169,6 +169,14 @@ Ersteinrichtung.
   byte-identisch dasselbe echte `$6$...`-Format, das `chpasswd -e`
   erwartet. Der Hash verwendet 500000 Runden statt der glibc-Vorgabe von 5000 aus dem Jahr 2000, sodass ein Angriff auf eine Kopie des Images oder von `/etc/shadow` deutlich teurer ist; das vom Gerät selbst bevorzugte yescrypt (`$y$`) lässt sich unter Windows nicht portabel aus Python erzeugen.
 
+## 🖼️ Screenshots
+
+Aufgenommen mit 1920×1080 auf einem Prüfstand, mit Beispieldaten und ohne eine echte Anlage dahinter.
+
+<table>
+<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="Das Fenster: die für das Image gefundenen CM5-Projekte mit Version, Rolle und Stack, die Build-Optionen und das Build-Protokoll." width="100%"><br><sub>Das Fenster: die für das Image gefundenen CM5-Projekte mit Version, Rolle und Stack, die Build-Optionen und das Build-Protokoll.</sub></td></tr>
+</table>
+
 ## 🔒 Sicherheit und Schutz
 
 `--public-image` (bei `build-image` und `profile-build` sowie das Kästchen **Öffentliches Image** im Build-Fenster; standardmäßig aus) lehnt jede Erststart-Konfiguration ab und durchsucht außerdem die Boot-Partition (`firstrun.sh`, `wpa_supplicant.conf`, `userconf*`, `custom.toml`, `user-data`, `network-config`) und `/opt/hydra-umc` (`.env`-Dateien und Datenordner mit Dateien) nach Zugangsdaten; jeder Fund verhindert die Freigabe des Images. Mit einem echten Image wurde es nicht erprobt, da dafür Linux nötig ist.
