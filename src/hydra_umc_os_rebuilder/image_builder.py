@@ -112,6 +112,34 @@ def check_build_platform() -> PlatformCheck:
     return PlatformCheck(True)
 
 
+def check_build_preflight(
+    *, source: "BaseImageSource", plan: "EcosystemPlan", work_dir: Path, grow_mb: int = 0, compress: bool = False
+) -> PlatformCheck:
+    """What must be true before anything is downloaded: the plan has projects to install, the host has the tools the
+    steps after the download call (git for the clones; parted, e2fsck and resize2fs when the image is grown; xz when the
+    result is compressed) and, when the base image is not already in the work folder, the folder has room for it.
+    Returns the first reason found."""
+    if len(plan) == 0:
+        return PlatformCheck(False, "the ecosystem plan has no projects: nothing would be installed, so nothing is downloaded")
+    needed = ["git"]
+    if grow_mb > 0:
+        needed.extend(["parted", "e2fsck", "resize2fs"])
+    if compress:
+        needed.append("xz")
+    for tool in needed:
+        if shutil.which(tool) is None:
+            return PlatformCheck(False, f"required tool not found on PATH: {tool}")
+    cached = work_dir / Path(source.url).name
+    if not cached.is_file():
+        download_size = _remote_content_length(source.url)
+        if download_size is not None:
+            try:
+                _require_free_space(work_dir, download_size, f"downloading {source.label}")
+            except ImageBuildError as exc:
+                return PlatformCheck(False, str(exc))
+    return PlatformCheck(True)
+
+
 @dataclass
 class BuildProgress:
     phase: str
@@ -303,10 +331,24 @@ def fetch_base_image(source: BaseImageSource, dest_dir: Path, *, chunk_size: int
 DEFAULT_PROJECT_TIMEOUT_SECONDS: float = 1800.0
 
 
-def write_image_sidecars(output_path: Path, installed: tuple[str, ...], *, base_image: BaseImageSource) -> tuple[Path, Path]:
+def compress_image(raw_image: Path, *, run=None) -> Path:
+    """Compress a finished image with `xz -T0` (all cores) into `<image>.xz` and return that path; the raw file is
+    removed by xz once the compressed one is complete, so a failure leaves the raw image where it was."""
+    (run or _run)("xz", "-T0", "-f", str(raw_image))
+    return raw_image.with_name(raw_image.name + ".xz")
+
+
+def write_image_sidecars(
+    output_path: Path,
+    installed: tuple[str, ...],
+    *,
+    base_image: BaseImageSource,
+    uncompressed_sha256: str | None = None,
+) -> tuple[Path, Path]:
     """Write `<image>.sha256` (the `sha256sum` format, so `sha256sum -c` checks the image) and `<image>.manifest.json`
     (what is in the image: the base image, the installed projects with the content hash of each, and the builder version)
-    next to a finished image. Returns the two paths."""
+    next to a finished image. For a compressed image `uncompressed_sha256` is the hash of the raw image inside it.
+    Returns the two paths."""
     from . import __version__
 
     digest = _file_sha256(output_path)
@@ -325,6 +367,8 @@ def write_image_sidecars(output_path: Path, installed: tuple[str, ...], *, base_
         "projects": projects,
         "builder_version": __version__,
     }
+    if uncompressed_sha256:
+        manifest["image_uncompressed_sha256"] = uncompressed_sha256
     manifest_path = output_path.with_name(output_path.name + ".manifest.json")
     manifest_path.write_text(json.dumps(manifest, indent=2, sort_keys=True) + chr(10), encoding="utf-8")
     return checksum_path, manifest_path
@@ -485,6 +529,7 @@ def build_image(
     project_timeout_seconds: float | None = DEFAULT_PROJECT_TIMEOUT_SECONDS,
     grow_mb: int = 0,
     public_image: bool = False,
+    compress: bool = False,
 ) -> BuildResult:
     """The real end-to-end pipeline. `progress`, if given, is called with a
     BuildProgress at each real phase transition - never a fake percentage,
@@ -512,6 +557,9 @@ def build_image(
     check = check_build_platform()
     if not check.ok:
         return BuildResult(ok=False, error=check.reason, platform_check=check)
+    preflight = check_build_preflight(source=source, plan=plan, work_dir=work_dir, grow_mb=grow_mb, compress=compress)
+    if not preflight.ok:
+        return BuildResult(ok=False, error=preflight.reason, platform_check=preflight)
 
     def report(phase: str, detail: str = "") -> None:
         if progress is not None:
@@ -712,8 +760,13 @@ def build_image(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     shutil.move(str(raw_image), str(output_path))
     try:
-        write_image_sidecars(output_path, tuple(installed), base_image=source)
-    except OSError as exc:
+        uncompressed_digest = None
+        if compress:
+            report("compress", output_path.name)
+            uncompressed_digest = _file_sha256(output_path)
+            output_path = compress_image(output_path)
+        write_image_sidecars(output_path, tuple(installed), base_image=source, uncompressed_sha256=uncompressed_digest)
+    except (OSError, subprocess.CalledProcessError) as exc:
         return BuildResult(
             ok=False,
             output_path=output_path,

@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Compressed output with `--compress`:** `build-image` and `profile-build` take a switch (off by default) that compresses the finished image with `xz -T0` into `<image>.xz`; the checksum file and the manifest are then written for the compressed file, and the manifest also carries the hash of the raw image inside it. Tested with a stand-in for `xz`; not yet timed on a multi-gigabyte image.
+- **A fuller check before anything is downloaded:** the build refuses an empty plan, a host without `git` (and without `parted`, `e2fsck` and `resize2fs` when the image is grown, or `xz` when it is compressed), and a work folder without room for the base image, instead of discovering it after the download. 4 new tests.
 - **A "Public image" box in the build window:** the box (off by default, with its text in all eight languages) turns on the public-image checks for a local build and adds `--public-image` to the command of a remote build.
 - **`--public-image` for images meant to be distributed:** `build-image` and `profile-build` take a switch (off by default) that refuses a first-boot configuration (its script keeps the Wi-Fi password and the account hash in clear on the boot partition) and makes the secret scan also look at the boot partition (first-boot script, Wi-Fi, account and cloud-init seed files) and at the installed projects (`.env` files and generated `data` folders); any finding stops the image from being promoted, as the existing scan already does. Without the switch nothing changes.
 

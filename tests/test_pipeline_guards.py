@@ -69,11 +69,12 @@ def test_the_pipeline_never_hands_a_terminal_to_a_subprocess(monkeypatch: pytest
 
 def test_a_bad_first_boot_setting_fails_the_build_before_any_download(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(image_builder_module, "check_build_platform", lambda: PlatformCheck(True))
+    monkeypatch.setattr(image_builder_module, "_remote_content_length", lambda *_a, **_k: None)
     downloads = []
     monkeypatch.setattr(image_builder_module, "fetch_base_image", lambda *a, **k: downloads.append(a) or tmp_path / "x.img")
     result = build_image(
         source=BaseImageSource(label="x", url="https://example.invalid/x.img.xz", sha256=""),
-        plan=EcosystemPlan(entries=(), discovery_errors=()),
+        plan=EcosystemPlan(entries=(_plan_entry(),), discovery_errors=()),
         firstboot=FirstBootConfig(hostname="not a valid host name!"),
         work_dir=tmp_path / "work",
         output_path=tmp_path / "out.img",
@@ -85,6 +86,7 @@ def test_a_bad_first_boot_setting_fails_the_build_before_any_download(monkeypatc
 
 def test_a_failed_download_is_a_failed_build_not_an_exception(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     monkeypatch.setattr(image_builder_module, "check_build_platform", lambda: PlatformCheck(True))
+    monkeypatch.setattr(image_builder_module, "_remote_content_length", lambda *_a, **_k: None)
 
     def failing_download(*_a, **_k):
         (tmp_path / "work").mkdir(exist_ok=True)
@@ -94,7 +96,7 @@ def test_a_failed_download_is_a_failed_build_not_an_exception(monkeypatch: pytes
     monkeypatch.setattr(image_builder_module, "fetch_base_image", failing_download)
     result = build_image(
         source=BaseImageSource(label="x", url="https://example.invalid/x.img.xz", sha256=""),
-        plan=EcosystemPlan(entries=(), discovery_errors=()),
+        plan=EcosystemPlan(entries=(_plan_entry(),), discovery_errors=()),
         firstboot=None,
         work_dir=tmp_path / "work",
         output_path=tmp_path / "out.img",
@@ -131,3 +133,70 @@ def test_a_profile_file_cannot_hand_git_an_option_or_a_foreign_url() -> None:
     foreign = {**good, "entries": [{**good["entries"][0], "git_url": "https://evil.example/repo.git"}]}
     with pytest.raises(ProfileManifestError, match="git_url"):
         from_json(foreign)
+
+
+_SOURCE = BaseImageSource(label="x", url="https://example.invalid/x.img.xz", sha256="")
+
+
+def test_an_empty_plan_is_refused_before_anything_is_downloaded(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(image_builder_module, "check_build_platform", lambda: PlatformCheck(True))
+    downloads: list[object] = []
+    monkeypatch.setattr(image_builder_module, "fetch_base_image", lambda *a, **k: downloads.append(a) or tmp_path / "x.img")
+    result = build_image(
+        source=_SOURCE,
+        plan=EcosystemPlan(entries=(), discovery_errors=()),
+        firstboot=None,
+        work_dir=tmp_path / "work",
+        output_path=tmp_path / "out.img",
+    )
+    assert not result.ok and "no projects" in result.error
+    assert downloads == []
+
+
+def test_the_preflight_asks_for_the_tools_of_the_steps_that_will_run(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(image_builder_module, "_remote_content_length", lambda *_a, **_k: None)
+    present = {"git"}
+    monkeypatch.setattr(image_builder_module.shutil, "which", lambda tool: "/usr/bin/" + tool if tool in present else None)
+    plan = EcosystemPlan(entries=(_plan_entry(),), discovery_errors=())
+    check = image_builder_module.check_build_preflight
+    assert check(source=_SOURCE, plan=plan, work_dir=tmp_path).ok
+    grown = check(source=_SOURCE, plan=plan, work_dir=tmp_path, grow_mb=512)
+    assert not grown.ok and "parted" in grown.reason
+    compressed = check(source=_SOURCE, plan=plan, work_dir=tmp_path, compress=True)
+    assert not compressed.ok and "xz" in compressed.reason
+    present.clear()
+    assert "git" in check(source=_SOURCE, plan=plan, work_dir=tmp_path).reason
+
+
+def test_the_preflight_refuses_a_work_folder_without_room_for_the_download(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(image_builder_module.shutil, "which", lambda tool: "/usr/bin/" + tool)
+    monkeypatch.setattr(image_builder_module, "_remote_content_length", lambda *_a, **_k: 10**15)
+    plan = EcosystemPlan(entries=(_plan_entry(),), discovery_errors=())
+    check = image_builder_module.check_build_preflight(source=_SOURCE, plan=plan, work_dir=tmp_path / "work")
+    assert not check.ok and "not enough free disk space" in check.reason
+
+
+def test_a_compressed_image_gets_its_checksum_and_manifest_for_the_compressed_file(tmp_path: Path) -> None:
+    import hashlib
+    import json
+
+    raw = tmp_path / "out.img"
+    raw.write_bytes(b"raw image")
+    commands: list[tuple] = []
+
+    def fake_xz(*command, **_kwargs):
+        commands.append(command)
+        (tmp_path / "out.img.xz").write_bytes(b"xz data")
+        raw.unlink()
+
+    packed = image_builder_module.compress_image(raw, run=fake_xz)
+    assert packed == tmp_path / "out.img.xz"
+    assert commands == [("xz", "-T0", "-f", str(raw))]
+    checksum, manifest_path = image_builder_module.write_image_sidecars(
+        packed, (), base_image=_SOURCE, uncompressed_sha256=hashlib.sha256(b"raw image").hexdigest()
+    )
+    assert checksum.name == "out.img.xz.sha256"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert manifest["image"] == "out.img.xz"
+    assert manifest["image_sha256"] == hashlib.sha256(b"xz data").hexdigest()
+    assert manifest["image_uncompressed_sha256"] == hashlib.sha256(b"raw image").hexdigest()

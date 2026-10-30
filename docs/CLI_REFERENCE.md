@@ -141,6 +141,14 @@ A successful `build-image` or `profile-build` writes two files beside the image,
 
 If the two files cannot be written the build is reported as failed, although the image itself has been moved to its place.
 
+## Compressed output
+
+`build-image --compress` and `profile-build --compress` (off by default) compress the finished image with `xz -T0` into `<image>.xz` and write the checksum file and the manifest for that compressed file; the manifest adds `image_uncompressed_sha256`, the hash of the raw image inside. `xz` must be installed on the build host; the check before the download says so if it is not.
+
+## Checks before the download
+
+Before the base image is fetched the build refuses: a plan with no projects, a missing `git` (and `parted`, `e2fsck` and `resize2fs` when `--grow-mb` is used, or `xz` with `--compress`), and a work folder with less free space than the base image needs.
+
 ## Images meant to be distributed
 
 `build-image --public-image` and `profile-build --public-image` (off by default) refuse a first-boot configuration and extend the secret scan to the boot partition and to the installed projects (`.env` files, generated `data` folders). A finding stops the image from being promoted. Leave the switch off for an image personalised for your own devices. The **Public image** box of the build window (off by default) does the same for a local build and adds the switch to a remote one.

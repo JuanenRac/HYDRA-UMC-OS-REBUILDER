@@ -136,6 +136,7 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
         project_timeout_seconds=args.project_timeout_seconds or None,
         grow_mb=args.grow_mb,
         public_image=args.public_image,
+        compress=args.compress,
     )
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
@@ -240,6 +241,7 @@ def _cmd_profile_build(args: argparse.Namespace) -> int:
         project_timeout_seconds=args.project_timeout_seconds or None,
         grow_mb=args.grow_mb,
         public_image=args.public_image,
+        compress=args.compress,
     )
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
@@ -313,6 +315,11 @@ def build_parser() -> argparse.ArgumentParser:
         "(default 0: the size of the base image)",
     )
     build_parser_cmd.add_argument(
+        "--compress",
+        action="store_true",
+        help="compress the finished image with xz (<image>.xz) and write its checksum and manifest for the compressed file; off by default",
+    )
+    build_parser_cmd.add_argument(
         "--public-image",
         action="store_true",
         help="build an image meant to be distributed: refuse a first-boot configuration and also scan the boot partition and "
@@ -375,6 +382,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         help="make the image this many MiB larger and grow its root partition and file system before the projects are installed "
         "(default 0: the size of the base image)",
+    )
+    profile_build_parser.add_argument(
+        "--compress",
+        action="store_true",
+        help="compress the finished image with xz (<image>.xz) and write its checksum and manifest for the compressed file; off by default",
     )
     profile_build_parser.add_argument(
         "--public-image",
