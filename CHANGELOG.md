@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.3.4] - Signed profile manifests, compressed output, a fuller check before downloading and a public image option
+
 - **Signed profile manifests:** `profile-keygen` creates an Ed25519 key pair, `profile-sign` writes `<manifest>.sig` (a signature over the SHA-256 of the file) and `profile-verify` checks it against a trusted public key. `profile-build --require-signed` (or `HYDRA_UMC_OS_REBUILDER_REQUIRE_SIGNED=1`; off by default) refuses a manifest whose signature does not verify, before anything else happens, and then leaves the signed file untouched, writing the hashes of the build to `<manifest>.built.json`. Needs the new `signing` extra (`cryptography`). 7 new tests.
 - **Compressed output with `--compress`:** `build-image` and `profile-build` take a switch (off by default) that compresses the finished image with `xz -T0` into `<image>.xz`; the checksum file and the manifest are then written for the compressed file, and the manifest also carries the hash of the raw image inside it. Tested with a stand-in for `xz`; not yet timed on a multi-gigabyte image.
 - **A fuller check before anything is downloaded:** the build refuses an empty plan, a host without `git` (and without `parted`, `e2fsck` and `resize2fs` when the image is grown, or `xz` when it is compressed), and a work folder without room for the base image, instead of discovering it after the download. 4 new tests.
