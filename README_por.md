@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Language">
   <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="Desktop">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-177%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-183%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.3.3-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,12 +36,12 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Versão | `0.3.3` |
 | Maturidade | Funcional |
-| Testes | 177 (`python -m pytest -q tests`) |
+| Testes | 183 (`python -m pytest -q tests`) |
 | Tecnologia | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Destino | O PC de quem o usa |
 | Em hardware real | Ainda não: não há registo de execução em hardware real para esta versão |
 
-**Ir para:** [Visão geral](#-visão-geral) · [Arquitetura](#-arquitetura) · [Início rápido](#-início-rápido) · [Testes](#-testes) · [Estrutura do repositório](#-estrutura-do-repositório) · [Projetos relacionados](#-projetos-relacionados)
+**Ir para:** [Visão geral](#-visão-geral) · [Arquitetura](#-arquitetura) · [Segurança e proteção](#-segurança-e-proteção) · [Início rápido](#-início-rápido) · [Testes](#-testes) · [Estrutura do repositório](#-estrutura-do-repositório) · [Projetos relacionados](#-projetos-relacionados)
 
 ## 🚦 Estado do projeto
 
@@ -52,7 +52,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 | Área | Estado | O que significa aqui |
 |---|---|---|
 | Software | 🟡 | Funciona para o seu propósito principal; a verificação de honestidade acima lista o que ainda falta |
-| Testes | 🟢 | 177 testes automáticos, executados a cada alteração |
+| Testes | 🟢 | 183 testes automáticos, executados a cada alteração |
 | Hardware real | 🔴 | Ainda não: não há registo de execução em hardware real para esta versão |
 | Documentação | 🟢 | README em oito idiomas, verificado contra o manifesto a cada alteração |
 
@@ -184,6 +184,10 @@ O **HYDRA-UMC-OS-REBUILDER** constrói uma imagem nova da CM5 com a versão atua
 - **As palavras-passe já não viajam como argumentos.** `--password` e `--wifi-password` continuam a funcionar, mas uma linha de comandos é visível a todos os utilizadores da máquina e o `sudo` escreve-a no registo de autenticação; a CLI lê-as por isso também de `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` ou, com `--secrets-stdin`, de um objeto JSON (`{"password": "...", "wifiPassword": "..."}`) na entrada padrão. A compilação remota (SSH) da interface envia-as assim e já não as põe no comando executado.
 - **O chroot está completo e a compilação remota fica fixada.** A compilação monta `/proc`, `/sys`, `/dev` e `/dev/pts` na imagem e dá-lhe a resolução de nomes do equipamento enquanto os projetos são compilados (o `resolv.conf` próprio da imagem é reposto no fim), para que `pip`, `npm` e `go` cheguem à rede a partir do chroot. Uma compilação remota por SSH instala esta ferramenta a partir da etiqueta da versão em execução (`HYDRA_UMC_REBUILDER_REMOTE_REF` indica outra etiqueta ou commit) e compila a partir do perfil congelado do plano revisto (`profile-build`) em vez de voltar a descobrir o ecossistema no equipamento remoto. Nada disto correu ainda num equipamento Linux real com root.
 
+## 🔒 Segurança e proteção
+
+`--public-image` (em `build-image` e `profile-build`, e a caixa **Imagem pública** da janela de construção; desligada por predefinição) recusa qualquer configuração de primeiro arranque e procura também credenciais na partição de arranque (`firstrun.sh`, `wpa_supplicant.conf`, `userconf*`, `custom.toml`, `user-data`, `network-config`) e em `/opt/hydra-umc` (ficheiros `.env` e pastas de dados com ficheiros); qualquer deteção impede a promoção da imagem. Não foi experimentada com uma imagem real, porque isso requer Linux.
+
 ## 🚀 Início rápido
 
 Requer Python 3.10 ou superior.
@@ -196,7 +200,7 @@ Requer Python 3.10 ou superior.
 
 ## 🧪 Testes
 
-177 testes automáticos correm com `python -m pytest -q tests`. Não precisam de hardware nem de nada fora desta máquina.
+183 testes automáticos correm com `python -m pytest -q tests`. Não precisam de hardware nem de nada fora desta máquina.
 
 A CI executa `HYDRA_UMC_CI=1 python tools/ci_validate.py`, que verifica o manifesto, os documentos, os oito README e as imagens.
 

@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Language">
   <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="Desktop">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-177%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-183%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.3.3-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,12 +36,12 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.3.3` |
 | Maturity | Functional |
-| Tests | 177 (`python -m pytest -q tests`) |
+| Tests | 183 (`python -m pytest -q tests`) |
 | Stack | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Target | The PC of the person using it |
 | On real hardware | Not yet: no run on real hardware is recorded for this version |
 
-**Jump to:** [Overview](#-overview) · [Architecture](#-architecture) · [Quick start](#-quick-start) · [Testing](#-testing) · [Repository Structure](#-repository-structure) · [Related Projects](#-related-projects)
+**Jump to:** [Overview](#-overview) · [Architecture](#-architecture) · [Security & Safety](#-security--safety) · [Quick start](#-quick-start) · [Testing](#-testing) · [Repository Structure](#-repository-structure) · [Related Projects](#-related-projects)
 
 ## 🚦 Project status
 
@@ -52,7 +52,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Area | State | What it means here |
 |---|---|---|
 | Software | 🟡 | Works for its main purpose; the honesty check above lists what is still missing |
-| Tests | 🟢 | 177 automated tests, run on every change |
+| Tests | 🟢 | 183 automated tests, run on every change |
 | Real hardware | 🔴 | Not yet: no run on real hardware is recorded for this version |
 | Documentation | 🟢 | README in eight languages, checked against the manifest on every change |
 
@@ -177,6 +177,10 @@ Status, Build Image, and First-Boot Config.
 - **The passwords never travel as arguments.** `--password` and `--wifi-password` still work, but a command line is visible to every user of the machine and `sudo` writes it to the authentication log, so the CLI also reads them from `HYDRA_UMC_FIRSTBOOT_PASSWORD` / `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` or, with `--secrets-stdin`, from one JSON object (`{"password": "...", "wifiPassword": "..."}`) on standard input. The remote (SSH) build of the GUI sends them that way and no longer puts them in the command it runs.
 - **The chroot is complete and the remote build is pinned.** The build mounts `/proc`, `/sys`, `/dev` and `/dev/pts` in the image and gives it the host's name resolution while the projects build (the image's own `resolv.conf` is put back afterwards), so `pip`, `npm` and `go` can reach the network from the chroot. A remote build over SSH installs this tool from the release tag of the version that is running (`HYDRA_UMC_REBUILDER_REMOTE_REF` names another tag or commit) and builds from the frozen profile of the plan that was reviewed (`profile-build`) instead of discovering the ecosystem again on the remote host. None of this has run on a real Linux host with root yet.
 
+## 🔒 Security & Safety
+
+`--public-image` (on `build-image` and `profile-build`, and the **Public image** box of the build window; off by default) refuses any first-boot configuration and also scans the boot partition (`firstrun.sh`, `wpa_supplicant.conf`, `userconf*`, `custom.toml`, `user-data`, `network-config`) and `/opt/hydra-umc` (`.env` files and data folders with files) for credentials; any finding stops the image from being promoted. It has not been tried on a real image, because that needs Linux.
+
 ## 🚀 Quick start
 
 Requires Python 3.10 or newer.
@@ -189,7 +193,7 @@ Requires Python 3.10 or newer.
 
 ## 🧪 Testing
 
-177 automated tests run with `python -m pytest -q tests`. They need no hardware and nothing outside this machine.
+183 automated tests run with `python -m pytest -q tests`. They need no hardware and nothing outside this machine.
 
 The CI runs `HYDRA_UMC_CI=1 python tools/ci_validate.py`, which checks the manifest, the documents, the eight READMEs and the pictures.
 

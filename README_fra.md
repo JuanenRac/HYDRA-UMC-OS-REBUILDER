@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Language">
   <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="Desktop">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-177%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-183%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.3.3-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,12 +36,12 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.3.3` |
 | Maturité | Fonctionnel |
-| Tests | 177 (`python -m pytest -q tests`) |
+| Tests | 183 (`python -m pytest -q tests`) |
 | Technologie | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Cible | Le PC de la personne qui l'utilise |
 | Sur matériel réel | Pas encore : aucune exécution sur du matériel réel n'est consignée pour cette version |
 
-**Aller à :** [Présentation](#-présentation) · [Architecture](#-architecture) · [Démarrage rapide](#-démarrage-rapide) · [Tests](#-tests) · [Structure du dépôt](#-structure-du-dépôt) · [Projets liés](#-projets-liés)
+**Aller à :** [Présentation](#-présentation) · [Architecture](#-architecture) · [Sécurité et protection](#-sécurité-et-protection) · [Démarrage rapide](#-démarrage-rapide) · [Tests](#-tests) · [Structure du dépôt](#-structure-du-dépôt) · [Projets liés](#-projets-liés)
 
 ## 🚦 État du projet
 
@@ -52,7 +52,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 | Domaine | État | Ce que cela veut dire ici |
 |---|---|---|
 | Logiciel | 🟡 | Fonctionne pour son usage principal ; la vérification d'honnêteté ci-dessus liste ce qui manque encore |
-| Tests | 🟢 | 177 tests automatiques, exécutés à chaque modification |
+| Tests | 🟢 | 183 tests automatiques, exécutés à chaque modification |
 | Matériel réel | 🔴 | Pas encore : aucune exécution sur du matériel réel n'est consignée pour cette version |
 | Documentation | 🟢 | README en huit langues, vérifié par rapport au manifeste à chaque modification |
 
@@ -170,6 +170,10 @@ Configuration du Premier Démarrage.
   qu'attend `chpasswd -e`, sur toute plateforme où tourne cet outil, y
   compris Windows. Le hachage utilise 500000 tours, et non les 5000 par défaut de glibc, qui datent de l'an 2000, si bien qu'attaquer une copie de l'image ou de `/etc/shadow` coûte beaucoup plus cher ; le yescrypt (`$y$`) que préfère l'appareil lui-même ne peut pas être produit de façon portable depuis Python sous Windows.
 
+## 🔒 Sécurité et protection
+
+`--public-image` (sur `build-image` et `profile-build`, et la case **Image publique** de la fenêtre de construction ; décochée par défaut) refuse toute configuration du premier démarrage et recherche aussi des identifiants dans la partition de démarrage (`firstrun.sh`, `wpa_supplicant.conf`, `userconf*`, `custom.toml`, `user-data`, `network-config`) et dans `/opt/hydra-umc` (fichiers `.env` et dossiers de données contenant des fichiers) ; tout résultat empêche de promouvoir l'image. Il n'a pas été essayé sur une image réelle, car cela demande Linux.
+
 ## 🚀 Démarrage rapide
 
 Nécessite Python 3.10 ou plus récent.
@@ -182,7 +186,7 @@ Nécessite Python 3.10 ou plus récent.
 
 ## 🧪 Tests
 
-177 tests automatiques s'exécutent avec `python -m pytest -q tests`. Ils n'ont besoin ni de matériel ni de rien en dehors de cette machine.
+183 tests automatiques s'exécutent avec `python -m pytest -q tests`. Ils n'ont besoin ni de matériel ni de rien en dehors de cette machine.
 
 La CI exécute `HYDRA_UMC_CI=1 python tools/ci_validate.py`, qui vérifie le manifeste, les documents, les huit README et les images.
 
