@@ -30,6 +30,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]
+# Ed25519 for signed profile manifests (profile-keygen, profile-sign, profile-verify, profile-build --require-signed)
+signing = ["cryptography>=42"]
 # paramiko is a real GUI-only dependency, not the CLI's own - only
 # qt_gui.py's remote build (RebuilderBridge._start_remote_build, real
 # SSH to a real Linux host) needs it; --cli build-image never imports it.

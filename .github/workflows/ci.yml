@@ -40,7 +40,7 @@ jobs:
           PY
       - name: Validate Updater manifest and discovery tests
         run: |
-          python -m pip install ".[dev]"
+          python -m pip install ".[dev,signing]"
           PYTHONPATH=src python -m pytest tests -q
       - name: Lint the Python sources
         run: |

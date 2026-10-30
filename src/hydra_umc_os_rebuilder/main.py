@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import replace
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -195,15 +196,73 @@ def _cmd_profile_set_required_resources(args: argparse.Namespace) -> int:
     return 0
 
 
+def _check_profile_signature(args: argparse.Namespace, manifest_path: Path) -> bool:
+    """True when the manifest was verified; False when no signature was asked for. Raises when one was asked for and fails."""
+    from . import profile_signing
+
+    if not profile_signing.signature_required(args.require_signed):
+        return False
+    trusted = args.trusted_key or os.environ.get(profile_signing.TRUSTED_KEY_ENV, "")
+    if not trusted:
+        raise profile_signing.ProfileSigningError(
+            f"a signed profile was asked for but no trusted public key was given (--trusted-key or {profile_signing.TRUSTED_KEY_ENV})"
+        )
+    profile_signing.verify_manifest(manifest_path, trusted)
+    return True
+
+
+def _cmd_profile_keygen(args: argparse.Namespace) -> int:
+    from . import profile_signing
+
+    try:
+        public = profile_signing.generate_keypair(Path(args.private_out), Path(args.public_out))
+    except (profile_signing.ProfileSigningError, OSError) as error:
+        print(f"PROFILE_KEYGEN_FAILED error={error}", file=sys.stderr)
+        return 1
+    print(f"PROFILE_KEYGEN_OK public={public}")
+    return 0
+
+
+def _cmd_profile_sign(args: argparse.Namespace) -> int:
+    from . import profile_signing
+
+    try:
+        target = profile_signing.sign_manifest(Path(args.manifest), args.key_file)
+    except (profile_signing.ProfileSigningError, OSError) as error:
+        print(f"PROFILE_SIGN_FAILED error={error}", file=sys.stderr)
+        return 1
+    print(f"PROFILE_SIGNED signature={target}")
+    return 0
+
+
+def _cmd_profile_verify(args: argparse.Namespace) -> int:
+    from . import profile_signing
+
+    trusted = args.trusted_key or os.environ.get(profile_signing.TRUSTED_KEY_ENV, "")
+    try:
+        profile_signing.verify_manifest(Path(args.manifest), trusted)
+    except (profile_signing.ProfileSigningError, OSError) as error:
+        print(f"PROFILE_VERIFY_FAILED error={error}", file=sys.stderr)
+        return 1
+    print("PROFILE_VERIFIED")
+    return 0
+
+
 def _cmd_profile_build(args: argparse.Namespace) -> int:
     from .image_builder import build_image, check_build_platform
+
+    manifest_path = Path(args.manifest)
+    try:
+        signed = _check_profile_signature(args, manifest_path)
+    except (ValueError, OSError) as error:
+        print(f"BUILD_BLOCKED reason={error}", file=sys.stderr)
+        return 1
 
     check = check_build_platform()
     if not check.ok:
         print(f"BUILD_BLOCKED reason={check.reason}", file=sys.stderr)
         return 1
 
-    manifest_path = Path(args.manifest)
     manifest = load_profile_manifest(manifest_path)
     plan = manifest_to_ecosystem_plan(manifest)
     from .image_builder import KNOWN_BASE_IMAGES
@@ -250,7 +309,13 @@ def _cmd_profile_build(args: argparse.Namespace) -> int:
     # frozen manifest on disk - a rebuilt profile now carries real proof
     # of what actually landed, not just the recipe it was built from.
     built_manifest = record_build_result(manifest, result.installed)
-    save_profile_manifest(built_manifest, manifest_path)
+    if signed:
+        # the file stays exactly as it was signed; the hashes of this build go next to it
+        recorded = manifest_path.with_name(manifest_path.stem + ".built.json")
+        save_profile_manifest(built_manifest, recorded)
+        print(f"PROFILE_BUILD_RECORDED path={recorded}")
+    else:
+        save_profile_manifest(built_manifest, manifest_path)
     print(f"BUILD_OK output={result.output_path} installed={','.join(result.installed)}")
     return 0
 
@@ -352,6 +417,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="relative path (POSIX-style, relative to this project's own installed root) that must exist after a real build (repeatable)",
     )
 
+    keygen_parser = sub.add_parser("profile-keygen", help="create an Ed25519 key pair for signing profile manifests (needs the 'signing' extra)")
+    keygen_parser.add_argument("--private-out", required=True, help="file to write the private key to (readable by its owner only; never commit it)")
+    keygen_parser.add_argument("--public-out", required=True, help="file to write the public key to")
+
+    sign_parser = sub.add_parser("profile-sign", help="write <manifest>.sig, an Ed25519 signature over the manifest as it is now")
+    sign_parser.add_argument("--manifest", required=True, help="path to the profile manifest JSON")
+    sign_parser.add_argument("--key-file", required=True, help="file holding the private key (64 hexadecimal characters)")
+
+    verify_parser = sub.add_parser("profile-verify", help="check <manifest>.sig against a trusted public key")
+    verify_parser.add_argument("--manifest", required=True, help="path to the profile manifest JSON")
+    verify_parser.add_argument(
+        "--trusted-key", help="the public key (64 hexadecimal characters) or a file holding it; else HYDRA_UMC_OS_REBUILDER_PROFILE_PUBKEY"
+    )
+
     profile_build_parser = sub.add_parser("profile-build", help="build a real .img from EXACTLY a frozen profile manifest (Linux/root only)")
     profile_build_parser.add_argument("--manifest", required=True, help="path to an existing profile manifest JSON")
     profile_build_parser.add_argument("--out", required=True, help="output .img path")
@@ -382,6 +461,15 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         help="make the image this many MiB larger and grow its root partition and file system before the projects are installed "
         "(default 0: the size of the base image)",
+    )
+    profile_build_parser.add_argument(
+        "--require-signed",
+        action="store_true",
+        help="refuse a profile manifest whose <manifest>.sig does not verify against the trusted key "
+        "(or set HYDRA_UMC_OS_REBUILDER_REQUIRE_SIGNED=1); off by default",
+    )
+    profile_build_parser.add_argument(
+        "--trusted-key", help="the public key (64 hexadecimal characters) or a file holding it; else HYDRA_UMC_OS_REBUILDER_PROFILE_PUBKEY"
     )
     profile_build_parser.add_argument(
         "--compress",
@@ -466,6 +554,9 @@ def main(argv: list[str] | None = None) -> int:
         "profile-update": _cmd_profile_update,
         "profile-set-required-resources": _cmd_profile_set_required_resources,
         "profile-build": _cmd_profile_build,
+        "profile-keygen": _cmd_profile_keygen,
+        "profile-sign": _cmd_profile_sign,
+        "profile-verify": _cmd_profile_verify,
     }
     return handlers[args.command](args)
 

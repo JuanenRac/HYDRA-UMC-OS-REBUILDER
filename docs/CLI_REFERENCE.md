@@ -141,6 +141,19 @@ A successful `build-image` or `profile-build` writes two files beside the image,
 
 If the two files cannot be written the build is reported as failed, although the image itself has been moved to its place.
 
+## Signed profile manifests
+
+A profile manifest decides which commit of which project goes into an image, so it can be signed:
+
+```
+hydra-umc-os-rebuilder --cli profile-keygen --private-out profile.key --public-out profile.pub
+hydra-umc-os-rebuilder --cli profile-sign --manifest cm5.json --key-file profile.key
+hydra-umc-os-rebuilder --cli profile-verify --manifest cm5.json --trusted-key profile.pub
+hydra-umc-os-rebuilder --cli profile-build --manifest cm5.json --out cm5.img --require-signed --trusted-key profile.pub
+```
+
+`<manifest>.sig` holds an Ed25519 signature over the SHA-256 of the file's bytes. Keys are 64 hexadecimal characters in a file of their own (the private key is created readable by its owner only and is never overwritten; keep it out of any repository). `--trusted-key` takes the public key itself or a file holding it; `HYDRA_UMC_OS_REBUILDER_PROFILE_PUBKEY` is the fallback. `--require-signed` is off by default (a profile frozen on the same machine needs no signature); `HYDRA_UMC_OS_REBUILDER_REQUIRE_SIGNED=1` turns it on everywhere. A changed file, a signature by another key or a missing signature stops the build before the platform check. A signed manifest is not rewritten by the build: the hashes of what landed go to `<manifest>.built.json`. Needs `pip install 'hydra-umc-os-rebuilder[signing]'`.
+
 ## Compressed output
 
 `build-image --compress` and `profile-build --compress` (off by default) compress the finished image with `xz -T0` into `<image>.xz` and write the checksum file and the manifest for that compressed file; the manifest adds `image_uncompressed_sha256`, the hash of the raw image inside. `xz` must be installed on the build host; the check before the download says so if it is not.
