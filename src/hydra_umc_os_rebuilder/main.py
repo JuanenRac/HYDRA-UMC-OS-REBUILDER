@@ -135,6 +135,7 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
         progress=progress,
         project_timeout_seconds=args.project_timeout_seconds or None,
         grow_mb=args.grow_mb,
+        public_image=args.public_image,
     )
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
@@ -238,6 +239,7 @@ def _cmd_profile_build(args: argparse.Namespace) -> int:
         progress=progress,
         project_timeout_seconds=args.project_timeout_seconds or None,
         grow_mb=args.grow_mb,
+        public_image=args.public_image,
     )
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
@@ -310,6 +312,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="make the image this many MiB larger and grow its root partition and file system before the projects are installed "
         "(default 0: the size of the base image)",
     )
+    build_parser_cmd.add_argument(
+        "--public-image",
+        action="store_true",
+        help="build an image meant to be distributed: refuse a first-boot configuration and also scan the boot partition and "
+        "the installed projects (.env files, generated data) for credentials; off by default",
+    )
 
     # freeze/diff/update/build a named, persisted, tested combination
     # of components - see profile_manifest.py's own module docstring.
@@ -367,6 +375,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=0,
         help="make the image this many MiB larger and grow its root partition and file system before the projects are installed "
         "(default 0: the size of the base image)",
+    )
+    profile_build_parser.add_argument(
+        "--public-image",
+        action="store_true",
+        help="build an image meant to be distributed: refuse a first-boot configuration and also scan the boot partition and "
+        "the installed projects (.env files, generated data) for credentials; off by default",
     )
 
     for secret_parser in (config_parser, build_parser_cmd, profile_build_parser):

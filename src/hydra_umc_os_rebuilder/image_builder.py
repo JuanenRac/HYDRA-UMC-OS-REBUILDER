@@ -484,6 +484,7 @@ def build_image(
     progress=None,
     project_timeout_seconds: float | None = DEFAULT_PROJECT_TIMEOUT_SECONDS,
     grow_mb: int = 0,
+    public_image: bool = False,
 ) -> BuildResult:
     """The real end-to-end pipeline. `progress`, if given, is called with a
     BuildProgress at each real phase transition - never a fake percentage,
@@ -502,6 +503,12 @@ def build_image(
     version tag/commit and built by running ITS OWN build.sh with the
     target rootfs's own real interpreter (chrooted) - this function never
     reimplements a single project's own build steps."""
+    if public_image and firstboot is not None:
+        # A first-boot script carries the Wi-Fi password and the account hash in clear on the boot partition.
+        return BuildResult(
+            ok=False,
+            error="a public image cannot carry a first-boot configuration (firstrun.sh holds the Wi-Fi password and the account hash): build it without one",
+        )
     check = check_build_platform()
     if not check.ok:
         return BuildResult(ok=False, error=check.reason, platform_check=check)
@@ -634,7 +641,9 @@ def build_image(
                 _write_firstboot_config(build_boot_partition_patch(firstboot), boot_mount)
 
             report("secret-scan")
-            secret_findings = scan_for_leaked_secrets(rootfs_mount)
+            secret_findings = scan_for_leaked_secrets(
+                rootfs_mount, boot_mount=boot_mount if public_image else None, public_image=public_image
+            )
 
         report("unmount")
     finally:
@@ -731,7 +740,33 @@ def _real_home_directories(rootfs_mount: Path) -> list[Path]:
     return homes
 
 
-def scan_for_leaked_secrets(rootfs_mount: Path) -> list[str]:
+# Files of the boot partition that carry credentials in clear (first-boot script, Wi-Fi, account, cloud-init seed).
+_BOOT_SECRET_FILES = ("firstrun.sh", "wpa_supplicant.conf", "userconf.txt", "userconf", "custom.toml", "user-data", "network-config")
+
+
+def _scan_public_image_extras(rootfs_mount: Path, boot_mount: Path | None) -> list[str]:
+    """The extra checks of an image meant to be distributed: the boot partition and the installed projects."""
+    findings: list[str] = []
+    if boot_mount is not None:
+        for name in _BOOT_SECRET_FILES:
+            candidate = boot_mount / name
+            if candidate.is_file():
+                findings.append(f"{candidate}: a boot-partition file that carries credentials in clear")
+    projects = rootfs_mount / "opt" / "hydra-umc"
+    if projects.is_dir():
+        for env_file in sorted(projects.rglob(".env")):
+            if env_file.is_file():
+                findings.append(f"{env_file}: a real .env file in an installed project")
+        for project in sorted(entry for entry in projects.iterdir() if entry.is_dir()):
+            data_dir = project / "data"
+            if data_dir.is_dir() and any(child.is_file() for child in data_dir.rglob("*")):
+                findings.append(f"{data_dir}: generated data inside an installed project")
+    return findings
+
+
+def scan_for_leaked_secrets(
+    rootfs_mount: Path, *, boot_mount: Path | None = None, public_image: bool = False
+) -> list[str]:
     """C15 (this project's own real security gap): a real, read-only scan
     of the mounted rootfs for secret-bearing paths that must never end up
     in a publicly distributed image - the ONLY inventory/secret check
@@ -784,6 +819,10 @@ def scan_for_leaked_secrets(rootfs_mount: Path) -> list[str]:
         for env_file in sorted(home.rglob(".env")):
             if env_file.is_file():
                 findings.append(f"{env_file}: a real .env file")
+
+    # An image meant to be distributed is also checked on its boot partition and in the installed projects.
+    if public_image:
+        findings.extend(_scan_public_image_extras(rootfs_mount, boot_mount))
 
     return findings
 

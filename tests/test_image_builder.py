@@ -997,3 +997,40 @@ def test_the_remote_pip_install_has_its_own_longer_timeout() -> None:
     assert "REMOTE_INSTALL_TIMEOUT_SECONDS = 1800.0" in source
     assert "timeout=REMOTE_INSTALL_TIMEOUT_SECONDS" in source
     assert "def run(command: str, *, check: bool = True, timeout: float = 30)" in source
+
+
+def test_a_public_image_scan_also_looks_at_the_boot_partition_and_the_projects(tmp_path: Path) -> None:
+    rootfs = tmp_path / "rootfs"
+    boot = tmp_path / "boot"
+    project = rootfs / "opt" / "hydra-umc" / "server"
+    (project / "data").mkdir(parents=True)
+    (project / "data" / "users.json").write_text("{}", encoding="utf-8")
+    (project / ".env").write_text("TOKEN=x\n", encoding="utf-8")
+    boot.mkdir()
+    (boot / "firstrun.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+    assert scan_for_leaked_secrets(rootfs, boot_mount=boot) == []
+    findings = scan_for_leaked_secrets(rootfs, boot_mount=boot, public_image=True)
+    assert any("firstrun.sh" in f for f in findings)
+    assert any(".env" in f for f in findings)
+    assert any("generated data" in f for f in findings)
+
+
+def test_a_public_image_scan_of_a_clean_tree_is_clean(tmp_path: Path) -> None:
+    (tmp_path / "boot").mkdir()
+    (tmp_path / "rootfs" / "opt" / "hydra-umc" / "server" / "data").mkdir(parents=True)
+    assert scan_for_leaked_secrets(tmp_path / "rootfs", boot_mount=tmp_path / "boot", public_image=True) == []
+
+
+def test_a_public_image_refuses_a_first_boot_configuration_before_doing_anything(tmp_path: Path) -> None:
+    from hydra_umc_os_rebuilder.firstboot_config import FirstBootConfig
+
+    result = build_image(
+        source=None,  # never reached
+        plan=None,
+        firstboot=FirstBootConfig(hostname="hydra"),
+        work_dir=tmp_path / "work",
+        output_path=tmp_path / "out.img",
+        public_image=True,
+    )
+    assert not result.ok and "first-boot" in result.error
+    assert not (tmp_path / "work").exists()
