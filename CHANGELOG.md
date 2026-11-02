@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A password on the command line is refused:** `--password` and `--wifi-password` stop the command with a message that points to `HYDRA_UMC_FIRSTBOOT_PASSWORD`, `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` and `--secrets-stdin`, unless the options file sets `secrets.allow_password_argument` (off by default). 4 new tests.
 - **The README shows a screenshot of the window** (the projects found for the image, the build options and the log), taken with a made-up list of projects by `tools/capture_screenshots.py`; the list and the captions in the eight languages are in `docs/screenshots.json`.
 
 ## [0.3.5] - A build plan for systemd-nspawn and pi-gen, an artifact cache keyed by project and commit, a signed release channel for images and a boot test prepared for QEMU

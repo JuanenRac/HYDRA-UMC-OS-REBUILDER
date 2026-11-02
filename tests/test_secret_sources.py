@@ -11,6 +11,26 @@ def parse(*argv):
     return cli.build_parser().parse_args(list(argv))
 
 
+class PasswordArgumentTests(unittest.TestCase):
+    def test_a_password_argument_is_refused_by_default(self):
+        args = parse("build-image", "--out", "x", "--password", "flag")
+        reason = cli.refuse_secret_arguments(args, {"secrets": {"allow_password_argument": False}})
+        self.assertIn("--password", reason)
+        self.assertIn("HYDRA_UMC_FIRSTBOOT_PASSWORD", reason)
+
+    def test_the_options_file_can_allow_it(self):
+        args = parse("build-image", "--out", "x", "--wifi-password", "psk")
+        self.assertIsNone(cli.refuse_secret_arguments(args, {"secrets": {"allow_password_argument": True}}))
+
+    def test_no_password_argument_nothing_to_refuse(self):
+        args = parse("build-image", "--out", "x")
+        self.assertIsNone(cli.refuse_secret_arguments(args, {"secrets": {"allow_password_argument": False}}))
+
+    def test_main_stops_with_code_2(self):
+        with mock.patch("sys.stderr", new=io.StringIO()):
+            self.assertEqual(cli.main(["--cli", "build-image", "--out", "x", "--password", "flag"]), 2)
+
+
 class SecretSourcesTests(unittest.TestCase):
     def test_every_command_that_takes_the_passwords_takes_secrets_stdin(self):
         for command in (["config", "--out", "x"], ["build-image", "--out", "x"], ["profile-build", "--manifest", "p.json", "--out", "x"]):

@@ -498,7 +498,7 @@ def build_parser() -> argparse.ArgumentParser:
 # The two secrets of the first-boot configuration never have to travel as arguments of a command: a command line
 # is visible to every user of the machine (`ps`) and sudo writes it to the authentication log. They can come from
 # these environment variables, or as one JSON object on standard input with --secrets-stdin (the way the remote
-# build sends them). An explicit --password / --wifi-password still works and wins.
+# build sends them). An explicit --password / --wifi-password is refused unless the options file allows it.
 SECRET_ENVIRONMENT = {"password": "HYDRA_UMC_FIRSTBOOT_PASSWORD", "wifi_password": "HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD"}
 
 
@@ -530,10 +530,32 @@ def apply_secret_sources(args: argparse.Namespace, environ: dict[str, str] | Non
             setattr(args, attribute, source[variable])
 
 
+def refuse_secret_arguments(args: argparse.Namespace, config: dict | None = None) -> str | None:
+    """The reason to refuse a command that carries a password as an argument, or None. Refused unless the options
+    file sets secrets.allow_password_argument (off by default): the environment and --secrets-stdin remain."""
+    given = [flag for flag, name in (("--password", "password"), ("--wifi-password", "wifi_password"))
+             if getattr(args, name, None)]
+    if not given:
+        return None
+    if config is None:
+        from . import build_config
+
+        config = build_config.load_config(getattr(args, "config", None))
+    if config["secrets"]["allow_password_argument"]:
+        return None
+    return (f"{' and '.join(given)} on the command line is refused: a command line is visible to every user of the "
+            f"machine. Use {', '.join(SECRET_ENVIRONMENT.values())} or --secrets-stdin, or set "
+            "secrets.allow_password_argument in the options file")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
+        refusal = refuse_secret_arguments(args)
+        if refusal:
+            print(f"REFUSED: {refusal}", file=sys.stderr)
+            return 2
         apply_secret_sources(args)
     except ValueError as error:
         print(f"REFUSED: {error}", file=sys.stderr)

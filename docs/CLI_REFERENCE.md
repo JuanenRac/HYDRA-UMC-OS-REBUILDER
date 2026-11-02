@@ -38,12 +38,15 @@ Customisation" screen uses on a Raspberry Pi OS (Trixie+) image. See
 does and why.
 
 ```
+export HYDRA_UMC_FIRSTBOOT_PASSWORD='change-me'
+export HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD='wifi-pass'
 hydra-umc-os-rebuilder --cli config --out ./boot \
-  --hostname hydra-umc-cm5 \
-  --username hydra_umc --password 'change-me' \
-  --wifi-ssid MyNetwork --wifi-password 'wifi-pass' --wifi-country ES \
+  --hostname hydra-umc-cm5 --username hydra_umc \
+  --wifi-ssid MyNetwork --wifi-country ES \
   --timezone Europe/Madrid --keyboard es
 ```
+
+The two passwords come from those variables or, with `--secrets-stdin`, from a JSON object on standard input. `--password` and `--wifi-password` on the command line are refused (a command line is visible to every user of the machine) unless the options file sets `secrets.allow_password_argument` to `true`.
 
 Only `--out` is required; every other field is optional and independently
 skipped when absent (no hostname change, no user created, no Wi-Fi

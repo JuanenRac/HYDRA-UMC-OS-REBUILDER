@@ -32,6 +32,7 @@ DEFAULTS: dict[str, Any] = {
         },
     },
     "artifact_cache": {"enabled": False, "directory": "", "max_gb": 4},
+    "secrets": {"allow_password_argument": False},
     "release_channel": {
         "require_signed_tag": False, "require_signed_manifest": False, "trusted_key": "", "tag_prefix": "image-v",
     },

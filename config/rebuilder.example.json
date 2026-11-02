@@ -6,6 +6,7 @@
     "pigen": { "checkout": "", "stage_name": "stage-hydra", "release": "trixie", "image_name": "hydra-umc", "locale": "en_GB.UTF-8", "timezone": "Europe/Madrid" }
   },
   "artifact_cache": { "enabled": false, "directory": "", "max_gb": 4 },
+  "secrets": { "allow_password_argument": false },
   "release_channel": { "require_signed_tag": false, "require_signed_manifest": false, "trusted_key": "", "tag_prefix": "image-v" },
   "boot_test": {
     "enabled": false, "qemu_binary": "qemu-system-aarch64", "machine": "virt", "cpu": "cortex-a72", "memory_mb": 2048,
