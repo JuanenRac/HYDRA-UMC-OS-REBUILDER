@@ -169,11 +169,13 @@ HYDRA-UMC-UPDATERと同じビジュアル言語（同じダークパレット、
 
 ## 🖼️ スクリーンショット
 
-テストベンチで 1920×1080 で撮影。サンプルデータを使用しており、実際の設備は接続されていません。
+テストベンチで架空のサンプルデータを使って撮影したもので、実際の設備は接続されていません。
 
-<table>
-<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="ウィンドウ：イメージ用に見つかった CM5 プロジェクトのバージョン・役割・スタック、ビルドオプション、ビルドログ。" width="100%"><br><sub>ウィンドウ：イメージ用に見つかった CM5 プロジェクトのバージョン・役割・スタック、ビルドオプション、ビルドログ。</sub></td></tr>
-</table>
+<p align="center">
+  <img src="images/screenshots/overview.png" alt="ウィンドウ" width="100%">
+</p>
+
+<p align="center"><em>ウィンドウ：イメージ用に見つかった CM5 プロジェクトのバージョン・役割・スタック、ビルドオプション、ビルドログ。</em></p>
 
 ## 🔒 セキュリティと安全
 
@@ -261,7 +263,7 @@ HYDRA-UMC-OS-REBUILDER/
 ├── config/                       オプション設定ファイルの例(すべて無効)
 ├── tests/                        実際のテスト：firstboot_config、ecosystem_plan、profile_manifest、image_builder、i18n、main
 ├── docs/                         プロジェクトの文書
-├── images/                       メディア、アプリアイコン、バナー
+├── images/                       README のバナーとスクリーンショット
 ├── tools/                        プロジェクトのツールと CI の検査
 ├── .github/                      CI ワークフローと Issue テンプレート
 ├── build.sh / build.bat          venv + 編集可能インストール + コンパイルチェック

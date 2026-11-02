@@ -174,11 +174,13 @@ Primo Avvio.
 
 ## 🖼️ Schermate
 
-Catturate a 1920×1080 su un banco di prova, con dati di esempio e senza alcuna installazione reale dietro.
+Catturate su un banco di prova con dati di esempio inventati e senza alcuna installazione reale dietro.
 
-<table>
-<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="La finestra: i progetti della CM5 trovati per l'immagine con versione, ruolo e stack, le opzioni di costruzione e il registro." width="100%"><br><sub>La finestra: i progetti della CM5 trovati per l'immagine con versione, ruolo e stack, le opzioni di costruzione e il registro.</sub></td></tr>
-</table>
+<p align="center">
+  <img src="images/screenshots/overview.png" alt="La finestra" width="100%">
+</p>
+
+<p align="center"><em>La finestra: i progetti della CM5 trovati per l'immagine con versione, ruolo e stack, le opzioni di costruzione e il registro.</em></p>
 
 ## 🔒 Sicurezza e protezione
 
@@ -266,7 +268,7 @@ HYDRA-UMC-OS-REBUILDER/
 ├── config/                       File di opzioni di esempio (tutto spento)
 ├── tests/                        Test reali: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
 ├── docs/                         documenti del progetto
-├── images/                       Risorse, icona dell'app e banner
+├── images/                       Banner e schermate del README
 ├── tools/                        strumenti del progetto e controlli della CI
 ├── .github/                      workflow di CI e modelli di segnalazione
 ├── build.sh / build.bat          venv + installazione editabile + verifica compilazione

@@ -173,11 +173,13 @@ Ersteinrichtung.
 
 ## 🖼️ Screenshots
 
-Aufgenommen mit 1920×1080 auf einem Prüfstand, mit Beispieldaten und ohne eine echte Anlage dahinter.
+Aufgenommen auf einem Prüfstand mit erfundenen Beispieldaten und ohne eine echte Anlage dahinter.
 
-<table>
-<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="Das Fenster: die für das Image gefundenen CM5-Projekte mit Version, Rolle und Stack, die Build-Optionen und das Build-Protokoll." width="100%"><br><sub>Das Fenster: die für das Image gefundenen CM5-Projekte mit Version, Rolle und Stack, die Build-Optionen und das Build-Protokoll.</sub></td></tr>
-</table>
+<p align="center">
+  <img src="images/screenshots/overview.png" alt="Das Fenster" width="100%">
+</p>
+
+<p align="center"><em>Das Fenster: die für das Image gefundenen CM5-Projekte mit Version, Rolle und Stack, die Build-Optionen und das Build-Protokoll.</em></p>
 
 ## 🔒 Sicherheit und Schutz
 
@@ -266,7 +268,7 @@ HYDRA-UMC-OS-REBUILDER/
 ├── config/                       Beispiel-Optionsdatei (alles aus)
 ├── tests/                        Echte Tests: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
 ├── docs/                         Dokumente des Projekts
-├── images/                       Medien, App-Icon und Banner
+├── images/                       README-Banner und Screenshots
 ├── tools/                        Projektwerkzeuge und CI-Prüfungen
 ├── .github/                      CI-Workflow und Issue-Vorlagen
 ├── build.sh / build.bat          venv + editierbare Installation + Kompilierungsprüfung

@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The README shows a screenshot of the window** (the projects found for the image, the build options and the log), taken with a made-up list of projects by `tools/capture_screenshots.py`; the list and the captions in the eight languages are in `docs/screenshots.json`.
+
 ## [0.3.5] - A build plan for systemd-nspawn and pi-gen, an artifact cache keyed by project and commit, a signed release channel for images and a boot test prepared for QEMU
 
 - **Other ways to build, prepared and switched off:** `build-plan` shows what the build backend named in the options file would do (`chroot`, the default; `nspawn`, the `systemd-nspawn` command around an install; `pigen`, the files of a pi-gen stage that copies the checkouts) and `--write-pigen-stage DIR` writes the stage into a new folder. Nothing is run or built; it reports the tools the host lacks. All options live in one file (`config/rebuilder.example.json`, given with `--config` or `HYDRA_UMC_OS_REBUILDER_CONFIG`); unknown keys are refused.

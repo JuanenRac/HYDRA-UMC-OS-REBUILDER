@@ -181,11 +181,13 @@ Status, Build Image, and First-Boot Config.
 
 ## 🖼️ Screenshots
 
-Captured at 1920×1080 on a test bench, with sample data and no real installation behind them.
+Captured on a test bench with made-up sample data and no real installation behind them.
 
-<table>
-<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="The window: the CM5 projects found for the image with their version, role and stack, the build options and the build log." width="100%"><br><sub>The window: the CM5 projects found for the image with their version, role and stack, the build options and the build log.</sub></td></tr>
-</table>
+<p align="center">
+  <img src="images/screenshots/overview.png" alt="The window" width="100%">
+</p>
+
+<p align="center"><em>The window: the CM5 projects found for the image with their version, role and stack, the build options and the build log.</em></p>
 
 ## 🔒 Security & Safety
 
@@ -300,7 +302,7 @@ HYDRA-UMC-OS-REBUILDER/
 ├── config/                       Example options file (all off)
 ├── tests/                        Real tests: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
 ├── docs/                         documents of the project
-├── images/                       Media, app icon and banner
+├── images/                       README banner and screenshots
 ├── tools/                        project tools and CI checks
 ├── .github/                      CI workflow and issue templates
 ├── build.sh / build.bat          venv + editable install + compile-check

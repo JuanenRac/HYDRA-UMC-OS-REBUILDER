@@ -174,11 +174,13 @@ Configuration du Premier Démarrage.
 
 ## 🖼️ Captures d'écran
 
-Capturées en 1920×1080 sur un banc d'essai, avec des données d'exemple et sans installation réelle derrière.
+Capturées sur un banc d'essai avec des données d'exemple fictives et sans installation réelle derrière.
 
-<table>
-<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="La fenêtre : les projets de la CM5 trouvés pour l'image avec leur version, leur rôle et leur pile, les options de construction et le journal." width="100%"><br><sub>La fenêtre : les projets de la CM5 trouvés pour l'image avec leur version, leur rôle et leur pile, les options de construction et le journal.</sub></td></tr>
-</table>
+<p align="center">
+  <img src="images/screenshots/overview.png" alt="La fenêtre" width="100%">
+</p>
+
+<p align="center"><em>La fenêtre : les projets de la CM5 trouvés pour l'image avec leur version, leur rôle et leur pile, les options de construction et le journal.</em></p>
 
 ## 🔒 Sécurité et protection
 
@@ -267,7 +269,7 @@ HYDRA-UMC-OS-REBUILDER/
 ├── config/                       Fichier d'options d'exemple (tout éteint)
 ├── tests/                        Tests réels : firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
 ├── docs/                         documents du projet
-├── images/                       Ressources, icône de l'app et bannière
+├── images/                       Bannière et captures du README
 ├── tools/                        outils du projet et vérifications de la CI
 ├── .github/                      workflow de CI et modèles de tickets
 ├── build.sh / build.bat          venv + installation éditable + vérification de compilation

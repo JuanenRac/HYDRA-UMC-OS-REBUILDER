@@ -188,11 +188,13 @@ O **HYDRA-UMC-OS-REBUILDER** constrói uma imagem nova da CM5 com a versão atua
 
 ## 🖼️ Capturas de ecrã
 
-Capturadas a 1920×1080 numa bancada de testes, com dados de exemplo e sem qualquer instalação real por trás.
+Capturadas numa bancada de testes com dados de exemplo inventados e sem qualquer instalação real por trás.
 
-<table>
-<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="A janela: os projetos da CM5 encontrados para a imagem com a sua versão, função e pilha, as opções de construção e o registo." width="100%"><br><sub>A janela: os projetos da CM5 encontrados para a imagem com a sua versão, função e pilha, as opções de construção e o registo.</sub></td></tr>
-</table>
+<p align="center">
+  <img src="images/screenshots/overview.png" alt="A janela" width="100%">
+</p>
+
+<p align="center"><em>A janela: os projetos da CM5 encontrados para a imagem com a sua versão, função e pilha, as opções de construção e o registo.</em></p>
 
 ## 🔒 Segurança e proteção
 
@@ -310,7 +312,7 @@ HYDRA-UMC-OS-REBUILDER/
 ├── config/                       Ficheiro de opções de exemplo (tudo desligado)
 ├── tests/                        Testes reais: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
 ├── docs/                         documentos do projeto
-├── images/                       Multimédia, ícone da aplicação e faixa
+├── images/                       Faixa e capturas de ecrã do README
 ├── tools/                        ferramentas do projeto e verificações da CI
 ├── .github/                      fluxo de CI e modelos de problemas
 ├── build.sh / build.bat          venv + instalação editável + verificação de compilação

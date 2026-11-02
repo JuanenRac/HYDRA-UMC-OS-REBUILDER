@@ -1,0 +1,27 @@
+{
+  "screens": [
+    {
+      "file": "overview.png",
+      "alt": {
+        "en": "The window",
+        "es": "La ventana",
+        "fr": "La fenêtre",
+        "it": "La finestra",
+        "de": "Das Fenster",
+        "zh": "窗口",
+        "ja": "ウィンドウ",
+        "pt": "A janela"
+      },
+      "caption": {
+        "en": "The window: the CM5 projects found for the image with their version, role and stack, the build options and the build log.",
+        "es": "La ventana: los proyectos de la CM5 encontrados para la imagen con su versión, función y pila, las opciones de construcción y el registro.",
+        "fr": "La fenêtre : les projets de la CM5 trouvés pour l'image avec leur version, leur rôle et leur pile, les options de construction et le journal.",
+        "it": "La finestra: i progetti della CM5 trovati per l'immagine con versione, ruolo e stack, le opzioni di costruzione e il registro.",
+        "de": "Das Fenster: die für das Image gefundenen CM5-Projekte mit Version, Rolle und Stack, die Build-Optionen und das Build-Protokoll.",
+        "zh": "窗口：为镜像找到的 CM5 项目及其版本、角色和技术栈，构建选项和构建日志。",
+        "ja": "ウィンドウ：イメージ用に見つかった CM5 プロジェクトのバージョン・役割・スタック、ビルドオプション、ビルドログ。",
+        "pt": "A janela: os projetos da CM5 encontrados para a imagem com a sua versão, função e pilha, as opções de construção e o registo."
+      }
+    }
+  ]
+}

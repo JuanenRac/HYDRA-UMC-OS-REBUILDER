@@ -151,11 +151,13 @@ HYDRA-UMC-UPDATER 相同的视觉语言（相同的深色调色板、字体排�
 
 ## 🖼️ 屏幕截图
 
-在测试台上以 1920×1080 截取，使用示例数据，背后没有真实的安装。
+在测试台上使用虚构的示例数据截取，背后没有真实的安装。
 
-<table>
-<tr><td width="50%" valign="top"><img src="images/screenshots/overview.png" alt="窗口：为镜像找到的 CM5 项目及其版本、角色和技术栈，构建选项和构建日志。" width="100%"><br><sub>窗口：为镜像找到的 CM5 项目及其版本、角色和技术栈，构建选项和构建日志。</sub></td></tr>
-</table>
+<p align="center">
+  <img src="images/screenshots/overview.png" alt="窗口" width="100%">
+</p>
+
+<p align="center"><em>窗口：为镜像找到的 CM5 项目及其版本、角色和技术栈，构建选项和构建日志。</em></p>
 
 ## 🔒 安全与防护
 
@@ -241,7 +243,7 @@ HYDRA-UMC-OS-REBUILDER/
 ├── config/                       选项文件示例(全部关闭)
 ├── tests/                        真实测试：firstboot_config、ecosystem_plan、profile_manifest、image_builder、i18n、main
 ├── docs/                         项目文档
-├── images/                       素材、应用图标和横幅
+├── images/                       README 横幅和截图
 ├── tools/                        项目工具和 CI 检查
 ├── .github/                      CI 工作流和 Issue 模板
 ├── build.sh / build.bat          venv + 可编辑安装 + 编译检查

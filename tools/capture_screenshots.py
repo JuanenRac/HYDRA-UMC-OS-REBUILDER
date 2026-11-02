@@ -1,5 +1,5 @@
 # =============================================================================
-# HYDRA-UMC-OS-REBUILDER - tools/make_screenshots.py
+# HYDRA-UMC-OS-REBUILDER - tools/capture_screenshots.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
 # GPL-3.0-or-later - see LICENSE
 #
@@ -7,8 +7,8 @@
 # renderer), with a made-up list of projects instead of the one the program fetches from GitHub. Nothing real is behind the pictures, and nothing
 # is sent to any network.
 #
-#   python tools/make_screenshots.py              writes images/screenshots/<name>.png at 1920x1080
-#   python tools/make_screenshots.py --out DIR    writes them in DIR instead, to look at them before they replace the ones in the repository
+#   python tools/capture_screenshots.py              writes images/screenshots/<name>.png at 1920x1080
+#   python tools/capture_screenshots.py --out DIR    writes them in DIR instead, to look at them before they replace the ones in the repository
 #
 # It takes no mouse or keyboard of the desktop. Run it from the repository root, with the interpreter of the project (the one that has PySide6).
 # =============================================================================
