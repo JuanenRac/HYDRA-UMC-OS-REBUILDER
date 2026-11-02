@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Language">
   <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="Desktop">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-203%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-212%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.3.4-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,7 +36,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Versão | `0.3.4` |
 | Maturidade | Funcional |
-| Testes | 203 (`python -m pytest -q tests`) |
+| Testes | 212 (`python -m pytest -q tests`) |
 | Tecnologia | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Destino | O PC de quem o usa |
 | Em hardware real | Ainda não: não há registo de execução em hardware real para esta versão |
@@ -52,7 +52,7 @@ Cada linha é uma parte deste repositório e a luz diz até onde chega hoje. É 
 | Área | Estado | O que significa aqui |
 |---|---|---|
 | Software | 🟡 | Funciona para o seu propósito principal; a verificação de honestidade acima lista o que ainda falta |
-| Testes | 🟢 | 203 testes automáticos, executados a cada alteração |
+| Testes | 🟢 | 212 testes automáticos, executados a cada alteração |
 | Hardware real | 🔴 | Ainda não: não há registo de execução em hardware real para esta versão |
 | Implantação | 🟠 | Publicado como release; instalá-lo numa máquina limpa está documentado mas não registado |
 | Documentação | 🟢 | README em oito idiomas, verificado contra o manifesto a cada alteração |
@@ -210,7 +210,7 @@ Requer Python 3.10 ou superior.
 
 ## 🧪 Testes
 
-203 testes automáticos correm com `python -m pytest -q tests`. Não precisam de hardware nem de nada fora desta máquina.
+212 testes automáticos correm com `python -m pytest -q tests`. Não precisam de hardware nem de nada fora desta máquina.
 
 A CI executa `HYDRA_UMC_CI=1 python tools/ci_validate.py`, que verifica o manifesto, os documentos, os oito README e as imagens.
 
@@ -300,7 +300,14 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── qml/Main.qml              Shell de desktop com tema: Estado do ecossistema / Construir imagem / Configuração de primeiro arranque
 │   ├── main.py                   Despacho: GUI por defeito, --cli para status/config/build-image
 │   ├── remote_install.py         De onde uma compilação remota instala e compila (revisão fixada, não a ponta de main)
-│   └── ssh_hostkeys.py           Confiança na primeira utilização da chave SSH da máquina de compilação remota, com impressão digital fixada
+│   ├── ssh_hostkeys.py           Confiança na primeira utilização da chave SSH da máquina de compilação remota, com impressão digital fixada
+│   ├── build_config.py           Ficheiro de opções, tudo desligado
+│   ├── build_backends.py         Planos para systemd-nspawn e pi-gen
+│   ├── artifact_cache.py         Cache de projetos por commit
+│   ├── release_channel.py        Releases assinadas e tag assinado
+│   ├── boot_test.py              Teste de arranque no QEMU
+│   └── extra_commands.py         Comandos de plano, cache, release, arranque
+├── config/                       Ficheiro de opções de exemplo (tudo desligado)
 ├── tests/                        Testes reais: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
 ├── docs/                         documentos do projeto
 ├── images/                       Multimédia, ícone da aplicação e faixa

@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Language">
   <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="Desktop">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-203%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-212%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.3.4-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,7 +36,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | バージョン | `0.3.4` |
 | 成熟度 | 機能する |
-| テスト | 203 (`python -m pytest -q tests`) |
+| テスト | 212 (`python -m pytest -q tests`) |
 | 技術 | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | 対象 | 利用者の PC |
 | 実機での確認 | まだです：このバージョンについて実機での動作記録はありません |
@@ -52,7 +52,7 @@ GPL-3.0-or-later - see LICENSE
 | 領域 | 状態 | ここでの意味 |
 |---|---|---|
 | ソフトウェア | 🟡 | 主な目的では動作します。足りない点は上の正直さの確認に書かれています |
-| テスト | 🟢 | 自動テスト 203 件。変更のたびに実行されます |
+| テスト | 🟢 | 自動テスト 212 件。変更のたびに実行されます |
 | 実機 | 🔴 | まだです：このバージョンについて実機での動作記録はありません |
 | デプロイ | 🟠 | リリースとして公開されています。新しい環境へのインストールは文書化されていますが記録はありません |
 | ドキュメント | 🟢 | 8 言語の README。変更のたびにマニフェストと照合されます |
@@ -191,7 +191,7 @@ Python 3.10 以上が必要です。
 
 ## 🧪 テスト
 
-`python -m pytest -q tests` で自動テスト 203 件を実行します。 ハードウェアも、このマシンの外にあるものも必要ありません。
+`python -m pytest -q tests` で自動テスト 212 件を実行します。 ハードウェアも、このマシンの外にあるものも必要ありません。
 
 CI は `HYDRA_UMC_CI=1 python tools/ci_validate.py` を実行し、マニフェスト、文書、8 つの README、図を検査します。
 
@@ -251,7 +251,14 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── qml/Main.qml              テーマ化されたデスクトップシェル：エコシステム状態 / イメージ作成 / 初回起動設定
 │   ├── main.py                   ディスパッチ：デフォルトはGUI、--cliでstatus/config/build-image
 │   ├── remote_install.py         リモートビルドがインストール・ビルドする元 (固定リビジョン。main の先頭ではない)
-│   └── ssh_hostkeys.py           リモートビルド機の SSH ホスト鍵を初回に信頼 (フィンガープリントを固定)
+│   ├── ssh_hostkeys.py           リモートビルド機の SSH ホスト鍵を初回に信頼 (フィンガープリントを固定)
+│   ├── build_config.py           ビルド設定ファイル(既定はすべて無効)
+│   ├── build_backends.py         systemd-nspawn と pi-gen の計画
+│   ├── artifact_cache.py         コミットごとのビルド成果物キャッシュ
+│   ├── release_channel.py        署名付きリリースとタグ検証
+│   ├── boot_test.py              QEMU でのイメージ起動テスト
+│   └── extra_commands.py         計画・キャッシュ・リリース・起動のコマンド
+├── config/                       オプション設定ファイルの例(すべて無効)
 ├── tests/                        実際のテスト：firstboot_config、ecosystem_plan、profile_manifest、image_builder、i18n、main
 ├── docs/                         プロジェクトの文書
 ├── images/                       メディア、アプリアイコン、バナー

@@ -18,7 +18,7 @@ import os
 import sys
 from pathlib import Path
 
-from . import __version__
+from . import __version__, extra_commands
 from .ecosystem_plan import _fetch_commit_sha, fetch_ecosystem_plan, plan_summary_lines
 from .firstboot_config import FirstBootConfig, WifiConfig, build_boot_partition_patch
 from .image_builder import DEFAULT_PROJECT_TIMEOUT_SECONDS
@@ -431,6 +431,8 @@ def build_parser() -> argparse.ArgumentParser:
         "--trusted-key", help="the public key (64 hexadecimal characters) or a file holding it; else HYDRA_UMC_OS_REBUILDER_PROFILE_PUBKEY"
     )
 
+    extra_commands.add_parsers(sub)
+
     profile_build_parser = sub.add_parser("profile-build", help="build a real .img from EXACTLY a frozen profile manifest (Linux/root only)")
     profile_build_parser.add_argument("--manifest", required=True, help="path to an existing profile manifest JSON")
     profile_build_parser.add_argument("--out", required=True, help="output .img path")
@@ -558,6 +560,8 @@ def main(argv: list[str] | None = None) -> int:
         "profile-sign": _cmd_profile_sign,
         "profile-verify": _cmd_profile_verify,
     }
+    if args.command in extra_commands.HANDLERS:
+        return extra_commands.run(args)
     return handlers[args.command](args)
 
 

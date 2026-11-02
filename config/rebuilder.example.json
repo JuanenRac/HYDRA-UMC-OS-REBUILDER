@@ -1,0 +1,15 @@
+{
+  "format": "hydra-rebuilder-config/1",
+  "build_backend": {
+    "name": "chroot",
+    "nspawn": { "binary": "systemd-nspawn", "extra_args": [] },
+    "pigen": { "checkout": "", "stage_name": "stage-hydra", "release": "trixie", "image_name": "hydra-umc", "locale": "en_GB.UTF-8", "timezone": "Europe/Madrid" }
+  },
+  "artifact_cache": { "enabled": false, "directory": "", "max_gb": 4 },
+  "release_channel": { "require_signed_tag": false, "require_signed_manifest": false, "trusted_key": "", "tag_prefix": "image-v" },
+  "boot_test": {
+    "enabled": false, "qemu_binary": "qemu-system-aarch64", "machine": "virt", "cpu": "cortex-a72", "memory_mb": 2048,
+    "timeout_seconds": 300, "ssh_port": 2222, "ready_markers": ["login:"], "failure_markers": ["Kernel panic", "VFS: Unable to mount root"],
+    "verify_over_ssh": false, "ssh_user": "", "verify_command": "provisioning/verify_cm5_runtime.sh --json"
+  }
+}

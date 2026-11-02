@@ -270,6 +270,144 @@
             "zh": "首次使用时信任远程构建机的 SSH 主机密钥,并固定其指纹",
             "pt": "Confiança na primeira utilização da chave SSH da máquina de compilação remota, com impressão digital fixada"
           }
+        },
+        {
+          "name": "build_config.py",
+          "desc": {
+            "en": "Build options file, all off by default",
+            "es": "Fichero de opciones, todo apagado",
+            "de": "Optionsdatei, alles aus",
+            "fr": "Fichier d'options, tout éteint",
+            "it": "File di opzioni, tutto spento",
+            "ja": "ビルド設定ファイル(既定はすべて無効)",
+            "zh": "构建选项文件,默认全部关闭",
+            "pt": "Ficheiro de opções, tudo desligado"
+          },
+          "tree_desc": {
+            "en": "Build options file, all off by default",
+            "es": "Fichero de opciones, todo apagado",
+            "de": "Optionsdatei, alles aus",
+            "fr": "Fichier d'options, tout éteint",
+            "it": "File di opzioni, tutto spento",
+            "ja": "ビルド設定ファイル(既定はすべて無効)",
+            "zh": "构建选项文件,默认全部关闭",
+            "pt": "Ficheiro de opções, tudo desligado"
+          }
+        },
+        {
+          "name": "build_backends.py",
+          "desc": {
+            "en": "Plans for systemd-nspawn and pi-gen",
+            "es": "Planes para systemd-nspawn y pi-gen",
+            "de": "Pläne für systemd-nspawn und pi-gen",
+            "fr": "Plans pour systemd-nspawn et pi-gen",
+            "it": "Piani per systemd-nspawn e pi-gen",
+            "ja": "systemd-nspawn と pi-gen の計画",
+            "zh": "systemd-nspawn 与 pi-gen 的计划",
+            "pt": "Planos para systemd-nspawn e pi-gen"
+          },
+          "tree_desc": {
+            "en": "Plans for systemd-nspawn and pi-gen",
+            "es": "Planes para systemd-nspawn y pi-gen",
+            "de": "Pläne für systemd-nspawn und pi-gen",
+            "fr": "Plans pour systemd-nspawn et pi-gen",
+            "it": "Piani per systemd-nspawn e pi-gen",
+            "ja": "systemd-nspawn と pi-gen の計画",
+            "zh": "systemd-nspawn 与 pi-gen 的计划",
+            "pt": "Planos para systemd-nspawn e pi-gen"
+          }
+        },
+        {
+          "name": "artifact_cache.py",
+          "desc": {
+            "en": "Cache of built projects by commit",
+            "es": "Caché de proyectos por commit",
+            "de": "Cache gebauter Projekte pro Commit",
+            "fr": "Cache des projets par commit",
+            "it": "Cache dei progetti per commit",
+            "ja": "コミットごとのビルド成果物キャッシュ",
+            "zh": "按提交缓存的构建产物",
+            "pt": "Cache de projetos por commit"
+          },
+          "tree_desc": {
+            "en": "Cache of built projects by commit",
+            "es": "Caché de proyectos por commit",
+            "de": "Cache gebauter Projekte pro Commit",
+            "fr": "Cache des projets par commit",
+            "it": "Cache dei progetti per commit",
+            "ja": "コミットごとのビルド成果物キャッシュ",
+            "zh": "按提交缓存的构建产物",
+            "pt": "Cache de projetos por commit"
+          }
+        },
+        {
+          "name": "release_channel.py",
+          "desc": {
+            "en": "Signed image releases and tag check",
+            "es": "Releases firmadas y tag firmado",
+            "de": "Signierte Releases und Tag-Prüfung",
+            "fr": "Releases signées et tag signé",
+            "it": "Release firmate e tag firmato",
+            "ja": "署名付きリリースとタグ検証",
+            "zh": "签名发布与标签校验",
+            "pt": "Releases assinadas e tag assinado"
+          },
+          "tree_desc": {
+            "en": "Signed image releases and tag check",
+            "es": "Releases firmadas y tag firmado",
+            "de": "Signierte Releases und Tag-Prüfung",
+            "fr": "Releases signées et tag signé",
+            "it": "Release firmate e tag firmato",
+            "ja": "署名付きリリースとタグ検証",
+            "zh": "签名发布与标签校验",
+            "pt": "Releases assinadas e tag assinado"
+          }
+        },
+        {
+          "name": "boot_test.py",
+          "desc": {
+            "en": "Boot test of an image in QEMU",
+            "es": "Prueba de arranque en QEMU",
+            "de": "Boot-Test eines Images in QEMU",
+            "fr": "Test de démarrage dans QEMU",
+            "it": "Test di avvio in QEMU",
+            "ja": "QEMU でのイメージ起動テスト",
+            "zh": "在 QEMU 中的镜像启动测试",
+            "pt": "Teste de arranque no QEMU"
+          },
+          "tree_desc": {
+            "en": "Boot test of an image in QEMU",
+            "es": "Prueba de arranque en QEMU",
+            "de": "Boot-Test eines Images in QEMU",
+            "fr": "Test de démarrage dans QEMU",
+            "it": "Test di avvio in QEMU",
+            "ja": "QEMU でのイメージ起動テスト",
+            "zh": "在 QEMU 中的镜像启动测试",
+            "pt": "Teste de arranque no QEMU"
+          }
+        },
+        {
+          "name": "extra_commands.py",
+          "desc": {
+            "en": "Commands for plan, cache, release, boot",
+            "es": "Comandos de plan, caché, release y arranque",
+            "de": "Befehle für Plan, Cache, Release, Boot",
+            "fr": "Commandes plan, cache, release, boot",
+            "it": "Comandi piano, cache, release, avvio",
+            "ja": "計画・キャッシュ・リリース・起動のコマンド",
+            "zh": "计划、缓存、发布、启动命令",
+            "pt": "Comandos de plano, cache, release, arranque"
+          },
+          "tree_desc": {
+            "en": "Commands for plan, cache, release, boot",
+            "es": "Comandos de plan, caché, release y arranque",
+            "de": "Befehle für Plan, Cache, Release, Boot",
+            "fr": "Commandes plan, cache, release, boot",
+            "it": "Comandi piano, cache, release, avvio",
+            "ja": "計画・キャッシュ・リリース・起動のコマンド",
+            "zh": "计划、缓存、发布、启动命令",
+            "pt": "Comandos de plano, cache, release, arranque"
+          }
         }
       ],
       "tree_head": {
@@ -310,6 +448,29 @@
       "accent": "b",
       "columns": 2,
       "rows": [
+        {
+          "name": "config/",
+          "desc": {
+            "en": "Example options file (all off)",
+            "es": "Fichero de opciones de ejemplo (todo apagado)",
+            "de": "Beispiel-Optionsdatei (alles aus)",
+            "fr": "Fichier d'options d'exemple (tout éteint)",
+            "it": "File di opzioni di esempio (tutto spento)",
+            "ja": "オプション設定ファイルの例(すべて無効)",
+            "zh": "选项文件示例(全部关闭)",
+            "pt": "Ficheiro de opções de exemplo (tudo desligado)"
+          },
+          "tree_desc": {
+            "en": "Example options file (all off)",
+            "es": "Fichero de opciones de ejemplo (todo apagado)",
+            "de": "Beispiel-Optionsdatei (alles aus)",
+            "fr": "Fichier d'options d'exemple (tout éteint)",
+            "it": "File di opzioni di esempio (tutto spento)",
+            "ja": "オプション設定ファイルの例(すべて無効)",
+            "zh": "选项文件示例(全部关闭)",
+            "pt": "Ficheiro de opções de exemplo (tudo desligado)"
+          }
+        },
         {
           "name": "tests/",
           "desc": {

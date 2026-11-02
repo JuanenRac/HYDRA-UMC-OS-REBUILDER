@@ -19,7 +19,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/Language-Python%203.10%2B-blue.svg" alt="Language">
   <img src="https://img.shields.io/badge/Desktop-PySide6%20%7C%20Qt%20Quick-367BF5.svg" alt="Desktop">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-203%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-212%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.3.4-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -36,7 +36,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.3.4` |
 | Maturity | Functional |
-| Tests | 203 (`python -m pytest -q tests`) |
+| Tests | 212 (`python -m pytest -q tests`) |
 | Stack | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
 | Target | The PC of the person using it |
 | On real hardware | Not yet: no run on real hardware is recorded for this version |
@@ -52,7 +52,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Area | State | What it means here |
 |---|---|---|
 | Software | 🟡 | Works for its main purpose; the honesty check above lists what is still missing |
-| Tests | 🟢 | 203 automated tests, run on every change |
+| Tests | 🟢 | 212 automated tests, run on every change |
 | Real hardware | 🔴 | Not yet: no run on real hardware is recorded for this version |
 | Deployment | 🟠 | Published as a release; installing it on a clean machine is documented but not recorded |
 | Documentation | 🟢 | README in eight languages, checked against the manifest on every change |
@@ -203,7 +203,7 @@ Requires Python 3.10 or newer.
 
 ## 🧪 Testing
 
-203 automated tests run with `python -m pytest -q tests`. They need no hardware and nothing outside this machine.
+212 automated tests run with `python -m pytest -q tests`. They need no hardware and nothing outside this machine.
 
 The CI runs `HYDRA_UMC_CI=1 python tools/ci_validate.py`, which checks the manifest, the documents, the eight READMEs and the pictures.
 
@@ -290,7 +290,14 @@ HYDRA-UMC-OS-REBUILDER/
 │   ├── qml/Main.qml              Themed desktop shell: Ecosystem Status / Build Image / First-Boot Config
 │   ├── main.py                   Dispatch: GUI by default, --cli for status/config/build-image
 │   ├── remote_install.py         What a remote build installs and builds from (pinned, not the tip of main)
-│   └── ssh_hostkeys.py           Trust on first use of the SSH host key of a remote build machine, with a pinned fingerprint
+│   ├── ssh_hostkeys.py           Trust on first use of the SSH host key of a remote build machine, with a pinned fingerprint
+│   ├── build_config.py           Build options file, all off by default
+│   ├── build_backends.py         Plans for systemd-nspawn and pi-gen
+│   ├── artifact_cache.py         Cache of built projects by commit
+│   ├── release_channel.py        Signed image releases and tag check
+│   ├── boot_test.py              Boot test of an image in QEMU
+│   └── extra_commands.py         Commands for plan, cache, release, boot
+├── config/                       Example options file (all off)
 ├── tests/                        Real tests: firstboot_config, ecosystem_plan, profile_manifest, image_builder, i18n, main
 ├── docs/                         documents of the project
 ├── images/                       Media, app icon and banner
