@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **An image the installers of HYDRA-UMC-OS can find their projects in:** every project the build installs also gets a relative link `/opt/hydra-umc/src/<NAME>` (the repository name in capitals) to its checkout, so that `/opt/hydra-umc/src/HYDRA-UMC-OS/provisioning/install_<x>.sh --apply` finds `ROOT` at `/opt/hydra-umc/src` with every project of the image next to it (before, the installers looked for `/opt/hydra-umc/HYDRA-UMC-SERVER` and the image only had `/opt/hydra-umc/hydra-umc-server`).
+- **A deployment record in the image:** `/opt/hydra-umc/deploy-plan.json` (`hydra-image-deploy/1`) lists, for each project of the image, whether HYDRA-UMC-OS has an installer that follows its deployment contract (installer, target, unit and the command to run) or why it has none; it is written from the table of installers of the checkout of HYDRA-UMC-OS that is in the image. The image still holds checkouts and nothing else: no account, unit or service is made or enabled by the build.
+
 ## [0.3.4] - Signed profile manifests, compressed output, a fuller check before downloading and a public image option
 
 - **Signed profile manifests:** `profile-keygen` creates an Ed25519 key pair, `profile-sign` writes `<manifest>.sig` (a signature over the SHA-256 of the file) and `profile-verify` checks it against a trusted public key. `profile-build --require-signed` (or `HYDRA_UMC_OS_REBUILDER_REQUIRE_SIGNED=1`; off by default) refuses a manifest whose signature does not verify, before anything else happens, and then leaves the signed file untouched, writing the hashes of the build to `<manifest>.built.json`. Needs the new `signing` extra (`cryptography`). 7 new tests.

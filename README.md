@@ -129,6 +129,7 @@ Status, Build Image, and First-Boot Config.
 ### ARCHITECTURE & DESIGN DECISIONS
 
 - **SSH host key pinned on first use, and no default Wi-Fi country.** A remote build refuses a machine whose key it has not pinned and shows the key's SHA-256 fingerprint; enter that fingerprint (checked on the machine itself) and the key is pinned, after which only that key is accepted and a different one is refused as a changed key. The image's Wi-Fi country code has no default any more (`--wifi-country` / the country field is required with a Wi-Fi network), because it sets the radio rules of the country where the machine will be.
+- **The image has the layout the installers expect, and says what can be deployed.** Every project the build installs also gets a relative link `/opt/hydra-umc/src/<NAME>` (the repository name in capitals) to its checkout, so `/opt/hydra-umc/src/HYDRA-UMC-OS/provisioning/install_<x>.sh --apply` finds every project of the image next to it, and `/opt/hydra-umc/deploy-plan.json` lists, from the table of installers of the HYDRA-UMC-OS in the image, which project has an installer that follows the deployment contract (installer, unit, the command to run) and why the others have none. The image still holds checkouts only: the build makes no account or unit and enables nothing.
 - **`ecosystem_plan.py` never reimplements GitHub discovery.** It depends
   on `hydra-umc-updater` as a real Python package
   (`hydra_umc_updater.github_client.discover_remote_projects()`) rather

@@ -9,6 +9,7 @@ import hashlib
 import http.server
 import json
 import lzma
+import os
 import shutil
 import threading
 from pathlib import Path
@@ -32,8 +33,10 @@ from hydra_umc_os_rebuilder.image_builder import (
     build_image,
     fetch_base_image,
     fetch_reference_sha256,
+    link_checkout_for_installers,
     scan_for_leaked_secrets,
     verify_installed_resources,
+    write_deploy_record,
 )
 
 
@@ -1034,3 +1037,61 @@ def test_a_public_image_refuses_a_first_boot_configuration_before_doing_anything
     )
     assert not result.ok and "first-boot" in result.error
     assert not (tmp_path / "work").exists()
+
+
+# ---------------------------------------------------------------------------
+# The layout the installers of HYDRA-UMC-OS expect, and the record of what can be deployed from the image.
+# ---------------------------------------------------------------------------
+def _plan_table(root: Path, installers: list[dict], supported: int = 1) -> None:
+    folder = root / "opt" / "hydra-umc" / "hydra-umc-os" / "provisioning"
+    folder.mkdir(parents=True)
+    (folder / "install_plan.json").write_text(json.dumps({"format": "hydra-install-plan/2", "supported_contract": supported, "installers": installers}), encoding="utf-8")
+
+
+def test_a_checkout_is_linked_under_its_name_in_capitals_for_the_installers(tmp_path: Path) -> None:
+    (tmp_path / "opt" / "hydra-umc" / "hydra-umc-server").mkdir(parents=True)
+    (tmp_path / "opt" / "hydra-umc" / "hydra-umc-server" / "marker.txt").write_text("here", encoding="utf-8")
+    try:
+        link = link_checkout_for_installers(tmp_path, "HYDRA-UMC-SERVER")
+    except OSError:
+        pytest.skip("this host cannot make links")
+    assert link == tmp_path / "opt" / "hydra-umc" / "src" / "HYDRA-UMC-SERVER"
+    assert Path(os.readlink(link)).as_posix() == "../hydra-umc-server"
+    assert (link / "marker.txt").read_text(encoding="utf-8") == "here"
+    link_checkout_for_installers(tmp_path, "HYDRA-UMC-SERVER")  # again: the link is replaced, not an error
+
+
+@pytest.mark.parametrize("name", ["../x", "a/b", "", ".hidden", "x y"])
+def test_a_name_the_installers_cannot_find_is_refused(tmp_path: Path, name: str) -> None:
+    with pytest.raises(ImageBuildError):
+        link_checkout_for_installers(tmp_path, name)
+    assert not (tmp_path / "opt").exists()
+
+
+def test_the_deploy_record_says_which_project_can_be_deployed_and_which_cannot(tmp_path: Path) -> None:
+    _plan_table(tmp_path, [
+        {"script": "install_server.sh", "source": "HYDRA-UMC-SERVER", "target": "/opt/hydra-umc/server", "unit": "hydra-umc-server.service", "contract": 1, "deploy_exempt": None},
+        {"script": "install_old.sh", "source": "HYDRA-UMC-OLD", "target": "/opt/hydra-umc/old", "unit": None, "contract": None, "deploy_exempt": "comes from this repository"},
+    ])
+    path = write_deploy_record(tmp_path, ["HYDRA-UMC-SERVER@0.8.1.0#sha256:aa", "HYDRA-UMC-OLD@0.1.0#sha256:bb", "HYDRA-UMC-TWIN@0.1.0#sha256:cc"])
+    record = json.loads(path.read_text(encoding="utf-8"))
+    assert path.name == "deploy-plan.json" and record["format"] == "hydra-image-deploy/1" and record["supported_contract"] == 1
+    by_name = {item["name"]: item for item in record["projects"]}
+    assert by_name["HYDRA-UMC-SERVER"]["deployable"] is True
+    assert by_name["HYDRA-UMC-SERVER"]["command"] == "sudo /opt/hydra-umc/src/HYDRA-UMC-OS/provisioning/install_server.sh --apply"
+    assert by_name["HYDRA-UMC-SERVER"]["version"] == "0.8.1.0"
+    assert by_name["HYDRA-UMC-OLD"]["deployable"] is False and "this repository" in by_name["HYDRA-UMC-OLD"]["reason"]
+    assert by_name["HYDRA-UMC-TWIN"]["deployable"] is False and "no installer" in by_name["HYDRA-UMC-TWIN"]["reason"]
+
+
+def test_without_hydra_umc_os_in_the_image_nothing_is_deployable_and_the_record_says_why(tmp_path: Path) -> None:
+    (tmp_path / "opt" / "hydra-umc").mkdir(parents=True)
+    record = json.loads(write_deploy_record(tmp_path, ["HYDRA-UMC-SERVER@0.8.1.0#sha256:aa"]).read_text(encoding="utf-8"))
+    assert record["supported_contract"] is None
+    assert record["projects"][0]["deployable"] is False and "not in this image" in record["projects"][0]["reason"]
+
+
+def test_an_installer_of_another_contract_is_not_offered(tmp_path: Path) -> None:
+    _plan_table(tmp_path, [{"script": "install_server.sh", "source": "HYDRA-UMC-SERVER", "target": "/opt/hydra-umc/server", "unit": "u.service", "contract": 2, "deploy_exempt": None}], supported=1)
+    record = json.loads(write_deploy_record(tmp_path, ["HYDRA-UMC-SERVER@1.0.0#sha256:aa"]).read_text(encoding="utf-8"))
+    assert record["projects"][0]["deployable"] is False and record["projects"][0]["contract"] == 2

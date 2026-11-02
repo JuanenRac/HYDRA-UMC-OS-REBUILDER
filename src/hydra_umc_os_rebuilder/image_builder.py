@@ -682,6 +682,17 @@ def build_image(
             # docstring for exactly what this does and does not prove.
             tree_hash = _hash_directory_tree(rootfs_mount / "opt" / "hydra-umc" / entry.name.lower())
             installed.append(f"{entry.name}@{real_version}#sha256:{tree_hash}")
+            try:
+                link_checkout_for_installers(rootfs_mount, entry.name)
+            except (ImageBuildError, OSError) as exc:
+                install_error = f"{entry.name}: {exc}"
+                break
+
+        if install_error is None:
+            try:
+                write_deploy_record(rootfs_mount, installed)
+            except (ImageBuildError, OSError) as exc:
+                install_error = f"the deployment record of the image: {exc}"
 
         if install_error is None:
             if firstboot is not None:
@@ -1110,6 +1121,68 @@ def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | 
                 f"build.sh ran: {', '.join(missing)} - refusing to install an incomplete build into the image"
             )
     return installed_version
+
+
+#: The layout the installers of HYDRA-UMC-OS (provisioning/install_*.sh) expect: they find the project they install next to the checkout of HYDRA-UMC-OS, under its
+#: own repository name in capitals. The image keeps each checkout under its lower-case name (`/opt/hydra-umc/hydra-umc-server`), which is where the installed
+#: programs also live in a few cases, so the capital-letter names are links in their own folder: run an installer through
+#: `/opt/hydra-umc/src/HYDRA-UMC-OS/provisioning/install_<x>.sh --apply` and its `ROOT` is `/opt/hydra-umc/src`, where every project of the image is.
+CHECKOUT_LINK_DIR = "src"
+DEPLOY_RECORD_NAME = "deploy-plan.json"
+DEPLOY_RECORD_FORMAT = "hydra-image-deploy/1"
+_CHECKOUT_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+
+
+def link_checkout_for_installers(rootfs_mount: Path, name: str) -> Path:
+    """Make `/opt/hydra-umc/src/<NAME>` a relative link to `/opt/hydra-umc/<name in lower case>` in the image. Returns the link."""
+    if not _CHECKOUT_NAME.match(name):
+        raise ImageBuildError(f"{name!r} is not a name the installers can find")
+    folder = rootfs_mount / "opt" / "hydra-umc" / CHECKOUT_LINK_DIR
+    folder.mkdir(parents=True, exist_ok=True)
+    link = folder / name
+    if link.is_symlink() or link.exists():
+        link.unlink()
+    os.symlink(Path("..") / name.lower(), link, target_is_directory=True)
+    return link
+
+
+def write_deploy_record(rootfs_mount: Path, installed: list[str]) -> Path:
+    """Write `/opt/hydra-umc/deploy-plan.json`: which project of the image has an installer that follows the deployment contract of HYDRA-UMC-OS, and which has none.
+
+    The image holds checkouts, not running services: nothing is installed as a service, no account or unit is made, and no unit is enabled. The record says what an operator
+    (or the first-boot step they choose to add) can do next, project by project, with the table of installers of the checkout of HYDRA-UMC-OS that is in the image; when
+    HYDRA-UMC-OS is not in the profile, every project says why it cannot be deployed from the image.
+    """
+    base = rootfs_mount / "opt" / "hydra-umc"
+    table: dict = {}
+    table_file = base / "hydra-umc-os" / "provisioning" / "install_plan.json"
+    try:
+        loaded = json.loads(table_file.read_text(encoding="utf-8"))
+        table = loaded if isinstance(loaded, dict) else {}
+    except (OSError, ValueError):
+        table = {}
+    rows = {str(row.get("source")): row for row in table.get("installers", []) if isinstance(row, dict) and row.get("source")}
+    projects = []
+    for item in installed:
+        name, _, rest = item.partition("@")
+        version = rest.partition("#")[0]
+        row = rows.get(name)
+        if not table:
+            projects.append({"name": name, "version": version, "deployable": False, "reason": "HYDRA-UMC-OS is not in this image, so there is no table of installers"})
+        elif row is None:
+            projects.append({"name": name, "version": version, "deployable": False, "reason": "no installer of HYDRA-UMC-OS installs this project as a service"})
+        elif row.get("contract") != table.get("supported_contract"):
+            projects.append({"name": name, "version": version, "deployable": False, "contract": row.get("contract"),
+                             "reason": row.get("deploy_exempt") or "its installer does not follow the deployment contract the table supports"})
+        else:
+            projects.append({"name": name, "version": version, "deployable": True, "installer": row.get("script"), "contract": row.get("contract"),
+                             "target": row.get("target"), "unit": row.get("unit"),
+                             "command": f"sudo /opt/hydra-umc/{CHECKOUT_LINK_DIR}/HYDRA-UMC-OS/provisioning/{row.get('script')} --apply"})
+    record = {"format": DEPLOY_RECORD_FORMAT, "layout": f"/opt/hydra-umc/{CHECKOUT_LINK_DIR}/<NAME>", "supported_contract": table.get("supported_contract"), "projects": projects}
+    path = base / DEPLOY_RECORD_NAME
+    path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+    path.chmod(0o644)
+    return path
 
 
 def _read_real_installed_version(target: Path, name: str) -> str:

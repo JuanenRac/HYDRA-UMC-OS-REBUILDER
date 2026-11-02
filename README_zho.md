@@ -122,6 +122,7 @@ HYDRA-UMC-UPDATER 相同的视觉语言（相同的深色调色板、字体排�
 ### 架构与设计决策
 
 - **SSH 主机密钥首次使用时固定，Wi-Fi 国家代码不再有默认值。** 远程构建会拒绝一台尚未固定其密钥的机器，并显示该密钥的 SHA-256 指纹；输入该指纹（在机器本身上核对过）后密钥即被固定，此后只接受该密钥，不同的密钥会被当作已更改的密钥而拒绝。镜像的 Wi-Fi 国家代码不再有默认值（配置 Wi-Fi 网络时 `--wifi-country` / 国家字段为必填），因为它决定机器所在国家的无线电规则。
+- **镜像具有安装程序所期望的布局，并说明哪些可以部署。** 构建安装的每个项目还会得到一个指向其检出的相对链接 `/opt/hydra-umc/src/<名称>`（仓库名的大写形式），因此 `/opt/hydra-umc/src/HYDRA-UMC-OS/provisioning/install_<x>.sh --apply` 能在旁边找到镜像中的所有项目；`/opt/hydra-umc/deploy-plan.json` 依据镜像中 HYDRA-UMC-OS 的安装程序表，列出哪个项目有遵循部署契约的安装程序（安装程序、单元、要运行的命令），以及其他项目没有的原因。镜像仍然只含检出：构建不创建账户或单元，也不启用任何东西。
 - **`ecosystem_plan.py` 绝不重新实现 GitHub 发现逻辑。** 它依赖
   `hydra-umc-updater` 作为真实的 Python 包
   （`hydra_umc_updater.github_client.discover_remote_projects()`），而不是
