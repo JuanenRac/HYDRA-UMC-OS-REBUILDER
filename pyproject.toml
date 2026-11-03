@@ -35,7 +35,7 @@ signing = ["cryptography>=42"]
 # paramiko is a real GUI-only dependency, not the CLI's own - only
 # qt_gui.py's remote build (RebuilderBridge._start_remote_build, real
 # SSH to a real Linux host) needs it; --cli build-image never imports it.
-gui = ["PySide6>=6.8,<7", "paramiko>=3.4,<5"]
+gui = ["PySide6>=6.8,<7", "paramiko>=3.4,<6"]
 
 [project.urls]
 Homepage = "https://github.com/JuanenRac/HYDRA-UMC-OS-REBUILDER"
