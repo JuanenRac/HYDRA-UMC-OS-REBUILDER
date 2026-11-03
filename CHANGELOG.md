@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The refusal of a password argument is one fixed sentence:** the message that stops `--password` and `--wifi-password` on the command line is built only from fixed text and the names of the two environment variables, never from what was typed; a test checks the typed value does not appear.
 - **A password on the command line is refused:** `--password` and `--wifi-password` stop the command with a message that points to `HYDRA_UMC_FIRSTBOOT_PASSWORD`, `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` and `--secrets-stdin`, unless the options file sets `secrets.allow_password_argument` (off by default). 4 new tests.
 - **The README shows a screenshot of the window** (the projects found for the image, the build options and the log), taken with a made-up list of projects by `tools/capture_screenshots.py`; the list and the captions in the eight languages are in `docs/screenshots.json`.
 

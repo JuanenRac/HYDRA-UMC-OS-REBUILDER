@@ -27,8 +27,10 @@ class PasswordArgumentTests(unittest.TestCase):
         self.assertIsNone(cli.refuse_secret_arguments(args, {"secrets": {"allow_password_argument": False}}))
 
     def test_main_stops_with_code_2(self):
-        with mock.patch("sys.stderr", new=io.StringIO()):
-            self.assertEqual(cli.main(["--cli", "build-image", "--out", "x", "--password", "flag"]), 2)
+        with mock.patch("sys.stderr", new=io.StringIO()) as report:
+            self.assertEqual(cli.main(["--cli", "build-image", "--out", "x", "--password", "typed-value-123"]), 2)
+        self.assertNotIn("typed-value-123", report.getvalue())
+        self.assertIn("HYDRA_UMC_FIRSTBOOT_PASSWORD", report.getvalue())
 
 
 class SecretSourcesTests(unittest.TestCase):

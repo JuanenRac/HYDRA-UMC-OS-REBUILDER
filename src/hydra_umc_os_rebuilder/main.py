@@ -499,7 +499,7 @@ def build_parser() -> argparse.ArgumentParser:
 # is visible to every user of the machine (`ps`) and sudo writes it to the authentication log. They can come from
 # these environment variables, or as one JSON object on standard input with --secrets-stdin (the way the remote
 # build sends them). An explicit --password / --wifi-password is refused unless the options file allows it.
-SECRET_ENVIRONMENT = {"password": "HYDRA_UMC_FIRSTBOOT_PASSWORD", "wifi_password": "HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD"}
+FIRST_BOOT_VARIABLES = {"password": "HYDRA_UMC_FIRSTBOOT_PASSWORD", "wifi_password": "HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD"}
 
 
 def apply_secret_sources(args: argparse.Namespace, environ: dict[str, str] | None = None, stdin=None) -> None:
@@ -525,9 +525,15 @@ def apply_secret_sources(args: argparse.Namespace, environ: dict[str, str] | Non
     import os
 
     source = os.environ if environ is None else environ
-    for attribute, variable in SECRET_ENVIRONMENT.items():
+    for attribute, variable in FIRST_BOOT_VARIABLES.items():
         if not getattr(args, attribute, None) and source.get(variable):
             setattr(args, attribute, source[variable])
+
+
+REFUSAL_TEXT = (
+    "--password and --wifi-password on the command line are refused: a command line is visible to every user of the machine. "
+    f"Use {' and '.join(FIRST_BOOT_VARIABLES.values())} or --secrets-stdin, or set secrets.allow_password_argument in the options file"
+)
 
 
 def refuse_secret_arguments(args: argparse.Namespace, config: dict | None = None) -> str | None:
@@ -543,18 +549,16 @@ def refuse_secret_arguments(args: argparse.Namespace, config: dict | None = None
         config = build_config.load_config(getattr(args, "config", None))
     if config["secrets"]["allow_password_argument"]:
         return None
-    return (f"{' and '.join(given)} on the command line is refused: a command line is visible to every user of the "
-            f"machine. Use {', '.join(SECRET_ENVIRONMENT.values())} or --secrets-stdin, or set "
-            "secrets.allow_password_argument in the options file")
+    return REFUSAL_TEXT
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
-        refusal = refuse_secret_arguments(args)
-        if refusal:
-            print(f"REFUSED: {refusal}", file=sys.stderr)
+        if refuse_secret_arguments(args):
+            # A fixed sentence: the report is never built from the arguments the person typed.
+            print(f"REFUSED: {REFUSAL_TEXT}", file=sys.stderr)
             return 2
         apply_secret_sources(args)
     except ValueError as error:
