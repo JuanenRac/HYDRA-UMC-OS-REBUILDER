@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The image plan follows the default branch and checks the manifest at the commit it will install:** the plan keeps the branch discovery read each manifest from (the default branch of the repository) instead of a fixed `main`, and `fetch_ecosystem_plan` reads `hydra-umc.project.json` again at the resolved commit; a project whose version or `deployment_target` there differs from the plan (the branch moved while planning) or whose manifest cannot be read is left out of the build and reported, never built mismatched.
 - **The refusal of a password argument is one fixed sentence:** the message that stops `--password` and `--wifi-password` on the command line is built only from fixed text and the names of the two environment variables, never from what was typed; a test checks the typed value does not appear.
 - **A password on the command line is refused:** `--password` and `--wifi-password` stop the command with a message that points to `HYDRA_UMC_FIRSTBOOT_PASSWORD`, `HYDRA_UMC_FIRSTBOOT_WIFI_PASSWORD` and `--secrets-stdin`, unless the options file sets `secrets.allow_password_argument` (off by default). 4 new tests.
 - **The README shows a screenshot of the window** (the projects found for the image, the build options and the log), taken with a made-up list of projects by `tools/capture_screenshots.py`; the list and the captions in the eight languages are in `docs/screenshots.json`.

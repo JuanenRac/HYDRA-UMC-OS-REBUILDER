@@ -325,7 +325,7 @@ def test_fetch_ecosystem_plan_resolves_the_github_token_env_var_once_for_both_re
         seen_tokens["discover"] = token
         return RemoteDiscovery(projects=(), errors=())
 
-    def fake_resolve(plan, *, owner="JuanenRac", token=None):
+    def fake_resolve(plan, *, owner="JuanenRac", token=None, verify_manifest_at_sha=False):
         seen_tokens["resolve"] = token
         return plan
 
@@ -346,7 +346,7 @@ def test_fetch_ecosystem_plan_prefers_an_explicitly_passed_token_over_the_env_va
         seen_tokens["discover"] = token
         return RemoteDiscovery(projects=(), errors=())
 
-    def fake_resolve(plan, *, owner="JuanenRac", token=None):
+    def fake_resolve(plan, *, owner="JuanenRac", token=None, verify_manifest_at_sha=False):
         seen_tokens["resolve"] = token
         return plan
 
@@ -368,3 +368,78 @@ def test_plan_summary_lines_include_a_total_and_error_count() -> None:
     lines = plan_summary_lines(plan)
     assert "HYDRA-UMC-SERVER 0.4.8 (api/node)" in lines
     assert any("1 repositor" in line for line in lines)
+
+
+def test_the_plan_keeps_the_default_branch_discovery_read_the_manifest_from() -> None:
+    entry = _entry("HYDRA-UMC-SERVER")
+    from dataclasses import replace as _replace
+
+    status = RemoteStatus(entry=_replace(entry, branch="trunk"), version=_V("0.4.8"), manifest=_manifest("HYDRA-UMC-SERVER", "0.4.8", "cm5"))
+    plan = build_plan(RemoteDiscovery(projects=(status,), errors=()))
+    assert plan.entries[0].branch == "trunk"
+    plain = build_plan(RemoteDiscovery(projects=(_status("Other", _V("1.0.0"), _manifest("Other", "1.0.0", "cm5")),), errors=()))
+    assert plain.entries[0].branch == "main"
+
+
+class _FakeRawHandler(http.server.BaseHTTPRequestHandler):
+    # {"owner/repo/ref": manifest dict, or None for 404}
+    manifests: dict[str, dict | None] = {}
+
+    def do_GET(self) -> None:  # noqa: N802 - stdlib method name
+        parts = self.path.strip("/").split("/")
+        key = "/".join(parts[:3]) if len(parts) == 4 else ""
+        manifest = self.manifests.get(key)
+        if manifest is None:
+            self.send_response(404)
+            self.end_headers()
+            return
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(json.dumps(manifest).encode("utf-8"))
+
+    def log_message(self, format: str, *args) -> None:  # noqa: A002 - silence test output
+        pass
+
+
+@pytest.fixture()
+def fake_github_raw(monkeypatch: pytest.MonkeyPatch):
+    _FakeRawHandler.manifests = {}
+    server = http.server.HTTPServer(("127.0.0.1", 0), _FakeRawHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    monkeypatch.setattr(ecosystem_plan_module, "RAW_BASE", f"http://127.0.0.1:{server.server_port}")
+    try:
+        yield _FakeRawHandler
+    finally:
+        server.shutdown()
+        thread.join()
+
+
+def _one(name: str = "HYDRA-UMC-SERVER", version: str = "0.4.8") -> EcosystemPlanEntry:
+    return EcosystemPlanEntry(name=name, version=version, role="api", stack="node", git_url=f"https://github.com/JuanenRac/{name}.git")
+
+
+def test_a_branch_that_moved_while_planning_leaves_the_project_out(fake_github_commits, fake_github_raw) -> None:
+    sha = "b" * 40
+    fake_github_commits.shas = {"JuanenRac/HYDRA-UMC-SERVER/main": sha}
+    fake_github_raw.manifests = {f"JuanenRac/HYDRA-UMC-SERVER/{sha}": {"version": "0.4.9", "deployment_target": "cm5"}}
+    resolved = resolve_commit_shas(_plan(_one()), verify_manifest_at_sha=True)
+    assert resolved.entries == ()
+    assert len(resolved.discovery_errors) == 1
+    assert "branch moved while planning" in resolved.discovery_errors[0]
+
+
+def test_the_manifest_at_the_resolved_commit_that_agrees_keeps_the_project(fake_github_commits, fake_github_raw) -> None:
+    sha = "c" * 40
+    fake_github_commits.shas = {"JuanenRac/HYDRA-UMC-SERVER/main": sha}
+    fake_github_raw.manifests = {f"JuanenRac/HYDRA-UMC-SERVER/{sha}": {"version": "0.4.8", "deployment_target": "cm5"}}
+    resolved = resolve_commit_shas(_plan(_one()), verify_manifest_at_sha=True)
+    assert [entry.commit_sha for entry in resolved.entries] == [sha]
+    assert resolved.discovery_errors == ()
+
+
+def test_an_unreadable_manifest_at_the_commit_is_a_mismatch_not_a_pass(fake_github_commits, fake_github_raw) -> None:
+    fake_github_commits.shas = {"JuanenRac/HYDRA-UMC-SERVER/main": "d" * 40}
+    resolved = resolve_commit_shas(_plan(_one()), verify_manifest_at_sha=True)
+    assert resolved.entries == ()

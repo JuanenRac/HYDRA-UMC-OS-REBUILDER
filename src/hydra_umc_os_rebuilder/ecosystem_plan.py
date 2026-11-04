@@ -25,6 +25,8 @@ import urllib.request
 from dataclasses import dataclass, replace
 
 from hydra_umc_updater.github_client import (
+    GITHUB_RAW_BASE,
+    MANIFEST_FILE,
     RemoteDiscovery,
     describe_http_error,
     discover_remote_projects,
@@ -32,6 +34,7 @@ from hydra_umc_updater.github_client import (
 )
 
 GITHUB_API_BASE = "https://api.github.com"
+RAW_BASE = GITHUB_RAW_BASE
 
 
 class GitHubRateLimitedError(RuntimeError):
@@ -121,6 +124,8 @@ def build_plan(discovery: RemoteDiscovery, *, owner: str = "JuanenRac") -> Ecosy
                 role=manifest.role,
                 stack=manifest.stack,
                 git_url=_git_url(owner, manifest.name),
+                # The branch discovery read the manifest from (the repository's own default branch), not a fixed "main".
+                branch=getattr(status.entry, "branch", None) or "main",
             )
         )
     # The shared SDK goes first so the projects that import it find it already
@@ -168,7 +173,30 @@ def _fetch_commit_sha(owner: str, name: str, branch: str, *, token: str | None, 
     return sha if isinstance(sha, str) and sha else None
 
 
-def resolve_commit_shas(plan: EcosystemPlan, *, owner: str = "JuanenRac", token: str | None = None) -> EcosystemPlan:
+def _manifest_version_at(owner: str, name: str, ref: str, *, timeout: float = 15) -> tuple[str | None, str | None]:
+    """The (version, deployment_target) the manifest of `owner/name` declares AT `ref` (a commit SHA), read from raw/<sha>.
+    (None, None) when it cannot be read: the caller treats that as a mismatch, never as a pass."""
+    url = f"{RAW_BASE}/{owner}/{name}/{ref}/{MANIFEST_FILE}"
+    request = urllib.request.Request(url, headers={"User-Agent": "hydra-umc-os-rebuilder", "Accept": "application/json"}, method="GET")
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8", errors="replace"))
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+        return None, None
+    if not isinstance(payload, dict):
+        return None, None
+    version = payload.get("version")
+    target = payload.get("deployment_target")
+    return (version if isinstance(version, str) else None, target if isinstance(target, str) else None)
+
+
+def resolve_commit_shas(
+    plan: EcosystemPlan,
+    *,
+    owner: str = "JuanenRac",
+    token: str | None = None,
+    verify_manifest_at_sha: bool = False,
+) -> EcosystemPlan:
     """this project's own real second pass over an already-built
     `EcosystemPlan`: resolves each entry's real, immutable commit SHA so
     `image_builder._install_one_project` clones an exact, reproducible
@@ -209,6 +237,16 @@ def resolve_commit_shas(plan: EcosystemPlan, *, owner: str = "JuanenRac", token:
                 f"{entry.name}: could not resolve a real commit SHA for branch {entry.branch!r} - excluded from this build"
             )
             continue
+        if verify_manifest_at_sha:
+            # Between reading the manifest of the branch and resolving its head a push can land: the version the plan promises must be
+            # the version of the commit that gets installed, else the project is left out of this build rather than built mismatched.
+            version, target = _manifest_version_at(owner, entry.name, sha)
+            if version != entry.version or target != "cm5":
+                errors.append(
+                    f"{entry.name}: the manifest at commit {sha[:12]} declares version {version!r} (target {target!r}) while the plan "
+                    f"was made for {entry.version!r} - the branch moved while planning; excluded from this build"
+                )
+                continue
         resolved.append(replace(entry, commit_sha=sha))
     return EcosystemPlan(entries=tuple(resolved), discovery_errors=tuple(errors), sdk_commit_sha=plan.sdk_commit_sha)
 
@@ -230,7 +268,7 @@ def fetch_ecosystem_plan(*, owner: str = "JuanenRac", token: str | None = None) 
     resolved_token = token if token is not None else os.environ.get("GITHUB_TOKEN") or None
     discovery = discover_remote_projects(owner=owner, token=resolved_token)
     plan = build_plan(discovery, owner=owner)
-    return resolve_commit_shas(plan, owner=owner, token=resolved_token)
+    return resolve_commit_shas(plan, owner=owner, token=resolved_token, verify_manifest_at_sha=True)
 
 
 def plan_summary_lines(plan: EcosystemPlan) -> list[str]:
