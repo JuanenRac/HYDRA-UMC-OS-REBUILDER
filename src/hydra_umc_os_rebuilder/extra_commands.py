@@ -3,7 +3,7 @@
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
 # GPL-3.0-or-later - see LICENSE
 #
-# build-plan, cache-status, cache-prune, release-manifest, release-sign, release-verify and boot-test. None of them writes
+# build-plan, cache-status, cache-prune, release-manifest, release-sign, release-verify, golden-register, golden-verify and boot-test. None of them writes
 # an image, a device or a tag: they plan, check and report (see docs/CLI_REFERENCE.md).
 # =============================================================================
 from __future__ import annotations
@@ -14,7 +14,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from . import artifact_cache, boot_test, build_backends, build_config, release_channel
+from . import artifact_cache, boot_test, build_backends, build_config, golden_image, release_channel
 from .profile_signing import ProfileSigningError
 
 
@@ -41,6 +41,17 @@ def add_parsers(sub: "argparse._SubParsersAction[argparse.ArgumentParser]") -> N
     verify.add_argument("--image", required=True)
     verify.add_argument("--trusted-key", default="")
     verify.add_argument("--repo", help="repository holding the signed tag")
+    golden = with_config(sub.add_parser("golden-register", help="keep a known-good recovery image on this host, signed (the device never holds it)"))
+    golden.add_argument("--image", required=True)
+    golden.add_argument("--store", required=True, help="folder that holds the golden image, golden.json and its signature")
+    golden.add_argument("--version", required=True)
+    golden.add_argument("--commit", required=True, help="the full commit the image was built from")
+    golden.add_argument("--key-file", required=True)
+    golden.add_argument("--replace", action="store_true", help="replace an existing golden image with a newer version")
+    golden_check = with_config(sub.add_parser("golden-verify", help="check the signature and the hash of the golden image before it is used for a recovery"))
+    golden_check.add_argument("--store", required=True)
+    golden_check.add_argument("--trusted-key", default="")
+    golden_check.add_argument("--minimum-version", default="")
     boot = with_config(sub.add_parser("boot-test", help="boot the image in QEMU and read the serial log (skipped when off or QEMU is missing)"))
     boot.add_argument("--image", required=True)
 
@@ -102,6 +113,19 @@ def _cmd_release_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_golden_register(args: argparse.Namespace) -> int:
+    record = golden_image.register(Path(args.image), Path(args.store), args.version, args.commit, args.key_file, replace=args.replace)
+    print(f"GOLDEN_REGISTERED record={record}")
+    return 0
+
+
+def _cmd_golden_verify(args: argparse.Namespace) -> int:
+    config = build_config.load_config(args.config)
+    key = args.trusted_key or str(config["release_channel"]["trusted_key"])
+    print("GOLDEN_VERIFIED " + json.dumps(golden_image.verify(Path(args.store), key, minimum_version=args.minimum_version), sort_keys=True))
+    return 0
+
+
 def _cmd_boot_test(args: argparse.Namespace) -> int:
     result = boot_test.run_boot_test(Path(args.image), build_config.load_config(args.config))
     print(json.dumps(result, indent=2, sort_keys=True))
@@ -115,6 +139,8 @@ HANDLERS: dict[str, Callable[[argparse.Namespace], int]] = {
     "release-manifest": _cmd_release_manifest,
     "release-sign": _cmd_release_sign,
     "release-verify": _cmd_release_verify,
+    "golden-register": _cmd_golden_register,
+    "golden-verify": _cmd_golden_verify,
     "boot-test": _cmd_boot_test,
 }
 
@@ -124,7 +150,7 @@ def run(args: argparse.Namespace) -> int:
     try:
         return HANDLERS[args.command](args)
     except (
-        build_config.BuildConfigError, build_backends.BackendError, artifact_cache.CacheError, release_channel.ReleaseError,
+        build_config.BuildConfigError, build_backends.BackendError, artifact_cache.CacheError, release_channel.ReleaseError, golden_image.GoldenError,
         boot_test.BootTestError, ProfileSigningError, OSError,
     ) as error:
         print(f"{args.command.upper().replace('-', '_')}_FAILED error={error}", file=sys.stderr)

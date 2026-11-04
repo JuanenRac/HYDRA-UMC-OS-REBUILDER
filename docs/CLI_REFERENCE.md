@@ -173,11 +173,12 @@ Before the base image is fetched the build refuses: a plan with no projects, a m
 
 The official image is made to fit a small card, and installing the projects (virtual environments, `node_modules`, build folders) can fill its root file system. `build-image --grow-mb N` and `profile-build --grow-mb N` make the image N MiB larger before it is mounted: the file is extended, partition 2 is grown to the end (`parted resizepart`), the file system is checked (`e2fsck -f`) and grown (`resize2fs`). The default is 0, the size of the base image. The step is covered by tests that check the commands and their order; it has not been run against a real image yet.
 
-## Build backends, artifact cache, signed releases and boot test
+## Build backends, artifact cache, signed releases, golden image and boot test
 
 All of these read one options file (`config/rebuilder.example.json` lists every key; give yours with `--config` or `HYDRA_UMC_OS_REBUILDER_CONFIG`). Everything is off by default and unknown keys are refused. None of the commands writes an image, a device or a tag.
 
 - `build-plan [--project NAME=COMMIT ...] [--write-pigen-stage DIR]`: what `build_backend.name` (`chroot`, `nspawn` or `pigen`) would do and which tools the host lacks; `--write-pigen-stage` writes the pi-gen stage files into a new folder.
 - `cache-status`, `cache-prune`: the artifact cache keyed by (project, full commit); needs `artifact_cache.enabled` and a directory; entries are checked against their SHA-256 and the least recently used are removed beyond `max_gb`.
 - `release-manifest --image F --version V --commit SHA --output release.json`, `release-sign --manifest release.json --key-file KEY`, `release-verify --manifest release.json --image F [--trusted-key K] [--repo DIR]`: image, SHA-256, Ed25519 signature and (with `require_signed_tag`) the signed tag. The private key stays outside any repository.
+- `golden-register --image F --store DIR --version V --commit SHA --key-file KEY [--replace]`, `golden-verify --store DIR [--trusted-key K] [--minimum-version V]`: the known-good recovery image lives on the host in a store folder (image, `golden.json`, `golden.json.sig`), signed with Ed25519 under a domain of its own; replacing it needs `--replace` and a newer version; verification checks the signature and the SHA-256 of the image. The device holds no copy.
 - `boot-test --image F`: boots the image in QEMU with a throw-away overlay and reads the serial log; the result is `skipped` (with the reason) when `boot_test.enabled` is off or QEMU is not installed.
