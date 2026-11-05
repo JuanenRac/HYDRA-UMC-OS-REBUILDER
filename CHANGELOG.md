@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.3.6] - The build test of the repository compiles only on CI or when allowed: for the stacks that compile (rust, go, android, flutter, firmware-c), tools/buildtest.py prints BUILDTEST=SKIPPED with exit status 2 on a plain PC, never a... (and 5 more changes)
+
 - **The build test of the repository compiles only on CI or when allowed:** for the stacks that compile (`rust`, `go`, `android`, `flutter`, `firmware-c`), `tools/build_test.py` prints `BUILD_TEST=SKIPPED` with exit status 2 on a plain PC, never a pass; `ALLOW_LOCAL_BUILD=1` allows it and a CI runner always may. The `python` and `node` stacks are not locked.
 
 - **A golden (recovery) image kept on the host and signed:** `golden-register --image F --store DIR --version V --commit SHA --key-file KEY` copies a known-good image into a store folder and writes `golden.json` (name, size, SHA-256, version, commit) with an Ed25519 signature `golden.json.sig`; `golden-verify --store DIR [--trusted-key K] [--minimum-version V]` checks the signature and the hash of the image before it may be used to recover a device. The signature has its own domain (a release or profile signature never passes as a golden one), an existing golden is replaced only with `--replace` and only by a newer version, and the private key is a file outside any repository. The device keeps no copy (there is no flash for a third slot); the updater reinstalls the full image by the normal route. 5 new tests with throw-away keys.
