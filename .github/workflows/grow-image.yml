@@ -1,0 +1,43 @@
+# =============================================================================
+# HYDRA-UMC-OS-REBUILDER - Grow the root partition of an image (manual)
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+# =============================================================================
+# Started by hand only (workflow_dispatch): it never runs on a push or a pull request, so it cannot turn the checks of a push red.
+#
+# On a runner of GitHub it builds a small made-up image (a FAT boot partition and an ext4 root partition) on a loop device and grows it with the builder's own code
+# (`extend_image_file` and `grow_root_partition`: parted, e2fsck and resize2fs), then checks the size, the end of the partition, the file system and both marker files
+# (tools/grow_image_check.py). It is not an image of Raspberry Pi OS and it is not a card. It holds no key, uploads nothing and publishes nothing.
+
+name: Grow the root partition of an image (manual)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [tmp-rebuilder-grow]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grow-image
+  cancel-in-progress: false
+
+jobs:
+  grow:
+    name: grow a made-up image on a loop device
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install the tools
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq parted dosfstools e2fsprogs
+      - name: Grow the image and check it
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo python3 tools/grow_image_check.py | tee "$RUNNER_TEMP/grow.log"
+          { echo "### Growing the root partition of a made-up image"; echo '```'; cat "$RUNNER_TEMP/grow.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

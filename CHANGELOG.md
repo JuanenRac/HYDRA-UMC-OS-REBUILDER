@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The growth of the root partition is run on a real loop device (manual workflow):** `tools/grow_image_check.py` and the workflow "Grow the root partition of an image" build a small made-up image (FAT boot and ext4 root with a marker file each) and grow it with the builder's own `extend_image_file` and `grow_root_partition` (parted, e2fsck, resize2fs), then check the size of the file, that partition 2 reaches its end, that the file system is clean and has the new room free, that both marker files are intact and that a growth of zero or less is refused. It is not the image of Raspberry Pi OS itself.
 - **The pi-gen backend is checked against the real pi-gen by a manual workflow:** `pigen-stage.yml` clones the official pi-gen, writes the custom stage into it with the builder's own code, copies the OS repository in as the payload and checks the shape pi-gen expects (`tools/pigen_stage_check.py`: scripts parse and are executable, the stage list names stages that exist, the earlier stages do not export an image). With `build_image` on it also runs the docker build of pi-gen and reports the size and SHA-256 of the image. Booting the image on the board is pending.
 
 ## [0.3.6] - The build test of the repository compiles only on CI or when allowed: for the stacks that compile (rust, go, android, flutter, firmware-c), tools/buildtest.py prints BUILDTEST=SKIPPED with exit status 2 on a plain PC, never a... (and 5 more changes)
