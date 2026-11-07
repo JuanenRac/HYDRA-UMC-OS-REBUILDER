@@ -35,9 +35,16 @@ jobs:
           persist-credentials: false
       - name: Install the tools
         run: sudo apt-get update -qq && sudo apt-get install -y -qq parted dosfstools e2fsprogs
+      - name: Install the updater the builder depends on (the version pinned in pyproject.toml)
+        shell: bash
+        run: |
+          set -euo pipefail
+          pin="$(grep -o 'git+https[^"]*' pyproject.toml | head -n 1)"
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet "hydra-umc-updater @ $pin"
       - name: Grow the image and check it
         shell: bash
         run: |
           set -euo pipefail
-          sudo python3 tools/grow_image_check.py | tee "$RUNNER_TEMP/grow.log"
+          sudo "$RUNNER_TEMP/venv/bin/python" tools/grow_image_check.py | tee "$RUNNER_TEMP/grow.log"
           { echo "### Growing the root partition of a made-up image"; echo '```'; cat "$RUNNER_TEMP/grow.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
