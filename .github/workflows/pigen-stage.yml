@@ -1,0 +1,100 @@
+# =============================================================================
+# HYDRA-UMC-OS-REBUILDER - Custom pi-gen stage and image (manual)
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+# =============================================================================
+# Started by hand only (workflow_dispatch): it never runs on a push or a pull request, so it cannot turn the checks of a push red.
+#
+# Always: clones the official pi-gen, writes the custom stage of the pi-gen backend into it with the builder's own code, copies the OS repository in as the payload and
+# checks the shape pi-gen expects (tools/pigen_stage_check.py). Only when `build_image` is switched on: runs the docker build of pi-gen with that stage and reports the
+# size and the SHA-256 of the image it made (slow: arm64 under emulation; one job, started by hand). The image is not published and no key is used; it is kept for a day
+# as a workflow artifact only when `keep_image` is on. Booting it in QEMU needs a kernel for the board and is not done here.
+
+name: pi-gen stage and image (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      pigen_ref:
+        description: "Branch or tag of pi-gen to use"
+        type: string
+        default: "arm64"
+      build_image:
+        description: "true: also build the image with the docker build of pi-gen (slow)"
+        type: boolean
+        default: false
+      keep_image:
+        description: "true: keep the image as an artifact for one day (only with build_image)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pigen-stage
+  cancel-in-progress: false
+
+jobs:
+  stage:
+    name: pi-gen stage
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    permissions:
+      contents: read
+    env:
+      PIGEN_REF: ${{ inputs.pigen_ref || 'arm64' }}
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: rebuilder
+          persist-credentials: false
+
+      - name: Check out the OS repository as the payload
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ github.repository_owner }}/HYDRA-UMC-OS
+          path: payload/HYDRA-UMC-OS
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+
+      - name: Clone pi-gen
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --depth 1 --branch "$PIGEN_REF" https://github.com/RPi-Distro/pi-gen.git pi-gen
+          git -C pi-gen log -1 --format='pi-gen %h %s' | tee "$RUNNER_TEMP/pigen-commit.txt"
+
+      - name: Write the stage and check its shape
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONDONTWRITEBYTECODE=1 python rebuilder/tools/pigen_stage_check.py --pigen pi-gen --payload HYDRA-UMC-OS=payload/HYDRA-UMC-OS | tee "$RUNNER_TEMP/stage.log"
+          { echo "### Custom pi-gen stage"; cat "$RUNNER_TEMP/pigen-commit.txt"; echo '```'; cat "$RUNNER_TEMP/stage.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Build the image with pi-gen
+        if: ${{ inputs.build_image }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd pi-gen
+          PRESERVE_CONTAINER=0 CONTINUE=0 ./build-docker.sh -c config 2>&1 | tail -n 200
+          ls -l deploy
+          for image in deploy/*.img deploy/*.zip deploy/*.xz; do
+            [ -f "$image" ] || continue
+            echo "$image $(stat -c %s "$image") bytes sha256 $(sha256sum "$image" | cut -d' ' -f1)" | tee -a "$RUNNER_TEMP/image.txt"
+          done
+          [ -s "$RUNNER_TEMP/image.txt" ] || { echo "::error::pi-gen made no image"; exit 1; }
+          { echo "### Image made by pi-gen"; echo '```'; cat "$RUNNER_TEMP/image.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Keep the image for a day
+        if: ${{ inputs.build_image && inputs.keep_image }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: pigen-image
+          path: pi-gen/deploy/
+          retention-days: 1

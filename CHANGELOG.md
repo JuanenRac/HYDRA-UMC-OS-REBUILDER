@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The pi-gen backend is checked against the real pi-gen by a manual workflow:** `pigen-stage.yml` clones the official pi-gen, writes the custom stage into it with the builder's own code, copies the OS repository in as the payload and checks the shape pi-gen expects (`tools/pigen_stage_check.py`: scripts parse and are executable, the stage list names stages that exist, the earlier stages do not export an image). With `build_image` on it also runs the docker build of pi-gen and reports the size and SHA-256 of the image. Booting the image on the board is pending.
+
 ## [0.3.6] - The build test of the repository compiles only on CI or when allowed: for the stacks that compile (rust, go, android, flutter, firmware-c), tools/buildtest.py prints BUILDTEST=SKIPPED with exit status 2 on a plain PC, never a... (and 5 more changes)
 
 - **The build test of the repository compiles only on CI or when allowed:** for the stacks that compile (`rust`, `go`, `android`, `flutter`, `firmware-c`), `tools/build_test.py` prints `BUILD_TEST=SKIPPED` with exit status 2 on a plain PC, never a pass; `ALLOW_LOCAL_BUILD=1` allows it and a CI runner always may. The `python` and `node` stacks are not locked.
