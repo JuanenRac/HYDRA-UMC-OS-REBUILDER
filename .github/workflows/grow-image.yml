@@ -13,8 +13,6 @@ name: Grow the root partition of an image (manual)
 
 on:
   workflow_dispatch:
-  push:
-    branches: [tmp-rebuilder-grow]
 
 permissions:
   contents: read
