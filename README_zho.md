@@ -34,7 +34,7 @@ GPL-3.0-or-later - see LICENSE
 
 | | |
 |---|---|
-| 版本 | `0.3.6` |
+| 版本 | `0.3.7` |
 | 成熟度 | 可用 |
 | 测试 | 253 (`python -m pytest -q tests`) |
 | 技术栈 | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |

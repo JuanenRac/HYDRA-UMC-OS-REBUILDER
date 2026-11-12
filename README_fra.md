@@ -34,7 +34,7 @@ GPL-3.0-or-later - see LICENSE
 
 | | |
 |---|---|
-| Version | `0.3.6` |
+| Version | `0.3.7` |
 | Maturité | Fonctionnel |
 | Tests | 253 (`python -m pytest -q tests`) |
 | Technologie | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |

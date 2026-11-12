@@ -1,8 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [0.3.7] - The installers of HYDRA-UMC-OS are run through the links of an image tree: `tools/installer_tree_check.py` (and the manual workflow `installer-tree.yml`) lays out a tree like the one the builder makes (the OS checkout, one stub project per installer, the capit
 
 - **The installers of HYDRA-UMC-OS are run through the links of an image tree:** `tools/installer_tree_check.py` (and the manual workflow `installer-tree.yml`) lays out a tree like the one the builder makes (the OS checkout, one stub project per installer, the capital-letter links of `link_checkout_for_installers`) and runs every `install_*.sh` through its link with bash: first the dry-run the scripts promise, then the `ROOT` and `SOURCE` lines, and fails when `$SOURCE/hydra-umc.project.json` does not resolve; the hand-written installers (no `SOURCE` project, they ask for root first) are listed as skipped and never run. Nothing is installed (no `--apply`, no root). A made tree, not an image.
 - **The first boot can run installers, off by default:** `--run-installer install_X.sh` (repeatable, on `config`, `build-image` and `profile-build`) adds `/opt/hydra-umc/src/HYDRA-UMC-OS/provisioning/install_X.sh --apply` to the first-boot script, one failing installer does not stop the next; names that are not `install_<name>.sh` are refused. Without the option the image holds checkouts and installs nothing.

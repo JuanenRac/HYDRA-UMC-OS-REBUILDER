@@ -34,7 +34,7 @@ GPL-3.0-or-later - see LICENSE
 
 | | |
 |---|---|
-| バージョン | `0.3.6` |
+| バージョン | `0.3.7` |
 | 成熟度 | 機能する |
 | テスト | 253 (`python -m pytest -q tests`) |
 | 技術 | Python 3.10+ / PySide6 / QML / Raspberry Pi OS / GitHub raw content |
