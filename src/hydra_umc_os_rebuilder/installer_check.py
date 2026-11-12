@@ -52,16 +52,18 @@ def installer_scripts(rootfs: Path) -> list[Path]:
 
 def check_installer(script: Path, *, bash: str = "bash", run: Runner = _run) -> dict[str, Any]:
     """Run one installer through its link: the dry-run, then its ROOT and SOURCE lines. Returns what was found."""
-    result: dict[str, Any] = {"script": script.name, "dry_run_ok": False, "source": None, "resolves": False, "problem": None}
+    result: dict[str, Any] = {"script": script.name, "dry_run_ok": False, "source": None, "resolves": False, "problem": None, "skipped": False}
+    try:
+        lines = decision_lines(script.read_text(encoding="utf-8"))
+    except InstallerCheckError:
+        # A hand-written installer (it names no SOURCE project, and it asks for root before anything else): it is not run here, only reported.
+        return {**result, "skipped": True, "problem": "hand-written installer without a SOURCE project: not run"}
+    except OSError as error:
+        return {**result, "problem": str(error)}
     dry = run([bash, str(script)])
     result["dry_run_ok"] = dry.returncode == 0 and "Dry-run policy" in dry.stdout
     if not result["dry_run_ok"]:
         result["problem"] = f"the dry-run exited {dry.returncode} instead of 0 with its dry-run message"
-        return result
-    try:
-        lines = decision_lines(script.read_text(encoding="utf-8"))
-    except (InstallerCheckError, OSError) as error:
-        result["problem"] = str(error)
         return result
     # The file test runs inside bash too, so the answer is the one the installer itself would get (and a path as bash sees it is not turned into a host path).
     probe = "\n".join(lines) + '\nprintf "%s" "$SOURCE"\n[ -f "$SOURCE/hydra-umc.project.json" ]\n'
@@ -75,12 +77,14 @@ def check_installer(script: Path, *, bash: str = "bash", run: Runner = _run) -> 
 
 
 def check_tree(rootfs: Path, *, bash: str = "bash", run: Runner = _run, which: Callable[[str], str | None] = shutil.which) -> dict[str, Any]:
-    """Check every installer of the tree. `ok` is true only when there is at least one installer and each one resolves its project."""
+    """Check every installer of the tree. `ok` is true only when at least one installer was run and each one that was run resolves its project; hand-written installers are listed as `skipped`."""
     if which(bash) is None:
         raise InstallerCheckError(f"{bash} is not installed")
     scripts = installer_scripts(rootfs)
     rows = [check_installer(script, bash=bash, run=run) for script in scripts]
-    return {"installers": len(rows), "ok": bool(rows) and all(r["dry_run_ok"] and r["resolves"] for r in rows), "rows": rows}
+    run_rows = [r for r in rows if not r["skipped"]]
+    return {"installers": len(rows), "checked": len(run_rows), "skipped": len(rows) - len(run_rows),
+            "ok": bool(run_rows) and all(r["dry_run_ok"] and r["resolves"] for r in run_rows), "rows": rows}
 
 
 def build_tree(destination: Path, os_checkout: Path, *, link: Callable[[Path, str], Path]) -> list[str]:

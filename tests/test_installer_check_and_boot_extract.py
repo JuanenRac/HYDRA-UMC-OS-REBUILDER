@@ -79,6 +79,13 @@ def test_a_source_that_does_not_exist_is_reported_with_its_path(tmp_path: Path) 
     assert row["dry_run_ok"] is True and row["resolves"] is False and "does not resolve" in row["problem"]
 
 
+def test_a_hand_written_installer_is_listed_as_skipped_and_never_run(tmp_path: Path) -> None:
+    script = tmp_path / "install_hand.sh"
+    script.write_text("#!/usr/bin/env bash\n[[ $EUID -eq 0 ]] || exit 2\nROOT=/x\n", encoding="utf-8")
+    row = installer_check.check_installer(script, run=lambda c: pytest.fail("must not run"))
+    assert row["skipped"] is True and row["resolves"] is False and "not run" in row["problem"]
+
+
 def test_the_installers_resolve_their_project_through_the_links_of_the_tree(tmp_path: Path) -> None:
     bash = _real_bash()
     if bash is None:
@@ -91,7 +98,7 @@ def test_the_installers_resolve_their_project_through_the_links_of_the_tree(tmp_
         pytest.skip("this host cannot make links")
     assert names == ["HYDRA-UMC-OS", "HYDRA-UMC-DEMO"]
     report = installer_check.check_tree(tree, bash=bash)
-    assert report["installers"] == 2 and report["ok"] is True
+    assert report["installers"] == 2 and report["checked"] == 2 and report["skipped"] == 0 and report["ok"] is True
     assert all(row["resolves"] for row in report["rows"])
 
 

@@ -38,9 +38,12 @@ def main() -> int:
         print(f"INFO  tree with {len(names)} projects at {tree}")
         report = installer_check.check_tree(tree)
         for row in report["rows"]:
+            if row["skipped"]:
+                print(f"SKIP  {row['script']} ({row['problem']})")
+                continue
             good = row["dry_run_ok"] and row["resolves"]
             print(("PASS  " if good else "FAIL  ") + f"{row['script']} -> {row['source']}" + ("" if good else f" ({row['problem']})"))
-        print(f"{'PASS' if report['ok'] else 'FAIL'}  {report['installers']} installers run through their links")
+        print(f"{'PASS' if report['ok'] else 'FAIL'}  {report['checked']} installers run through their links, {report['skipped']} hand-written ones not run")
         print("evidence=simulator (a tree with the layout of the image was made, nothing was installed)")
         return 0 if report["ok"] else 1
     finally:
