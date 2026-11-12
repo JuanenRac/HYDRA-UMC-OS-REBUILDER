@@ -124,7 +124,7 @@ Ersteinrichtung.
 
 ## 🧩 Rolle in HYDRA-UMC
 
-**HYDRA-UMC-OS-REBUILDER** baut ein frisches CM5-Image, auf dem die aktuelle Version jedes Ökosystem-Projekts schon liegt, und schreibt die Einstellungen für den ersten Start (WLAN, Benutzer, Hostname, SSH), bevor das Image geflasht wird. Die Plattformschicht, die dieses Image trägt, beschreibt `HYDRA-UMC-OS`.
+**HYDRA-UMC-OS-REBUILDER** baut ein frisches CM5-Image, auf dem die aktuelle Version jedes Ökosystem-Projekts schon liegt, und schreibt die Einstellungen für den ersten Start (WLAN, Benutzer, Hostname, SSH), bevor das Image geflasht wird. Die Plattformschicht, die dieses Image trägt, beschreibt `HYDRA-UMC-OS`. Das Image, das es baut, ist das des CM5-Pilotprüfstands; ein Image für die Zielplattform NVIDIA Jetson Orin NX 16 GB ist noch nicht definiert, und dafür wurde nichts gebaut.
 
 ## 🏛️ Architektur
 

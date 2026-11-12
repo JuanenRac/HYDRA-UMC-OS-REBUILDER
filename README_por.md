@@ -119,7 +119,7 @@ Estado do ecossistema, Construir imagem e Configuração de primeiro arranque.
 
 ## 🧩 Papel no HYDRA-UMC
 
-O **HYDRA-UMC-OS-REBUILDER** constrói uma imagem nova da CM5 com a versão atual de cada projeto do ecossistema já incluída, e escreve as definições do primeiro arranque (Wi-Fi, utilizador, nome do anfitrião, SSH) antes de a imagem ser gravada. A camada de plataforma que essa imagem leva é descrita pelo `HYDRA-UMC-OS`.
+O **HYDRA-UMC-OS-REBUILDER** constrói uma imagem nova da CM5 com a versão atual de cada projeto do ecossistema já incluída, e escreve as definições do primeiro arranque (Wi-Fi, utilizador, nome do anfitrião, SSH) antes de a imagem ser gravada. A camada de plataforma que essa imagem leva é descrita pelo `HYDRA-UMC-OS`. A imagem que constrói é a do banco piloto com a CM5; uma imagem para a plataforma objetivo NVIDIA Jetson Orin NX de 16 GB ainda não está definida e nada foi construído para ela.
 
 ## 🏛️ Arquitetura
 

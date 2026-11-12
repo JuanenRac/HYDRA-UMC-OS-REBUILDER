@@ -124,7 +124,7 @@ Primo Avvio.
 
 ## 🧩 Ruolo in HYDRA-UMC
 
-**HYDRA-UMC-OS-REBUILDER** costruisce una nuova immagine della CM5 con la versione attuale di ogni progetto dell'ecosistema già inclusa, e scrive le impostazioni del primo avvio (Wi-Fi, utente, nome host, SSH) prima di scrivere l'immagine. Lo strato di piattaforma che l'immagine porta è descritto da `HYDRA-UMC-OS`.
+**HYDRA-UMC-OS-REBUILDER** costruisce una nuova immagine della CM5 con la versione attuale di ogni progetto dell'ecosistema già inclusa, e scrive le impostazioni del primo avvio (Wi-Fi, utente, nome host, SSH) prima di scrivere l'immagine. Lo strato di piattaforma che l'immagine porta è descritto da `HYDRA-UMC-OS`. L'immagine che costruisce è quella del banco pilota CM5; un'immagine per la piattaforma di destinazione NVIDIA Jetson Orin NX da 16 GB non è ancora definita e nulla è stato costruito per essa.
 
 ## 🏛️ Architettura
 

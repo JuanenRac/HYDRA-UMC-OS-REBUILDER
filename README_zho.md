@@ -111,7 +111,7 @@ HYDRA-UMC-UPDATER 相同的视觉语言（相同的深色调色板、字体排�
 
 ## 🧩 在 HYDRA-UMC 中的角色
 
-**HYDRA-UMC-OS-REBUILDER** 构建一个全新的 CM5 镜像，镜像中已包含生态系统各项目的当前版本，并在写入镜像之前写好首次启动设置（Wi-Fi、用户、主机名、SSH）。该镜像所携带的平台层由 `HYDRA-UMC-OS` 描述。
+**HYDRA-UMC-OS-REBUILDER** 构建一个全新的 CM5 镜像，镜像中已包含生态系统各项目的当前版本，并在写入镜像之前写好首次启动设置（Wi-Fi、用户、主机名、SSH）。该镜像所携带的平台层由 `HYDRA-UMC-OS` 描述。它构建的镜像属于 CM5 试验台；面向目标平台 NVIDIA Jetson Orin NX 16 GB 的镜像尚未定义，也没有为其构建任何东西。
 
 ## 🏛️ 架构
 
