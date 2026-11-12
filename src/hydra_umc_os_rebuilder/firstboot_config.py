@@ -69,9 +69,19 @@ class FirstBootConfig:
     # refuses that config, rather than silently building an image nobody
     # can get into, remotely or physically.
     acknowledge_no_remote_access: bool = False
+    # Names of installers of HYDRA-UMC-OS (`install_server.sh`, ...) that the first boot runs with `--apply` from the links of the image. Empty by default: the image
+    # then holds checkouts and nothing is installed or enabled until an operator chooses to. Whether a first boot should install by default is the owner's decision.
+    run_installers: tuple[str, ...] = ()
+
+
+_INSTALLER_NAME_RE = re.compile(r"^install_[a-z0-9_]+\.sh$")
+INSTALLER_DIRECTORY = "/opt/hydra-umc/src/HYDRA-UMC-OS/provisioning"
 
 
 def _validate(config: FirstBootConfig) -> None:
+    for name in config.run_installers:
+        if not _INSTALLER_NAME_RE.fullmatch(name):
+            raise FirstBootConfigError(f"invalid installer name: {name!r}")
     if config.hostname is not None and not _HOSTNAME_RE.fullmatch(config.hostname):
         raise FirstBootConfigError(f"invalid hostname: {config.hostname!r}")
     if config.username is not None and not _USERNAME_RE.fullmatch(config.username):
@@ -237,6 +247,11 @@ def build_firstrun_script(config: FirstBootConfig) -> str:
                 f"chmod 600 \"/home/{config.username}/.ssh/authorized_keys\"",
                 f"chown {_sh_quote(config.username)}:{_sh_quote(config.username)} \"/home/{config.username}/.ssh/authorized_keys\"",
             ]
+
+    if config.run_installers:
+        lines += ["", "# Installers of HYDRA-UMC-OS the operator asked to run on the first boot (one failing does not stop the next)."]
+        for name in config.run_installers:
+            lines.append(f"{INSTALLER_DIRECTORY}/{name} --apply || echo \"installer {name} failed\" >&2")
 
     lines += [
         "",

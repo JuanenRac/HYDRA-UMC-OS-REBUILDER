@@ -11,6 +11,7 @@
   "boot_test": {
     "enabled": false, "qemu_binary": "qemu-system-aarch64", "machine": "virt", "cpu": "cortex-a72", "memory_mb": 2048,
     "timeout_seconds": 300, "ssh_port": 2222, "ready_markers": ["login:"], "failure_markers": ["Kernel panic", "VFS: Unable to mount root"],
-    "verify_over_ssh": false, "ssh_user": "", "verify_command": "provisioning/verify_cm5_runtime.sh --json"
+    "verify_over_ssh": false, "ssh_user": "", "verify_command": "provisioning/verify_cm5_runtime.sh --json",
+    "extract_kernel": false, "kernel_name": "kernel8.img", "dtb_name": ""
   }
 }

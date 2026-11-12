@@ -41,6 +41,7 @@ DEFAULTS: dict[str, Any] = {
         "timeout_seconds": 300, "ssh_port": 2222, "ready_markers": ["login:"],
         "failure_markers": ["Kernel panic", "VFS: Unable to mount root"],
         "verify_over_ssh": False, "ssh_user": "", "verify_command": "provisioning/verify_cm5_runtime.sh --json",
+        "extract_kernel": False, "kernel_name": "kernel8.img", "dtb_name": "",
     },
 }
 

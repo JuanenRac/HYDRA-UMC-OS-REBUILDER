@@ -75,6 +75,7 @@ def _cmd_config(args: argparse.Namespace) -> int:
         keyboard_layout=args.keyboard,
         locale=args.locale,
         acknowledge_no_remote_access=args.acknowledge_no_remote_access,
+        run_installers=tuple(getattr(args, "run_installer", None) or ()),
     )
     patch = build_boot_partition_patch(config)
     out_dir = Path(args.out)
@@ -122,6 +123,7 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
             keyboard_layout=args.keyboard,
             locale=args.locale,
             acknowledge_no_remote_access=args.acknowledge_no_remote_access,
+            run_installers=tuple(getattr(args, "run_installer", None) or ()),
         )
 
     def progress(update) -> None:
@@ -285,6 +287,7 @@ def _cmd_profile_build(args: argparse.Namespace) -> int:
             keyboard_layout=args.keyboard,
             locale=args.locale,
             acknowledge_no_remote_access=args.acknowledge_no_remote_access,
+            run_installers=tuple(getattr(args, "run_installer", None) or ()),
         )
 
     def progress(update) -> None:
@@ -337,6 +340,7 @@ def build_parser() -> argparse.ArgumentParser:
     config_parser.add_argument("--password")
     config_parser.add_argument("--no-ssh", action="store_true", help="do not enable SSH (enabled by default)")
     config_parser.add_argument("--acknowledge-no-remote-access", action="store_true", help="opt into a config that disables SSH with no account configured either - see firstboot_config.py")
+    config_parser.add_argument("--run-installer", action="append", default=[], metavar="install_X.sh", help="run this installer of HYDRA-UMC-OS with --apply on the first boot (repeatable; off by default, nothing is installed unless asked)")
     config_parser.add_argument("--ssh-key", help="a public key to authorize for the new user")
     config_parser.add_argument("--wifi-ssid")
     config_parser.add_argument("--wifi-password")
@@ -357,6 +361,7 @@ def build_parser() -> argparse.ArgumentParser:
     build_parser_cmd.add_argument("--password")
     build_parser_cmd.add_argument("--no-ssh", action="store_true", help="do not enable SSH (enabled by default)")
     build_parser_cmd.add_argument("--acknowledge-no-remote-access", action="store_true", help="opt into a config that disables SSH with no account configured either - see firstboot_config.py")
+    build_parser_cmd.add_argument("--run-installer", action="append", default=[], metavar="install_X.sh", help="run this installer of HYDRA-UMC-OS with --apply on the first boot (repeatable; off by default, nothing is installed unless asked)")
     build_parser_cmd.add_argument("--ssh-key", help="a public key to authorize for the new user")
     build_parser_cmd.add_argument("--wifi-ssid")
     build_parser_cmd.add_argument("--wifi-password")
@@ -442,6 +447,7 @@ def build_parser() -> argparse.ArgumentParser:
     profile_build_parser.add_argument("--password")
     profile_build_parser.add_argument("--no-ssh", action="store_true", help="do not enable SSH (enabled by default)")
     profile_build_parser.add_argument("--acknowledge-no-remote-access", action="store_true", help="opt into a config that disables SSH with no account configured either - see firstboot_config.py")
+    profile_build_parser.add_argument("--run-installer", action="append", default=[], metavar="install_X.sh", help="run this installer of HYDRA-UMC-OS with --apply on the first boot (repeatable; off by default, nothing is installed unless asked)")
     profile_build_parser.add_argument("--ssh-key", help="a public key to authorize for the new user")
     profile_build_parser.add_argument("--wifi-ssid")
     profile_build_parser.add_argument("--wifi-password")

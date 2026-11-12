@@ -1,0 +1,49 @@
+# =============================================================================
+# HYDRA-UMC-OS-REBUILDER - Installers of HYDRA-UMC-OS against the tree of an image (manual)
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+# =============================================================================
+# Started by hand only (workflow_dispatch): it never runs on a push or a pull request, so it cannot turn the checks of a push red.
+#
+# Checks out the OS repository, lays out a tree like the one the image builder makes (the checkouts under /opt/hydra-umc and the capital-letter links under
+# /opt/hydra-umc/src) and runs every installer of the OS repository through its link: the dry-run each script promises and the lines that decide where its project must be.
+# Nothing is installed (no --apply, no root) and nothing is uploaded. It is a tree with the layout of the image, not an image.
+
+name: Installers against the tree of an image (manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: installer-tree
+  cancel-in-progress: false
+
+jobs:
+  installers:
+    name: run the installers through their links
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out this repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: rebuilder
+          persist-credentials: false
+      - name: Check out the OS repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ github.repository_owner }}/HYDRA-UMC-OS
+          path: os
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.12"
+      - name: Run the installers through the links
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 rebuilder/tools/installer_tree_check.py --os os | tee "$RUNNER_TEMP/tree.log"
+          { echo "### Installers of the OS repository against a tree laid out like an image"; echo '```'; cat "$RUNNER_TEMP/tree.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"

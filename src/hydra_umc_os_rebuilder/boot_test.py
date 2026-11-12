@@ -12,6 +12,7 @@
 # =============================================================================
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 from collections.abc import Callable
@@ -23,7 +24,7 @@ class BootTestError(ValueError):
     """A boot test that cannot be planned."""
 
 
-def qemu_command(image: Path, config: dict[str, Any], *, kernel: Path | None = None) -> list[str]:
+def qemu_command(image: Path, config: dict[str, Any], *, kernel: Path | None = None, dtb: Path | None = None) -> list[str]:
     """The QEMU command line for `image`. Serial goes to stdio; the SSH port of the guest is forwarded to the host's 127.0.0.1."""
     options = config["boot_test"]
     if not image.name:
@@ -37,7 +38,59 @@ def qemu_command(image: Path, config: dict[str, Any], *, kernel: Path | None = N
     ]
     if kernel is not None:
         command += ["-kernel", str(kernel), "-append", "root=/dev/vda2 rootwait console=ttyAMA0"]
+        if dtb is not None:
+            command += ["-dtb", str(dtb)]
     return command
+
+
+_FAT_TYPES = {"c", "b", "e", "0c", "0b", "0e", "ebd0a0a2-b9e5-4433-87c0-68b6b72699c7"}
+
+
+def boot_partition_offset(sfdisk_json: str) -> int:
+    """The byte offset of the first FAT partition (the boot partition) in the `sfdisk --json` listing of an image."""
+    try:
+        table = json.loads(sfdisk_json)["partitiontable"]
+        sector = int(table.get("sectorsize", 512))
+        for part in table["partitions"]:
+            if str(part.get("type", "")).lower() in _FAT_TYPES:
+                return int(part["start"]) * sector
+    except (ValueError, KeyError, TypeError, AttributeError) as error:
+        raise BootTestError(f"the partition table of the image cannot be read: {error}") from error
+    raise BootTestError("the image has no FAT boot partition")
+
+
+Runner = Callable[[list[str]], str]
+
+
+def _run(command: list[str]) -> str:
+    done = subprocess.run(command, capture_output=True, text=True, check=False, stdin=subprocess.DEVNULL)
+    if done.returncode != 0:
+        raise BootTestError(f"{command[0]} failed: {(done.stderr or done.stdout).strip()[:200]}")
+    return done.stdout
+
+
+def extract_boot_files(image: Path, destination: Path, config: dict[str, Any], *, run: Runner = _run,
+                       which: Callable[[str], str | None] = shutil.which) -> dict[str, Path | None]:
+    """Copy the kernel (and, when named, the device tree) out of the boot partition of `image` with mtools, without mounting anything.
+
+    Needs `sfdisk` and `mcopy`; a name that is not on the partition stops the test with a clear message instead of a QEMU that cannot start.
+    """
+    options = config["boot_test"]
+    for tool in ("sfdisk", "mcopy"):
+        if which(tool) is None:
+            raise BootTestError(f"{tool} is not installed")
+    offset = boot_partition_offset(run(["sfdisk", "--json", str(image)]))
+    destination.mkdir(parents=True, exist_ok=True)
+    found: dict[str, Path | None] = {"kernel": None, "dtb": None}
+    for key, name in (("kernel", str(options["kernel_name"])), ("dtb", str(options["dtb_name"]))):
+        if not name:
+            continue
+        if "/" in name or "\\" in name or name.startswith("."):
+            raise BootTestError(f"{name!r} is not a file name of the boot partition")
+        target = destination / name
+        run(["mcopy", "-n", "-i", f"{image}@@{offset}", f"::{name}", str(target)])
+        found[key] = target
+    return found
 
 
 def read_boot_log(text: str, config: dict[str, Any]) -> dict[str, Any]:
@@ -77,7 +130,8 @@ def _launch(command: list[str], timeout: float) -> str:
         return out.decode("utf-8", "replace") if isinstance(out, bytes) else (out or "")
 
 
-def run_boot_test(image: Path, config: dict[str, Any], *, launch: Launcher = _launch, which: Callable[[str], str | None] = shutil.which) -> dict[str, Any]:
+def run_boot_test(image: Path, config: dict[str, Any], *, launch: Launcher = _launch, which: Callable[[str], str | None] = shutil.which,
+                  run: Runner = _run) -> dict[str, Any]:
     """Boot the image in QEMU and read the serial log. Skipped (not passed) when switched off or QEMU is missing."""
     options = config["boot_test"]
     result: dict[str, Any] = {"command": qemu_command(image, config)}
@@ -87,5 +141,15 @@ def run_boot_test(image: Path, config: dict[str, Any], *, launch: Launcher = _la
         return {**result, "state": "skipped", "reason": f"{options['qemu_binary']} is not installed"}
     if not image.is_file():
         return {**result, "state": "skipped", "reason": f"{image} does not exist"}
+    if options.get("extract_kernel"):
+        import tempfile
+        with tempfile.TemporaryDirectory(prefix="hydra-boot-") as scratch:
+            try:
+                files = extract_boot_files(image, Path(scratch), config, run=run, which=which)
+            except BootTestError as error:
+                return {**result, "state": "skipped", "reason": str(error)}
+            result["command"] = qemu_command(image, config, kernel=files["kernel"], dtb=files["dtb"])
+            log = launch(result["command"], float(options["timeout_seconds"]))
+        return {**result, **read_boot_log(log, config)}
     log = launch(result["command"], float(options["timeout_seconds"]))
     return {**result, **read_boot_log(log, config)}
