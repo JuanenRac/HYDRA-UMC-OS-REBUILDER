@@ -41,9 +41,17 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.12"
+      - name: Install the updater the builder depends on (the version pinned in pyproject.toml)
+        shell: bash
+        working-directory: rebuilder
+        run: |
+          set -euo pipefail
+          pin="$(grep -o 'git+https[^"]*' pyproject.toml | head -n 1)"
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --quiet "hydra-umc-updater @ $pin"
       - name: Run the installers through the links
         shell: bash
         run: |
           set -euo pipefail
-          python3 rebuilder/tools/installer_tree_check.py --os os | tee "$RUNNER_TEMP/tree.log"
+          "$RUNNER_TEMP/venv/bin/python" rebuilder/tools/installer_tree_check.py --os os | tee "$RUNNER_TEMP/tree.log"
           { echo "### Installers of the OS repository against a tree laid out like an image"; echo '```'; cat "$RUNNER_TEMP/tree.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
