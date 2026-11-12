@@ -268,7 +268,6 @@ HYDRA-UMC-OS-REBUILDER/
   `firstrun.sh` 路径并存。
 - 增量镜像更新（在现有 `.img` 上打补丁而非完全重建），一旦出现超出从零
   构建的真实需求即实现。
-- 为 `status` 提供 `--json` 输出模式，便于脚本化使用。
 - 独立打包的图形界面可执行文件（PyInstaller），遵循与
   HYDRA-UMC-SUITE 自身 `build_exe.bat`/`.sh` 相同的约定，实现无需
   `pip`/venv 步骤的双击安装。

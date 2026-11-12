@@ -328,7 +328,6 @@ HYDRA-UMC-OS-REBUILDER/
 - Incremental image updates (patch an existing `.img` in place instead of
   a full rebuild) once there is a real need for it beyond a from-scratch
   build.
-- A `--json` output mode for `status`, for scripting against it.
 - Packaged standalone GUI executable (PyInstaller), matching
   HYDRA-UMC-SUITE's own `build_exe.bat`/`.sh` convention, for a
   double-click install with no `pip`/venv step.
