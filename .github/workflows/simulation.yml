@@ -1,0 +1,70 @@
+# =============================================================================
+# HYDRA-UMC-OS-REBUILDER - Simulation bench and coverage floor
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+#
+# Runs the image pipeline, the first-boot files, the release and golden-image commands, the profile signing and the boot test against fakes only
+# (no loop device, no QEMU, no board, no network): the build is replaced by a recorder, QEMU by a launcher that prints a serial log, GitHub by a
+# fixed plan. A second job measures the coverage of the program with a floor that must not go down. It runs on every push and pull request and by hand.
+# =============================================================================
+name: Simulation bench
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulation:
+    name: Pipeline against fakes
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Install the program and its test dependencies
+        run: python -m pip install ".[dev,signing]"
+      - name: Run the pipeline scenarios
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+          PYTHONPATH: src
+        run: >
+          python -m pytest -q
+          tests/test_image_builder.py
+          tests/test_pipeline_guards.py
+          tests/test_chroot_and_remote.py
+          tests/test_installer_check_and_boot_extract.py
+          tests/test_golden_image.py
+          tests/test_cli_commands.py
+          tests/test_language_hostkeys_boot_edges.py
+
+  coverage:
+    name: Coverage floor of the program
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Install the program and its test dependencies
+        run: python -m pip install ".[dev,signing]" coverage==7.17.0
+      - name: Measure the coverage
+        env:
+          PYTHONPATH: src
+        run: |
+          python -m coverage run --source=src -m pytest tests -q
+          python -m coverage report -m --fail-under=80

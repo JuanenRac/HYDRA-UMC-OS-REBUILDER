@@ -4,6 +4,10 @@
 
 All notable changes to this project are documented here.
 
+- **More tests of the command line, the language choice, the host key store and the boot test, and a simulation bench with a coverage floor:** `tests/test_cli_commands.py` (35 tests) runs every command through `main()` with the build itself replaced by a recorder: the first-boot files, the image build and the options it hands to the builder, the profile freeze, diff, update and resources, the signing round trip (a changed manifest is refused), `profile-build` signed and unsigned (a signed file is never rewritten), the release manifest, signature and verification, the golden image (a replacement only on request, a tampered image refused), the cache and the boot test. `tests/test_language_hostkeys_boot_edges.py` (41 tests) covers how the language of the window is chosen and saved, the pinned host keys (a changed key is refused, a refused key is never pinned, a seeded set of random keys) and the boot test with a launcher that prints a serial log. The new workflow "Simulation bench" runs the pipeline scenarios on their own and a job measures the coverage with a floor that must not go down.
+
+- **A saved-language file that holds a list or a number no longer stops the window from opening:** it is read as no saved choice, like a file that is not JSON.
+
 ## [0.3.7] - **README: the platform statement:** the description says what this project serves today (the CM5 pilot bench) and that the target platform of HYDRA-UMC, an NVIDIA Jetson Orin NX 16 GB, is a design that has not been built or tested.
 - The installers of HYDRA-UMC-OS are run through the links of an image tree: `tools/installer_tree_check.py` (and the manual workflow `installer-tree.yml`) lays out a tree like the one the builder makes (the OS checkout, one stub project per installer, the capit
 
