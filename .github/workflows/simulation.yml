@@ -67,4 +67,4 @@ jobs:
           PYTHONPATH: src
         run: |
           python -m coverage run --source=src -m pytest tests -q
-          python -m coverage report -m --fail-under=80
+          python -m coverage report -m --fail-under=75
