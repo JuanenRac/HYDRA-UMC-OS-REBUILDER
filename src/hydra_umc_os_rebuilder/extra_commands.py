@@ -14,7 +14,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from . import artifact_cache, boot_test, build_backends, build_config, golden_image, release_channel
+from . import artifact_cache, boot_test, build_backends, build_config, golden_delta, golden_image, release_channel
 from .profile_signing import ProfileSigningError
 
 
@@ -52,6 +52,17 @@ def add_parsers(sub: "argparse._SubParsersAction[argparse.ArgumentParser]") -> N
     golden_check.add_argument("--store", required=True)
     golden_check.add_argument("--trusted-key", default="")
     golden_check.add_argument("--minimum-version", default="")
+    delta = with_config(sub.add_parser("delta-create", help="write a signed delta that turns an older image into a newer one (only the changed blocks)"))
+    delta.add_argument("--base", required=True)
+    delta.add_argument("--target", required=True)
+    delta.add_argument("--store", required=True, help="folder for delta.json, delta.bin and the signature")
+    delta.add_argument("--key-file", required=True)
+    delta.add_argument("--block-size", type=int, default=golden_delta.DEFAULT_BLOCK)
+    delta_apply = with_config(sub.add_parser("delta-apply", help="rebuild the newer image from the older one and a signed delta; every hash is checked before the output is written"))
+    delta_apply.add_argument("--base", required=True)
+    delta_apply.add_argument("--store", required=True)
+    delta_apply.add_argument("--output", required=True)
+    delta_apply.add_argument("--trusted-key", default="")
     boot = with_config(sub.add_parser("boot-test", help="boot the image in QEMU and read the serial log (skipped when off or QEMU is missing)"))
     boot.add_argument("--image", required=True)
 
@@ -126,6 +137,19 @@ def _cmd_golden_verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_delta_create(args: argparse.Namespace) -> int:
+    record = golden_delta.create(Path(args.base), Path(args.target), Path(args.store), args.key_file, block_size=args.block_size)
+    print(f"DELTA_CREATED record={record}")
+    return 0
+
+
+def _cmd_delta_apply(args: argparse.Namespace) -> int:
+    config = build_config.load_config(args.config)
+    key = args.trusted_key or str(config["release_channel"]["trusted_key"])
+    print("DELTA_APPLIED " + json.dumps(golden_delta.apply(Path(args.base), Path(args.store), key, Path(args.output)), sort_keys=True))
+    return 0
+
+
 def _cmd_boot_test(args: argparse.Namespace) -> int:
     result = boot_test.run_boot_test(Path(args.image), build_config.load_config(args.config))
     print(json.dumps(result, indent=2, sort_keys=True))
@@ -141,6 +165,8 @@ HANDLERS: dict[str, Callable[[argparse.Namespace], int]] = {
     "release-verify": _cmd_release_verify,
     "golden-register": _cmd_golden_register,
     "golden-verify": _cmd_golden_verify,
+    "delta-create": _cmd_delta_create,
+    "delta-apply": _cmd_delta_apply,
     "boot-test": _cmd_boot_test,
 }
 
@@ -150,7 +176,7 @@ def run(args: argparse.Namespace) -> int:
     try:
         return HANDLERS[args.command](args)
     except (
-        build_config.BuildConfigError, build_backends.BackendError, artifact_cache.CacheError, release_channel.ReleaseError, golden_image.GoldenError,
+        build_config.BuildConfigError, build_backends.BackendError, artifact_cache.CacheError, release_channel.ReleaseError, golden_image.GoldenError, golden_delta.DeltaError,
         boot_test.BootTestError, ProfileSigningError, OSError,
     ) as error:
         print(f"{args.command.upper().replace('-', '_')}_FAILED error={error}", file=sys.stderr)
