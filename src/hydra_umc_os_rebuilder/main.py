@@ -19,6 +19,7 @@ import sys
 from pathlib import Path
 
 from . import __version__, extra_commands
+from .corpus_delivery import CORPUS_PUBKEY_ENV
 from .ecosystem_plan import _fetch_commit_sha, fetch_ecosystem_plan, plan_summary_lines
 from .firstboot_config import FirstBootConfig, WifiConfig, build_boot_partition_patch
 from .image_builder import DEFAULT_PROJECT_TIMEOUT_SECONDS
@@ -140,6 +141,8 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
         grow_mb=args.grow_mb,
         public_image=args.public_image,
         compress=args.compress,
+        corpus_bundle=Path(args.corpus_bundle) if args.corpus_bundle else None,
+        corpus_public_key=args.corpus_public_key or os.environ.get(CORPUS_PUBKEY_ENV) or None,
     )
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
@@ -394,6 +397,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="build an image meant to be distributed: refuse a first-boot configuration and also scan the boot partition and "
         "the installed projects (.env files, generated data) for credentials; off by default",
+    )
+    build_parser_cmd.add_argument(
+        "--corpus-bundle",
+        default=None,
+        help="put a signed documentation corpus in the image: corpus-<release>.json with its .sha256 and .sig next to it; the signature is verified against "
+        "--corpus-public-key before anything is downloaded, and an unsigned, altered or foreign-signed corpus stops the build; off unless given",
+    )
+    build_parser_cmd.add_argument(
+        "--corpus-public-key",
+        default=None,
+        help="the public key of the release signature (64 hexadecimal characters, or a file with them); or set HYDRA_UMC_OS_REBUILDER_CORPUS_PUBKEY",
     )
 
     # freeze/diff/update/build a named, persisted, tested combination
