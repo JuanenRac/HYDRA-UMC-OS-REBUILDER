@@ -497,3 +497,20 @@ def test_the_failure_line_is_named_after_the_command(monkeypatch, capsys) -> Non
     code = extra_commands.run(argparse.Namespace(command="cache-status"))
     assert code == 1
     assert capsys.readouterr().err.strip() == "CACHE_STATUS_FAILED error=disk gone"
+
+
+def test_delta_create_and_apply_round_trip_and_refusals(tmp_path, capsys) -> None:
+    private, public = _keys(tmp_path, capsys)
+    base, target = tmp_path / "old.img", tmp_path / "new.img"
+    base.write_bytes(bytes(range(256)) * 8)
+    target.write_bytes(bytes(range(256)) * 7 + b"changed tail bytes" * 20)
+    store = tmp_path / "delta"
+    code, out, _ = _run(capsys, "delta-create", "--base", str(base), "--target", str(target), "--store", str(store), "--key-file", str(private), "--block-size", "512")
+    assert code == 0 and out.startswith("DELTA_CREATED record=")
+    rebuilt = tmp_path / "rebuilt.img"
+    code, out, _ = _run(capsys, "delta-apply", "--base", str(base), "--store", str(store), "--output", str(rebuilt), "--trusted-key", public)
+    assert code == 0 and out.startswith("DELTA_APPLIED ") and rebuilt.read_bytes() == target.read_bytes()
+    code, _, err = _run(capsys, "delta-apply", "--base", str(target), "--store", str(store), "--output", str(tmp_path / "x.img"), "--trusted-key", public)
+    assert code == 1 and err.startswith("DELTA_APPLY_FAILED")
+    code, _, err = _run(capsys, "delta-create", "--base", str(tmp_path / "none"), "--target", str(target), "--store", str(tmp_path / "d2"), "--key-file", str(private))
+    assert code == 1 and err.startswith("DELTA_CREATE_FAILED")
