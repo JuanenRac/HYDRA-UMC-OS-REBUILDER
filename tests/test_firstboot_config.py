@@ -55,7 +55,7 @@ def test_username_with_an_empty_string_password_is_rejected() -> None:
     # `password is None` alone let "" through - build_firstrun_
     # script()'s own user-creation block gates on the truthy `if
     # username and password:`, under which "" is just as falsy as None,
-    # so this used to pass validation and then have its entire user
+    # so it must not pass validation and then have its entire user
     # setup silently dropped from the generated script at build time.
     with pytest.raises(FirstBootConfigError):
         build_firstrun_script(FirstBootConfig(username="hydra_umc", password=""))

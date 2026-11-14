@@ -91,8 +91,8 @@ def _validate(config: FirstBootConfig) -> None:
     # block (below, and the ssh_authorized_key check right after this
     # one) gates on the truthy `if config.username and config.password:`,
     # under which an empty string is just as falsy as None. A username
-    # set with password="" used to pass validation cleanly, then have
-    # its entire user/SSH-key setup silently dropped from the generated
+    # set with password="" must not pass validation: its entire
+    # user/SSH-key setup would be silently dropped from the generated
     # script at build time - the operator believing an account (however
     # weakly protected) was configured when none was created at all.
     if config.username is not None and not config.password:

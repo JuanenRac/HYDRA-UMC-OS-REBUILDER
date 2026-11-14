@@ -313,7 +313,7 @@ ApplicationWindow {
         onAccepted: remoteKeyPathField.text = selectedFile.toString().replace("file:///", "")
     }
 
-    // First-Boot Config, moved into its own dialog (used to be a 3rd tab) -
+    // First-Boot Config, in its own dialog (not a tab) -
     // opened from a button next to Build Image, since building a real image
     // is naturally the action this config feeds into (buildImage() below
     // reads these same field ids directly, dialog or not - QML id scoping
@@ -561,7 +561,7 @@ ApplicationWindow {
             }
 
             // -- Ecosystem Status - the real project list, always visible,
-            // no longer hidden behind a tab. -----------------------------
+            // not hidden behind a tab. -----------------------------
             SectionPanel {
                 SplitView.fillWidth: true
                 SplitView.fillHeight: true
@@ -840,11 +840,11 @@ ApplicationWindow {
                 }
             }
 
-            // -- Build Log - its own column to the right, per real user
-            // feedback (previously crammed under the Build Image controls).
+            // -- Build Log - its own column to the right, not crammed
+            // under the Build Image controls.
             SectionPanel {
-                // Same real 25%-of-Ecosystem-Status redistribution as
-                // the Build Image column above (+150 each) - was 300.
+                // Same 25%-of-Ecosystem-Status redistribution as
+                // the Build Image column above (+150 each).
                 SplitView.preferredWidth: 450
                 SplitView.minimumWidth: 200
                 SplitView.fillHeight: true

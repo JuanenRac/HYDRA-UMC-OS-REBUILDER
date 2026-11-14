@@ -324,10 +324,10 @@ def fetch_base_image(source: BaseImageSource, dest_dir: Path, *, chunk_size: int
 # the target rootfs (no network/CPU speed guarantee on every real host this
 # tool could run against), but finite - a single hung/misbehaving
 # submodule (a stalled `git clone`, a chroot build.sh stuck on an
-# interactive prompt it should never emit) used to be able to hang an
+# interactive prompt it should never emit) could otherwise hang an
 # entire image build forever, indistinguishable from real progress until
 # the operator gave up waiting. `None` (via `--project-timeout-seconds 0`
-# at the CLI) still opts back into the old, unlimited behavior for a
+# at the CLI) still opts into an unlimited run for a
 # project known to need longer.
 DEFAULT_PROJECT_TIMEOUT_SECONDS: float = 1800.0
 
@@ -593,13 +593,12 @@ def build_image(
             uncompressed_size = _xz_uncompressed_size(image_path)
             if uncompressed_size is not None:
                 _require_free_space(work_dir, uncompressed_size, f"decompressing {image_path.name}")
-            # Real fix for a real failure this session: this used to pass -k
-            # (keep the compressed source), so a successful decompress left
-            # BOTH the .xz and the full raw .img sitting in work_dir for the
-            # rest of the build - on a host as space-constrained as the real
-            # CM5, that's the difference between the mount/install phase that
-            # follows having room to work and it not. Dropping -k means xz
-            # removes the now-redundant .xz itself once decompression
+            # No -k (keep the compressed source): with it, a successful
+            # decompress would leave BOTH the .xz and the full raw .img
+            # sitting in work_dir for the rest of the build - on a host as
+            # space-constrained as the real CM5, that's the difference
+            # between the mount/install phase that follows having room to
+            # work and it not. Without -k, xz removes the now-redundant .xz itself once decompression
             # succeeds (never before - a failed decompress still leaves the
             # real source in place to retry from).
             _run("xz", "-d", "-f", str(image_path))
@@ -648,24 +647,19 @@ def build_image(
             # `_install_one_project` raising
             # `ImageBuildError` (a missing commit SHA, a diverged
             # version, a missing required resource - every one a REAL,
-            # already-tested refusal) used to propagate straight past
-            # this whole function - the `finally` block's own real
-            # umount/losetup cleanup still ran, but `build_image()`
-            # itself never returned the documented `BuildResult` its own
-            # signature promises; it raised instead, past every real
-            # caller. `main.py`'s own CLI command had no try/except
-            # around this call at all, so a mid-build failure (or an
-            # equivalent cancellation raised from inside `progress()`)
-            # crashed the whole CLI with a raw traceback instead of the
-            # documented `BUILD_FAILED error=...` exit-1 path -
-            # `qt_gui.py`'s own worker thread already caught this
-            # defensively, which is what surfaced the CLI never did.
-            # Caught here now, same as a cleanup failure or a leaked
-            # secret already were: reported as a real, honest
-            # `BuildResult(ok=False, ...)`, installed(so-far)
+            # already-tested refusal) is caught here, not propagated past
+            # this whole function: `build_image()` must return the
+            # documented `BuildResult` its own signature promises, because
+            # `main.py`'s own CLI command has no try/except around this
+            # call, so a mid-build failure (or an equivalent cancellation
+            # raised from inside `progress()`) would crash the whole CLI
+            # with a raw traceback instead of the documented
+            # `BUILD_FAILED error=...` exit-1 path. It is handled like a
+            # cleanup failure or a leaked secret: reported as a real,
+            # honest `BuildResult(ok=False, ...)`, installed(so-far)
             # preserved, the raw image never promoted - and the loop
-            # stops, so the `finally` block's own cleanup still runs
-            # exactly as before.
+            # stops, so the `finally` block's own umount/losetup cleanup
+            # still runs.
             try:
                 real_version = _install_one_project(entry, rootfs_mount, timeout_seconds=project_timeout_seconds, sdk_commit_sha=plan.sdk_commit_sha)
             except (ImageBuildError, subprocess.CalledProcessError) as exc:
@@ -725,11 +719,11 @@ def build_image(
 
         report("unmount")
     finally:
-        # `check=False` here used to let a real umount/
-        # losetup failure pass silently - the function went on to
+        # `check=False` here would let a real umount/
+        # losetup failure pass silently - the function would go on to
         # promote (move + report ok=True) an image whose own loop device
-        # or mount could still be active. Every real exit code and
-        # stderr is captured now, and a failure here stops promotion
+        # or mount could still be active. So every real exit code and
+        # stderr is captured, and a failure here stops promotion
         # entirely (see below) instead of being swallowed.
         cleanup_errors: list[str] = list(chroot_env.unmount()) if "chroot_env" in locals() else []
         for label, command in (
@@ -1115,13 +1109,13 @@ def _install_one_project(entry, rootfs_mount: Path, *, timeout_seconds: float | 
     # itself failing to revert).
     _run("git", "-C", str(target), "checkout", "--", ".", timeout=timeout_seconds)
     installed_version = _read_real_installed_version(target, entry.name)
-    # Real, honest safety net kept from, not removed: if the
+    # Safety net: if the
     # restore above somehow left the version genuinely diverged (a
     # project keeping its version in a path its own .gitignore excludes,
     # or a real git failure the checkout call's own check=True didn't
     # already raise on), this still refuses rather than installing an
-    # unplanned version - it just no longer fires on the ordinary case a
-    # real build.sh always used to trigger.
+    # unplanned version - it does not fire on the ordinary case a
+    # real build.sh always triggers.
     if installed_version != entry.version:
         raise ImageBuildError(
             f"{entry.name}: pinned commit {entry.commit_sha} was planned at version {entry.version!r} "
