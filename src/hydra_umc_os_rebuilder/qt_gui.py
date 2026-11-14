@@ -41,7 +41,7 @@ _REMOTE_LOG_LINE_RE = re.compile(r"^\[(?P<phase>[\w-]+)\]\s*(?P<detail>.*)$")
 # Real, conservative pre-flight floor for RebuilderBridge._start_remote_build's
 # own disk-space check, in KB (df --output=avail's own unit) - covers a real
 # base image download (~1GB compressed), its own decompressed size
-# (historically 3-4x that), and every ecosystem project's own cloned source
+# (typically 3-4x that), and every ecosystem project's own cloned source
 # tree. Deliberately generous rather than exact: the real, precise check
 # against the base image's own live Content-Length/uncompressed size already
 # happens later, inside image_builder.py's own _require_free_space() once
@@ -477,19 +477,19 @@ class RebuilderBridge(QObject):
                 self._buildProgress.emit(BuildProgress(phase="", detail=line))
 
         def worker() -> None:
-            # Real bug fixed here, found live: `import paramiko` and
-            # SSHClient() construction used to happen BEFORE the try block
-            # below - on a real machine where the `gui` extra's own
-            # paramiko dependency was installed before this remote-build
-            # feature existed (an older `pip install -e .[gui]`, never
-            # rerun), a missing paramiko raised straight out of this
-            # thread with NOTHING catching it: no _buildResult signal ever
-            # fires, buildBusy stays true forever (the UI just looks
-            # permanently "stuck"), and a background thread's own
-            # uncaught exception does NOT go through sys.excepthook either
-            # - Python's default threading.excepthook only ever prints it
-            # to a stderr this GUI has no console for. Now inside the
-            # real try/except below, and _setup_file_logging() also
+            # `import paramiko` and SSHClient() construction sit inside the
+            # try block below, not before it: on a real machine where the
+            # `gui` extra's own paramiko dependency was installed before
+            # this remote-build feature existed (an older
+            # `pip install -e .[gui]`, never rerun), a missing paramiko
+            # would raise straight out of this thread with NOTHING catching
+            # it: no _buildResult signal would ever fire, buildBusy would
+            # stay true forever (the UI just looks permanently "stuck"),
+            # and a background thread's own uncaught exception does NOT go
+            # through sys.excepthook either - Python's default
+            # threading.excepthook only ever prints it to a stderr this GUI
+            # has no console for. So the import sits inside the real
+            # try/except below, and _setup_file_logging() also
             # installs a real threading.excepthook so this class of bug
             # is never silent again, whatever actually throws next time.
             remote_tmp = ""
@@ -567,7 +567,7 @@ class RebuilderBridge(QObject):
                 # image) minutes later once the base image download/
                 # decompress actually ran out of real disk. `_MIN_REMOTE_FREE_KB`
                 # is a real, conservative, documented floor (base image
-                # download ~1GB + its own decompressed size, historically
+                # download ~1GB + its own decompressed size, typically
                 # 3-4x that, + every ecosystem project's own cloned source
                 # tree) - a fast, cheap, EARLY sanity gate, not a
                 # replacement for `_require_free_space()`'s own more

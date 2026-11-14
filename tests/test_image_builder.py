@@ -111,9 +111,9 @@ def test_fetch_reference_sha256_raises_on_garbage_content(fixture_server: str) -
 def test_fetch_base_image_verifies_against_the_real_sidecar_when_pinned_hash_is_empty(
     fixture_server: str, tmp_path: Path
 ) -> None:
-    # Real bug this covers: BaseImageSource.sha256 == "" used to make the
-    # OLD verification check (`if source.sha256 and ...`) skip entirely -
-    # this must now actually fetch and check against the real sidecar.
+    # BaseImageSource.sha256 == "" must not make the verification check
+    # (`if source.sha256 and ...`) skip entirely -
+    # it must actually fetch and check against the real sidecar.
     source = BaseImageSource(label="fixture", url=f"{fixture_server}/image.img", sha256="")
     dest = fetch_base_image(source, tmp_path)
     assert dest.read_bytes() == _FixtureHandler.image_bytes

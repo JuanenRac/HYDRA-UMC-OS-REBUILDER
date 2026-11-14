@@ -101,10 +101,10 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
     source = KNOWN_BASE_IMAGES[0]
 
     # Real first-boot config, threaded into the actual build - same flags
-    # as the standalone `config` subcommand above. Previously always
-    # `firstboot=None` here: the `config` subcommand could only ever write
-    # a firstrun.sh to a directory disconnected from the actual image
-    # build, so a real build never carried the hostname/user/Wi-Fi the
+    # as the standalone `config` subcommand above. Passing `firstboot=None`
+    # always would leave the `config` subcommand writing a firstrun.sh to a
+    # directory disconnected from the actual image
+    # build, so a real build would never carry the hostname/user/Wi-Fi the
     # operator configured. `--hostname`/`--username`/... are all optional
     # (matching `config`'s own behavior) - omit every one and this stays
     # `firstboot=None`, an image with no first-boot customisation at all.
