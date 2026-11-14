@@ -50,6 +50,8 @@ def _load_saved_lang() -> str | None:
 
     try:
         data = json.loads(_CONFIG_PATH.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return None  # a file that holds a list or a number is not a saved choice
         lang = data.get("lang")
         return lang if lang in _LANG_CODES else None
     except (OSError, ValueError):

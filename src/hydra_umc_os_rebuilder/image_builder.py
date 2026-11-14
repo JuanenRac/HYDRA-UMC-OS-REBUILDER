@@ -37,6 +37,7 @@ import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from .corpus_delivery import CorpusDeliveryError, install_signed_corpus, verify_signed_corpus
 from .ecosystem_plan import EcosystemPlan
 from .firstboot_config import BootPartitionPatch, FirstBootConfig, FirstBootConfigError, build_boot_partition_patch
 
@@ -530,6 +531,8 @@ def build_image(
     grow_mb: int = 0,
     public_image: bool = False,
     compress: bool = False,
+    corpus_bundle: Path | None = None,
+    corpus_public_key: str | None = None,
 ) -> BuildResult:
     """The real end-to-end pipeline. `progress`, if given, is called with a
     BuildProgress at each real phase transition - never a fake percentage,
@@ -554,6 +557,15 @@ def build_image(
             ok=False,
             error="a public image cannot carry a first-boot configuration (firstrun.sh holds the Wi-Fi password and the account hash): build it without one",
         )
+    verified_corpus = None
+    if corpus_bundle is not None:
+        # A documentation corpus goes into the image only if the release signature verifies against the trusted public key; this runs before anything is downloaded or mounted.
+        if not corpus_public_key:
+            return BuildResult(ok=False, error="a documentation corpus needs the public key of the release signature (--corpus-public-key): an unchecked corpus is not put in an image")
+        try:
+            verified_corpus = verify_signed_corpus(corpus_bundle, corpus_public_key)
+        except CorpusDeliveryError as exc:
+            return BuildResult(ok=False, error=f"the documentation corpus was refused: {exc}")
     check = check_build_platform()
     if not check.ok:
         return BuildResult(ok=False, error=check.reason, platform_check=check)
@@ -693,6 +705,13 @@ def build_image(
                 write_deploy_record(rootfs_mount, installed)
             except (ImageBuildError, OSError) as exc:
                 install_error = f"the deployment record of the image: {exc}"
+
+        if install_error is None and verified_corpus is not None:
+            report("corpus", f"corpus {verified_corpus.release}, signature verified")
+            try:
+                install_signed_corpus(rootfs_mount, verified_corpus)
+            except (CorpusDeliveryError, OSError) as exc:
+                install_error = f"the documentation corpus: {exc}"
 
         if install_error is None:
             if firstboot is not None:
