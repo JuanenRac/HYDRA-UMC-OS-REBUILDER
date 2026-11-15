@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **The SDK pin and the shared tools are up to date:** the SDK dependency names the newest release tag, and the shared tools are the canonical copies again.
+
 All notable changes to this project are documented here.
 
 - **A signed documentation corpus can go into an image (`build-image --corpus-bundle FILE --corpus-public-key KEY`, off unless given):** the corpus built in CI by HYDRA-UMC-DEV-SERVER and signed with the release key (`corpus-<release>.json` with its `.sha256` and `.sig`) is checked against the trusted public key before anything is downloaded or mounted; an unsigned, altered, foreign-signed, mis-named or non-corpus file, or a corpus given without a key, stops the build, and a good one is copied to `/opt/hydra-umc/docs-qa/corpus/` with a record and the public key so the service checks the same signature on the device. The image holds no private key. `tests/test_corpus_delivery.py` (10 tests, throw-away keys) covers each refusal and the copy.
