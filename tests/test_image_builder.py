@@ -1095,3 +1095,39 @@ def test_an_installer_of_another_contract_is_not_offered(tmp_path: Path) -> None
     _plan_table(tmp_path, [{"script": "install_server.sh", "source": "HYDRA-UMC-SERVER", "target": "/opt/hydra-umc/server", "unit": "u.service", "contract": 2, "deploy_exempt": None}], supported=1)
     record = json.loads(write_deploy_record(tmp_path, ["HYDRA-UMC-SERVER@1.0.0#sha256:aa"]).read_text(encoding="utf-8"))
     assert record["projects"][0]["deployable"] is False and record["projects"][0]["contract"] == 2
+
+
+def test_build_image_runs_the_commands_of_the_platform_in_the_chroot_and_stops_at_the_first_that_fails(
+    fixture_server: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import subprocess
+
+    monkeypatch.setattr(image_builder_module, "check_build_platform", lambda: PlatformCheck(True))
+    monkeypatch.setattr(image_builder_module, "_wait_for_partitions", lambda *_a, **_k: None)
+    succeeding_target = tmp_path / "work" / "mnt" / "rootfs" / "opt" / "hydra-umc" / "hydra-umc-server"
+    inner_run, run_calls = _install_pipeline_fake_run(succeeding_target)
+
+    def fake_run(*command, **kwargs):
+        if command[0] == "chroot" and "apt-get" in command:
+            raise subprocess.CalledProcessError(100, list(command))
+        return inner_run(*command, **kwargs)
+
+    monkeypatch.setattr(image_builder_module, "_run", fake_run)
+    monkeypatch.setattr(image_builder_module.subprocess, "run", _fake_subprocess_run([]))
+    output_path = tmp_path / "out" / "x.img"
+    phases: list[str] = []
+    result = build_image(
+        source=BaseImageSource(label="fixture", url=f"{fixture_server}/image.img", sha256=""),
+        plan=EcosystemPlan(entries=(_entry(name="HYDRA-UMC-SERVER", version="1.0.0", commit_sha="c" * 40),), discovery_errors=()),
+        firstboot=None,
+        work_dir=tmp_path / "work",
+        output_path=output_path,
+        progress=lambda update: phases.append(update.phase),
+        platform_commands=(("apt-get", "install", "-y", "nvidia-jetpack"), ("systemctl", "enable", "nvpmodel.service")),
+    )
+    assert result.ok is False
+    assert "the platform command 'apt-get install -y nvidia-jetpack'" in result.error
+    assert not output_path.exists()
+    assert "platform" in phases and "secret-scan" not in phases
+    chroot_calls = [c for c in run_calls if c and c[0] == "chroot"]
+    assert not any("systemctl" in c for c in chroot_calls), "nothing runs after the command that failed"

@@ -17,12 +17,16 @@ import json
 import os
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from . import __version__, extra_commands
+from . import __version__, build_config, extra_commands, platforms
 from .corpus_delivery import CORPUS_PUBKEY_ENV
 from .ecosystem_plan import _fetch_commit_sha, fetch_ecosystem_plan, plan_summary_lines
 from .firstboot_config import FirstBootConfig, WifiConfig, build_boot_partition_patch
 from .image_builder import DEFAULT_PROJECT_TIMEOUT_SECONDS
+
+if TYPE_CHECKING:
+    from .image_builder import BaseImageSource
 from .profile_manifest import (
     ProfileManifestError,
     diff_profile,
@@ -90,15 +94,19 @@ def _cmd_config(args: argparse.Namespace) -> int:
 
 
 def _cmd_build_image(args: argparse.Namespace) -> int:
-    from .image_builder import KNOWN_BASE_IMAGES, build_image, check_build_platform
+    from .image_builder import build_image, check_build_platform
 
     check = check_build_platform()
     if not check.ok:
         print(f"BUILD_BLOCKED reason={check.reason}", file=sys.stderr)
         return 1
 
+    try:
+        source, platform_commands = _platform_base(args)
+    except (build_config.BuildConfigError, platforms.PlatformError) as error:
+        print(f"BUILD_BLOCKED reason={error}", file=sys.stderr)
+        return 1
     plan = fetch_ecosystem_plan(owner=args.owner)
-    source = KNOWN_BASE_IMAGES[0]
 
     # Real first-boot config, threaded into the actual build - same flags
     # as the standalone `config` subcommand above. Passing `firstboot=None`
@@ -143,12 +151,32 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
         compress=args.compress,
         corpus_bundle=Path(args.corpus_bundle) if args.corpus_bundle else None,
         corpus_public_key=args.corpus_public_key or os.environ.get(CORPUS_PUBKEY_ENV) or None,
+        platform_commands=platform_commands,
     )
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
         return 1
     print(f"BUILD_OK output={result.output_path} installed={','.join(result.installed)}")
     return 0
+
+
+def _platform_base(args: argparse.Namespace) -> tuple[BaseImageSource, tuple[tuple[str, ...], ...]]:
+    """The base image and the commands of the platform of a build. `cm5` (the default) is the Raspberry Pi OS image this tool has always built from, with no command added; any other platform
+    needs the base image to be given with its SHA-256 (there is no list of known images for it, and no checksum is ever fetched from the same place as the image), and its packages and units
+    are installed in the chroot after the projects."""
+    from .image_builder import KNOWN_BASE_IMAGES, BaseImageSource
+
+    config = build_config.load_config(getattr(args, "config", None))
+    if getattr(args, "platform", None):
+        config["platform"] = {**config["platform"], "name": args.platform}
+    build_config.check_platform(config)
+    declaration = platforms.selected(config)
+    url, digest = getattr(args, "base_image_url", None), getattr(args, "base_image_sha256", None)
+    if declaration["platform"] == platforms.DEFAULT_PLATFORM and not url:
+        return KNOWN_BASE_IMAGES[0], tuple(tuple(c) for c in platforms.platform_plan(config)["commands"])
+    if not url or not digest or len(digest) != 64 or any(ch not in "0123456789abcdef" for ch in digest):
+        raise platforms.PlatformError(f"the platform {declaration['platform']} needs --base-image-url and --base-image-sha256 (64 lower-case hexadecimal characters): " + declaration["base_image"]["source"])
+    return BaseImageSource(label=declaration["label"], url=url, sha256=digest), tuple(tuple(c) for c in platforms.platform_plan(config)["commands"])
 
 
 def _cmd_profile_freeze(args: argparse.Namespace) -> int:
@@ -355,6 +383,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     build_parser_cmd = sub.add_parser("build-image", help="build a ready-to-flash .img (Linux/root only)")
     build_parser_cmd.add_argument("--out", required=True, help="output .img path")
+    build_parser_cmd.add_argument("--config", help=f"options file (else {build_config.CONFIG_ENV}); its platform section chooses the platform")
+    build_parser_cmd.add_argument("--platform", choices=platforms.names(), help="build for this platform (default: the one of the configuration, cm5)")
+    build_parser_cmd.add_argument("--base-image-url", help="for a platform other than cm5: where the base image is (its source is described by build-plan --platform)")
+    build_parser_cmd.add_argument("--base-image-sha256", help="for a platform other than cm5: the SHA-256 of that image, 64 lower-case hexadecimal characters (required)")
     build_parser_cmd.add_argument("--work-dir", default="work", help="scratch directory for the download/mount/build steps")
     # Same real first-boot flags as the `config` subcommand above - all
     # optional, all threaded straight into the actual build (see

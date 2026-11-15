@@ -533,6 +533,7 @@ def build_image(
     compress: bool = False,
     corpus_bundle: Path | None = None,
     corpus_public_key: str | None = None,
+    platform_commands: tuple[tuple[str, ...], ...] = (),
 ) -> BuildResult:
     """The real end-to-end pipeline. `progress`, if given, is called with a
     BuildProgress at each real phase transition - never a fake percentage,
@@ -693,6 +694,15 @@ def build_image(
             except (ImageBuildError, OSError) as exc:
                 install_error = f"{entry.name}: {exc}"
                 break
+
+        if install_error is None and platform_commands:
+            report("platform", f"{len(platform_commands)} command(s) of the platform")
+            for command in platform_commands:
+                try:
+                    _run("chroot", str(rootfs_mount), "/usr/bin/env", "DEBIAN_FRONTEND=noninteractive", *command, timeout=project_timeout_seconds)
+                except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+                    install_error = f"the platform command {' '.join(command)!r}: {exc}"
+                    break
 
         if install_error is None:
             try:
