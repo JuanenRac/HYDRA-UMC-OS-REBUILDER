@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- **The image is planned for a platform: `cm5`, `jetson` or a generic `rk3588` (`platform.name`, `src/hydra_umc_os_rebuilder/platforms.py`, `build-plan --platform`):** each platform names the base image, the extra packages and the units, and the backends that can build it (the same table as `config/platforms` of HYDRA-UMC-OS, which a test compares when the two repositories are side by side). `cm5` is the default and adds nothing, so the pi-gen stage and the images of today are unchanged; `jetson` plans `nvidia-jetpack` and `nvpmodel.service` over the root file system of the JetPack in use; `rk3588` is generic and names no board. `platform.extra_packages` and `platform.extra_units` add to any platform and reach the pi-gen stage as `00-packages` and a unit script; pi-gen is refused for a platform that is not a Raspberry Pi. The plan runs nothing; no image was built for a Jetson or an RK3588, and the chroot build itself still takes the base image it is given.
 - **The SDK pin and the shared tools are up to date:** the SDK dependency names the newest release tag, and the shared tools are the canonical copies again.
 
 All notable changes to this project are documented here.
