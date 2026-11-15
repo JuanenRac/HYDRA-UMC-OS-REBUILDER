@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+
+## [0.3.8]
+
 - **`build-image --platform` chooses the base image by platform:** `cm5` (the default) keeps the known Raspberry Pi OS image and adds no command; `jetson` and the generic `rk3588` take the base image from `--base-image-url` with a required `--base-image-sha256` (no checksum is fetched from the place the image comes from), and the packages and units of the platform, with `platform.extra_packages` and `platform.extra_units`, are installed in the chroot after the projects, stopping at the first command that fails so the image is never promoted. Tested with the builder and the downloads doubled; the partition layout is still that of a Raspberry Pi image, and no image was built for a Jetson or an RK3588.
 
 - **The image is planned for a platform: `cm5`, `jetson` or a generic `rk3588` (`platform.name`, `src/hydra_umc_os_rebuilder/platforms.py`, `build-plan --platform`):** each platform names the base image, the extra packages and the units, and the backends that can build it (the same table as `config/platforms` of HYDRA-UMC-OS, which a test compares when the two repositories are side by side). `cm5` is the default and adds nothing, so the pi-gen stage and the images of today are unchanged; `jetson` plans `nvidia-jetpack` and `nvpmodel.service` over the root file system of the JetPack in use; `rk3588` is generic and names no board. `platform.extra_packages` and `platform.extra_units` add to any platform and reach the pi-gen stage as `00-packages` and a unit script; pi-gen is refused for a platform that is not a Raspberry Pi. The plan runs nothing; no image was built for a Jetson or an RK3588, and the chroot build itself still takes the base image it is given.
@@ -16,6 +19,8 @@ All notable changes to this project are documented here.
 - **More tests of the command line, the language choice, the host key store and the boot test, and a simulation bench with a coverage floor:** `tests/test_cli_commands.py` (35 tests) runs every command through `main()` with the build itself replaced by a recorder: the first-boot files, the image build and the options it hands to the builder, the profile freeze, diff, update and resources, the signing round trip (a changed manifest is refused), `profile-build` signed and unsigned (a signed file is never rewritten), the release manifest, signature and verification, the golden image (a replacement only on request, a tampered image refused), the cache and the boot test. `tests/test_language_hostkeys_boot_edges.py` (41 tests) covers how the language of the window is chosen and saved, the pinned host keys (a changed key is refused, a refused key is never pinned, a seeded set of random keys) and the boot test with a launcher that prints a serial log. The new workflow "Simulation bench" runs the pipeline scenarios on their own and a job measures the coverage with a floor that must not go down.
 
 - **A saved-language file that holds a list or a number no longer stops the window from opening:** it is read as no saved choice, like a file that is not JSON.
+
+- Build version synchronized with `hydra-umc.project.json` and the repository-native version source.
 
 ## [0.3.7] - **README: the platform statement:** the description says what this project serves today (the CM5 pilot bench) and that the target platform of HYDRA-UMC, an NVIDIA Jetson Orin NX 16 GB, is a design that has not been built or tested.
 - The installers of HYDRA-UMC-OS are run through the links of an image tree: `tools/installer_tree_check.py` (and the manual workflow `installer-tree.yml`) lays out a tree like the one the builder makes (the OS checkout, one stub project per installer, the capit
