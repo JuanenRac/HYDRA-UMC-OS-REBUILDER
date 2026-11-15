@@ -14,12 +14,15 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
 from pathlib import Path
 from typing import Any
 
 CONFIG_ENV = "HYDRA_UMC_OS_REBUILDER_CONFIG"
 FORMAT = "hydra-rebuilder-config/1"
 BACKENDS = ("chroot", "nspawn", "pigen")
+_PACKAGE = re.compile(r"[a-z0-9][a-z0-9+.\-]{1,63}")
+_UNIT = re.compile(r"[A-Za-z0-9:_.\\@-]{1,100}\.(service|timer|socket|path)")
 
 DEFAULTS: dict[str, Any] = {
     "format": FORMAT,
@@ -31,6 +34,7 @@ DEFAULTS: dict[str, Any] = {
             "locale": "en_GB.UTF-8", "timezone": "Europe/Madrid",
         },
     },
+    "platform": {"name": "cm5", "extra_packages": [], "extra_units": []},
     "artifact_cache": {"enabled": False, "directory": "", "max_gb": 4},
     "secrets": {"allow_password_argument": False},
     "release_channel": {
@@ -74,6 +78,22 @@ def _merge(base: dict[str, Any], override: dict[str, Any], where: str) -> dict[s
     return merged
 
 
+def check_platform(config: dict[str, Any]) -> None:
+    """The platform must exist, its extra packages and units must be plain names, and the backend must be able to build it."""
+    from . import platforms  # here and not at the top: that module does not import this one, but this keeps the import order free
+
+    options = config["platform"]
+    if options["name"] not in platforms.PLATFORMS:
+        raise BuildConfigError(f"platform.name must be one of {', '.join(platforms.names())}")
+    for key, pattern in (("extra_packages", _PACKAGE), ("extra_units", _UNIT)):
+        if not all(isinstance(item, str) and pattern.fullmatch(item) for item in options[key]) or len(set(options[key])) != len(options[key]):
+            raise BuildConfigError(f"platform.{key} must be a list of distinct plain names")
+    try:
+        platforms.check_backend(platforms.get(options["name"]), config["build_backend"]["name"])
+    except platforms.PlatformError as error:
+        raise BuildConfigError(str(error)) from error
+
+
 def load_config(path: str | os.PathLike[str] | None = None) -> dict[str, Any]:
     """The options, with the defaults for whatever the file leaves out."""
     chosen = str(path) if path else os.environ.get(CONFIG_ENV, "")
@@ -91,4 +111,5 @@ def load_config(path: str | os.PathLike[str] | None = None) -> dict[str, Any]:
     config = _merge(DEFAULTS, data, "")
     if config["build_backend"]["name"] not in BACKENDS:
         raise BuildConfigError(f"build_backend.name must be one of {', '.join(BACKENDS)}")
+    check_platform(config)
     return config

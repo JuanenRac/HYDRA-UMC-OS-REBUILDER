@@ -17,6 +17,8 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from . import platforms
+
 _SAFE_NAME = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-")
 _HEX = set("0123456789abcdef")
 
@@ -78,7 +80,16 @@ def pigen_stage_files(projects: dict[str, str], config: dict[str, Any]) -> dict[
         if len(commit) < 7 or any(ch not in _HEX for ch in commit):
             raise BackendError(f"{name}: {commit!r} is not a commit")
         lines.append(f'cp -a "files/{name}" "${{ROOTFS_DIR}}/opt/hydra-umc/src/{name}"  # {commit}')
+    declaration = platforms.selected(config)
+    extra: dict[str, str] = {}
+    if declaration["packages"] or declaration["remove_packages"]:
+        # the packages of the platform, in the form pi-gen reads (one name per line; a name with a leading '-' is removed by the stage)
+        extra[f"{stage}/01-platform/00-packages"] = "".join(f"{name}\n" for name in declaration["packages"])
+    if declaration["units"]:
+        enable = [f'on_chroot systemctl {"enable" if unit["enable"] else "disable"} {unit["name"]}' for unit in declaration["units"]]
+        extra[f"{stage}/02-platform-units/00-run.sh"] = "\n".join(["#!/bin/bash -e", *enable]) + "\n"
     return {
+        **extra,
         f"{stage}/prerun.sh": '#!/bin/bash -e\n[ -d "${ROOTFS_DIR}" ] || copy_previous\n',
         f"{stage}/00-checkouts/00-run.sh": "\n".join(lines) + "\n",
         f"{stage}/EXPORT_IMAGE": 'IMG_SUFFIX=""\n',
@@ -104,7 +115,11 @@ def write_pigen_stage(directory: Path, projects: dict[str, str], config: dict[st
 def plan_backend(config: dict[str, Any], projects: dict[str, str], *, rootfs: Path | None = None) -> dict[str, Any]:
     """What the chosen backend would do and what is missing on this host; nothing is run or written."""
     name = str(config["build_backend"]["name"])
-    plan: dict[str, Any] = {"backend": name, "runs_anything": False, "missing_tools": []}
+    try:
+        platforms.check_backend(platforms.selected(config), name)
+    except platforms.PlatformError as error:
+        raise BackendError(str(error)) from error
+    plan: dict[str, Any] = {"backend": name, "runs_anything": False, "missing_tools": [], "platform": platforms.platform_plan(config)}
     if name == "nspawn":
         binary = str(config["build_backend"]["nspawn"]["binary"])
         plan["command"] = nspawn_command(rootfs or Path("<rootfs>"), ["/bin/true"], config)

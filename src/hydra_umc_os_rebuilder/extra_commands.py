@@ -14,7 +14,7 @@ import sys
 from collections.abc import Callable
 from pathlib import Path
 
-from . import artifact_cache, boot_test, build_backends, build_config, golden_delta, golden_image, release_channel
+from . import artifact_cache, boot_test, build_backends, build_config, golden_delta, golden_image, platforms, release_channel
 from .profile_signing import ProfileSigningError
 
 
@@ -26,6 +26,7 @@ def add_parsers(sub: "argparse._SubParsersAction[argparse.ArgumentParser]") -> N
     plan = with_config(sub.add_parser("build-plan", help="show what the chosen build backend (chroot, nspawn, pi-gen) would do; runs nothing"))
     plan.add_argument("--project", action="append", default=[], metavar="NAME=COMMIT", help="a project and its commit (repeatable)")
     plan.add_argument("--write-pigen-stage", metavar="DIR", help="write the files of the pi-gen stage into this new folder")
+    plan.add_argument("--platform", choices=platforms.names(), help="plan for this platform instead of the one of the configuration (cm5, jetson or the generic rk3588)")
     with_config(sub.add_parser("cache-status", help="show the artifact cache"))
     with_config(sub.add_parser("cache-prune", help="remove the least recently used cache entries beyond the size limit"))
     manifest = with_config(sub.add_parser("release-manifest", help="write release.json for a finished image"))
@@ -77,6 +78,9 @@ def _projects(items: list[str]) -> dict[str, str]:
 
 def _cmd_build_plan(args: argparse.Namespace) -> int:
     config = build_config.load_config(args.config)
+    if args.platform:
+        config["platform"] = {**config["platform"], "name": args.platform}
+        build_config.check_platform(config)
     projects = _projects(args.project)
     plan = build_backends.plan_backend(config, projects)
     if args.write_pigen_stage:
