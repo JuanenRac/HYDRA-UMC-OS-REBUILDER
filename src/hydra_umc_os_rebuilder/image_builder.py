@@ -630,18 +630,26 @@ def build_image(
             leftover.unlink(missing_ok=True)
         return BuildResult(ok=False, error=str(exc))
     try:
-        _wait_for_partitions(loop_dev)
-        _run("mount", f"{loop_dev}p1", str(boot_mount))
-        _run("mount", f"{loop_dev}p2", str(rootfs_mount))
-
         installed: list[str] = []
         install_error: str | None = None
         secret_findings: list[str] = []
+        # What was really mounted: a mount that failed is not unmounted again below (that would only add a second, misleading error).
+        mounted_partitions: list[tuple[str, Path]] = []
         chroot_env = ChrootEnvironment(rootfs_mount)
         try:
-            chroot_env.mount()
-        except ImageBuildError as exc:
-            install_error = str(exc)
+            _wait_for_partitions(loop_dev)
+            _run("mount", f"{loop_dev}p1", str(boot_mount))
+            mounted_partitions.append(("umount boot", boot_mount))
+            _run("mount", f"{loop_dev}p2", str(rootfs_mount))
+            mounted_partitions.append(("umount rootfs", rootfs_mount))
+        except (ImageBuildError, subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+            # a partition that never appears or does not mount is a failed build, reported as one, never an exception out of this function
+            install_error = f"the image could not be mounted: {exc}"
+        if install_error is None:
+            try:
+                chroot_env.mount()
+            except ImageBuildError as exc:
+                install_error = str(exc)
         report("install", f"{len(plan)} ecosystem project(s)")
         for entry in (plan.entries if install_error is None else ()):
             report("install", entry.name)
@@ -737,8 +745,7 @@ def build_image(
         # entirely (see below) instead of being swallowed.
         cleanup_errors: list[str] = list(chroot_env.unmount()) if "chroot_env" in locals() else []
         for label, command in (
-            ("umount boot", ["umount", str(boot_mount)]),
-            ("umount rootfs", ["umount", str(rootfs_mount)]),
+            *((label, ["umount", str(mount_point)]) for label, mount_point in mounted_partitions),
             ("losetup -d", ["losetup", "-d", loop_dev]),
         ):
             result = subprocess.run(command, check=False, capture_output=True, text=True)

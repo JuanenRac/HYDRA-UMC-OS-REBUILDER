@@ -44,6 +44,7 @@ jobs:
           tests/test_chroot_and_remote.py
           tests/test_installer_check_and_boot_extract.py
           tests/test_golden_image.py
+          tests/test_simulation_faults.py
           tests/test_cli_commands.py
           tests/test_language_hostkeys_boot_edges.py
 
