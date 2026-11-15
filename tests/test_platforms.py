@@ -147,3 +147,62 @@ def test_the_command_refuses_a_platform_the_chosen_backend_cannot_build(tmp_path
     file.write_text(json.dumps({"build_backend": {"name": "pigen"}}), encoding="utf-8")
     assert main_module.main(["--cli", "build-plan", "--config", str(file), "--platform", "jetson"]) == 1
     assert "BUILD_PLAN_FAILED" in capsys.readouterr().err
+
+
+# ---- build-image chooses the base image by platform ----------------------------------------------------------------------------------------------------
+
+def _build(monkeypatch, capsys, *argv: str):
+    from hydra_umc_os_rebuilder import image_builder
+
+    calls: list[dict] = []
+
+    def fake_build(**kwargs):
+        calls.append(kwargs)
+        return image_builder.BuildResult(ok=True, output_path=kwargs["output_path"], installed=())
+
+    monkeypatch.setattr(image_builder, "check_build_platform", lambda: image_builder.PlatformCheck(True, ""))
+    monkeypatch.setattr(image_builder, "build_image", fake_build)
+    from hydra_umc_os_rebuilder.ecosystem_plan import EcosystemPlan
+
+    monkeypatch.setattr(main_module, "fetch_ecosystem_plan", lambda owner: EcosystemPlan(entries=(), discovery_errors=()))
+    code = main_module.main(["--cli", "build-image", "--out", "x.img", *argv])
+    return code, calls, capsys.readouterr()
+
+
+def test_build_image_for_cm5_keeps_the_known_raspberry_pi_image_and_adds_no_command(monkeypatch, capsys) -> None:
+    from hydra_umc_os_rebuilder import image_builder
+
+    code, calls, _ = _build(monkeypatch, capsys)
+    assert code == 0 and calls[0]["source"] == image_builder.KNOWN_BASE_IMAGES[0] and calls[0]["platform_commands"] == ()
+
+
+def test_build_image_for_another_platform_needs_the_base_image_and_its_checksum(monkeypatch, capsys) -> None:
+    digest = "ab" * 32
+    code, calls, out = _build(monkeypatch, capsys, "--platform", "jetson")
+    assert code == 1 and not calls and "--base-image-url and --base-image-sha256" in out.err
+    for bad in ("zz" * 32, "ab" * 31, digest.upper()):
+        code, calls, out = _build(monkeypatch, capsys, "--platform", "jetson", "--base-image-url", "https://example.invalid/rootfs.img", "--base-image-sha256", bad)
+        assert code == 1 and not calls
+    code, calls, out = _build(monkeypatch, capsys, "--platform", "jetson", "--base-image-url", "https://example.invalid/rootfs.img", "--base-image-sha256", digest)
+    assert code == 0
+    source = calls[0]["source"]
+    assert (source.url, source.sha256, source.label) == ("https://example.invalid/rootfs.img", digest, platforms.PLATFORMS["jetson"]["label"])
+    assert calls[0]["platform_commands"] == (("apt-get", "install", "-y", "--no-install-recommends", "nvidia-jetpack"), ("systemctl", "enable", "nvpmodel.service"))
+
+
+def test_build_image_uses_the_platform_of_the_configuration_and_refuses_an_impossible_one(monkeypatch, capsys, tmp_path: Path) -> None:
+    file = tmp_path / "c.json"
+    file.write_text(json.dumps({"platform": {"name": "rk3588"}}), encoding="utf-8")
+    code, calls, _ = _build(monkeypatch, capsys, "--config", str(file), "--base-image-url", "https://example.invalid/d.img", "--base-image-sha256", "cd" * 32)
+    assert code == 0 and calls[0]["platform_commands"][0][:3] == ("apt-get", "install", "-y")
+    code, calls, out = _build(monkeypatch, capsys, "--config", str(tmp_path / "missing.json"))
+    assert code == 1 and "BUILD_BLOCKED" in out.err
+
+
+def test_the_cm5_platform_with_extra_packages_runs_them_on_the_known_image(monkeypatch, capsys, tmp_path: Path) -> None:
+    from hydra_umc_os_rebuilder import image_builder
+
+    file = tmp_path / "c.json"
+    file.write_text(json.dumps({"platform": {"extra_packages": ["htop"]}}), encoding="utf-8")
+    code, calls, _ = _build(monkeypatch, capsys, "--config", str(file))
+    assert code == 0 and calls[0]["source"] == image_builder.KNOWN_BASE_IMAGES[0] and calls[0]["platform_commands"] == (("apt-get", "install", "-y", "--no-install-recommends", "htop"),)
