@@ -697,11 +697,11 @@ def build_image(
 
         if install_error is None and platform_commands:
             report("platform", f"{len(platform_commands)} command(s) of the platform")
-            for command in platform_commands:
+            for platform_command in platform_commands:
                 try:
-                    _run("chroot", str(rootfs_mount), "/usr/bin/env", "DEBIAN_FRONTEND=noninteractive", *command, timeout=project_timeout_seconds)
+                    _run("chroot", str(rootfs_mount), "/usr/bin/env", "DEBIAN_FRONTEND=noninteractive", *platform_command, timeout=project_timeout_seconds)
                 except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
-                    install_error = f"the platform command {' '.join(command)!r}: {exc}"
+                    install_error = f"the platform command {' '.join(platform_command)!r}: {exc}"
                     break
 
         if install_error is None:
