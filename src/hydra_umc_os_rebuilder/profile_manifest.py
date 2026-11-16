@@ -150,9 +150,18 @@ def from_json(data: dict) -> ProfileManifest:
         raw_entries = data["entries"]
     except KeyError as exc:
         raise ProfileManifestError(f"malformed profile manifest: missing {exc}") from exc
+    sdk_commit_sha = data.get("sdk_commit_sha")
+    if sdk_commit_sha is not None and not re.fullmatch(r"[0-9a-f]{40}", str(sdk_commit_sha)):
+        raise ProfileManifestError("sdk_commit_sha must be a full 40-character commit hash")
     entries = []
     for raw in raw_entries:
         try:
+            if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", str(raw["name"])):
+                raise ProfileManifestError(f"{raw.get('name')}: name must be a plain project name (letters, digits, dot, dash, underscore)")
+            for resource in raw.get("required_resources", ()):
+                parts = str(resource).replace("\\", "/").split("/")
+                if not str(resource) or str(resource).startswith("/") or ".." in parts:
+                    raise ProfileManifestError(f"{raw.get('name')}: required_resources must be relative paths without ..")
             if not re.fullmatch(r"[0-9a-f]{40}", str(raw["commit_sha"])):
                 raise ProfileManifestError(f"{raw.get('name')}: commit_sha must be a full 40-character commit hash")
             if not re.fullmatch(r"https://github\.com/JuanenRac/[A-Za-z0-9._-]+(?:\.git)?", str(raw["git_url"])):
@@ -171,7 +180,7 @@ def from_json(data: dict) -> ProfileManifest:
             )
         except KeyError as exc:
             raise ProfileManifestError(f"malformed profile manifest entry: missing {exc}") from exc
-    return ProfileManifest(profile_name=profile_name, entries=tuple(entries), sdk_commit_sha=data.get("sdk_commit_sha"))
+    return ProfileManifest(profile_name=profile_name, entries=tuple(entries), sdk_commit_sha=sdk_commit_sha)
 
 
 def save_profile_manifest(manifest: ProfileManifest, path: Path) -> None:

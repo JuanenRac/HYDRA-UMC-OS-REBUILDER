@@ -18,7 +18,7 @@ from hydra_umc_os_rebuilder.profile_manifest import freeze_profile, load_profile
 @pytest.fixture(autouse=True)
 def _no_network_sdk_lookup(monkeypatch):
     """profile-freeze also resolves the SDK commit; never let a test reach GitHub."""
-    monkeypatch.setattr(main_module, "_fetch_commit_sha", lambda *a, **k: "sdk-sha-for-tests")
+    monkeypatch.setattr(main_module, "_fetch_commit_sha", lambda *a, **k: "5d" * 20)
 
 
 def test_status_command_parses() -> None:

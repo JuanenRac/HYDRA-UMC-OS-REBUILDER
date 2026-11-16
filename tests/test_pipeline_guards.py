@@ -135,6 +135,20 @@ def test_a_profile_file_cannot_hand_git_an_option_or_a_foreign_url() -> None:
         from_json(foreign)
 
 
+def test_a_profile_file_cannot_name_a_folder_outside_the_image_or_a_moving_sdk_reference() -> None:
+    good = to_json(freeze_profile(EcosystemPlan(entries=(_plan_entry(),), discovery_errors=()), profile_name="p"))
+    for name in ("../../../..", "a/b", "", "-x"):
+        with pytest.raises(ProfileManifestError, match="name"):
+            from_json({**good, "entries": [{**good["entries"][0], "name": name}]})
+    for sdk in ("main", "--upload-pack=evil", "abc"):
+        with pytest.raises(ProfileManifestError, match="sdk_commit_sha"):
+            from_json({**good, "sdk_commit_sha": sdk})
+    for resource in ("../x", "/etc/passwd", "a/../../x"):
+        with pytest.raises(ProfileManifestError, match="required_resources"):
+            from_json({**good, "entries": [{**good["entries"][0], "required_resources": [resource]}]})
+    assert from_json({**good, "sdk_commit_sha": "d" * 40}).sdk_commit_sha == "d" * 40
+
+
 _SOURCE = BaseImageSource(label="x", url="https://example.invalid/x.img.xz", sha256="")
 
 
