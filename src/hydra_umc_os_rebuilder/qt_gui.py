@@ -30,7 +30,7 @@ from .ecosystem_plan import EcosystemPlanEntry, fetch_ecosystem_plan
 from .firstboot_config import FirstBootConfig, WifiConfig
 from .ssh_hostkeys import HostKeyStore, make_policy
 from .image_builder import DEFAULT_PROJECT_TIMEOUT_SECONDS, BuildProgress, check_build_platform
-from .remote_install import remote_install_requirement
+from .remote_install import remote_install_requirement, stale_work_dirs
 
 # Matches the real "[phase] detail" lines the remote build's own CLI
 # progress() printer emits (main.py's _cmd_build_image) - see
@@ -603,13 +603,13 @@ class RebuilderBridge(QObject):
                 # headroom over a real base-image build's own real
                 # download+decompress+install time).
                 stale = run(
-                    f"find {shlex.quote(work_base)} -maxdepth 1 -name 'hydra-umc-os-rebuilder-build.*' -mmin +120",
+                    f"find {shlex.quote(work_base)} -maxdepth 1 -user \"$(id -un)\" -name 'hydra-umc-os-rebuilder-build.*' -mmin +120",
                     check=False,
                 )
-                if stale:
-                    stale_paths = [p for p in stale.splitlines() if p.strip()]
+                stale_paths = stale_work_dirs(stale, work_base) if stale else []
+                if stale_paths:
                     emit_line(f"[connect] removing {len(stale_paths)} real stale work dir(s) from a previous run: {', '.join(stale_paths)}")
-                    run(f"sudo rm -rf {' '.join(shlex.quote(p) for p in stale_paths)}", check=False)
+                    run(f"sudo rm -rf -- {' '.join(shlex.quote(p) for p in stale_paths)}", check=False)
 
                 remote_tmp = run(f"mktemp -d --tmpdir={shlex.quote(work_base)} hydra-umc-os-rebuilder-build.XXXXXXXXXX")
                 emit_line(f"[connect] {username}@{host}: Linux, sudo OK, workdir {remote_tmp}")

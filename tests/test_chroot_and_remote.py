@@ -119,3 +119,20 @@ def test_a_development_copy_or_a_bad_reference_is_refused_not_replaced_by_main()
 def test_the_environment_can_name_the_reference(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("HYDRA_UMC_REBUILDER_REMOTE_REF", "abc1234")
     assert remote_ref("0.0.0+unknown") == "abc1234"
+
+
+def test_only_the_work_folders_of_this_tool_are_taken_for_removal() -> None:
+    from hydra_umc_os_rebuilder.remote_install import stale_work_dirs
+
+    listing = "\n".join([
+        "/var/tmp/hydra-umc-os-rebuilder-build.AbC123xyz0",
+        "/var/tmp/hydra-umc-os-rebuilder-build.x",  # the first half of a name with a line break
+        ".ssh",  # the second half of it
+        "/var/tmp/other/hydra-umc-os-rebuilder-build.AbC123xyz0",
+        "/var/tmp/hydra-umc-os-rebuilder-build.a b",
+        "/etc/passwd",
+        "",
+    ])
+    assert stale_work_dirs(listing, "/var/tmp") == ["/var/tmp/hydra-umc-os-rebuilder-build.AbC123xyz0", "/var/tmp/hydra-umc-os-rebuilder-build.x"]
+    assert stale_work_dirs(listing, "/var/tmp/") == stale_work_dirs(listing, "/var/tmp")
+    assert ".ssh" not in stale_work_dirs(listing, "/var/tmp")
