@@ -33,6 +33,7 @@ from .profile_manifest import (
     freeze_profile,
     load_profile_manifest,
     manifest_to_ecosystem_plan,
+    parse_profile_manifest,
     record_build_result,
     refreeze_selected,
     save_profile_manifest,
@@ -229,19 +230,18 @@ def _cmd_profile_set_required_resources(args: argparse.Namespace) -> int:
     return 0
 
 
-def _check_profile_signature(args: argparse.Namespace, manifest_path: Path) -> bool:
-    """True when the manifest was verified; False when no signature was asked for. Raises when one was asked for and fails."""
+def _check_profile_signature(args: argparse.Namespace, manifest_path: Path) -> bytes | None:
+    """The bytes that were verified; None when no signature was asked for. Raises when one was asked for and fails."""
     from . import profile_signing
 
     if not profile_signing.signature_required(args.require_signed):
-        return False
+        return None
     trusted = args.trusted_key or os.environ.get(profile_signing.TRUSTED_KEY_ENV, "")
     if not trusted:
         raise profile_signing.ProfileSigningError(
             f"a signed profile was asked for but no trusted public key was given (--trusted-key or {profile_signing.TRUSTED_KEY_ENV})"
         )
-    profile_signing.verify_manifest(manifest_path, trusted)
-    return True
+    return profile_signing.verify_manifest(manifest_path, trusted)
 
 
 def _cmd_profile_keygen(args: argparse.Namespace) -> int:
@@ -296,7 +296,11 @@ def _cmd_profile_build(args: argparse.Namespace) -> int:
         print(f"BUILD_BLOCKED reason={check.reason}", file=sys.stderr)
         return 1
 
-    manifest = load_profile_manifest(manifest_path)
+    try:
+        manifest = load_profile_manifest(manifest_path) if signed is None else parse_profile_manifest(signed, manifest_path)
+    except ProfileManifestError as error:
+        print(f"BUILD_BLOCKED reason={error}", file=sys.stderr)
+        return 1
     plan = manifest_to_ecosystem_plan(manifest)
     from .image_builder import KNOWN_BASE_IMAGES
 

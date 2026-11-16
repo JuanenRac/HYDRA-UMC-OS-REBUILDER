@@ -189,15 +189,24 @@ def save_profile_manifest(manifest: ProfileManifest, path: Path) -> None:
     path.write_text(json.dumps(to_json(manifest), indent=2, ensure_ascii=False, sort_keys=False) + "\n", encoding="utf-8")
 
 
-def load_profile_manifest(path: Path) -> ProfileManifest:
-    path = Path(path)
+def parse_profile_manifest(raw: bytes, path: Path) -> ProfileManifest:
+    """The manifest held in `raw` (for a signed profile, the bytes that were verified); `path` only names it in the messages."""
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
+        data = json.loads(raw.decode("utf-8"))
+    except ValueError as exc:
         raise ProfileManifestError(f"could not read profile manifest {path}: {exc}") from exc
     if not isinstance(data, dict):
         raise ProfileManifestError(f"malformed profile manifest {path}: top level must be an object")
     return from_json(data)
+
+
+def load_profile_manifest(path: Path) -> ProfileManifest:
+    path = Path(path)
+    try:
+        raw = path.read_bytes()
+    except OSError as exc:
+        raise ProfileManifestError(f"could not read profile manifest {path}: {exc}") from exc
+    return parse_profile_manifest(raw, path)
 
 
 def record_build_result(manifest: ProfileManifest, installed: tuple[str, ...]) -> ProfileManifest:
