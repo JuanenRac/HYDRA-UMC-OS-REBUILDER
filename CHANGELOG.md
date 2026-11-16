@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **A signed profile is built from the bytes that were verified, and a private key is read only from a file that is the owner's alone:** `profile-build --require-signed` parsed the manifest from the file a second time after the signature had been checked, so a file changed in between would have been built; the check now hands back the verified bytes and the build parses those. The golden-image, delta and release checks read their record once for the same reason. `--key-file` of `profile-sign`, `release-sign`, `golden-register` and `delta-create` no longer accepts the 64 hexadecimal characters as text (they would show in the process list and in the shell history) and, on Linux, refuses a key file that other accounts can read. Tests for the refusals and for the verified bytes.
+
 - **A profile file is checked for the name of each project, the SDK commit and the required resources before anything is cloned:** `from_json` refuses a project name that is not a plain name (`../../..` would have made the clone land outside the mounted image), an SDK commit that is not a full 40-character hash (a branch name or an option would have gone to `git checkout`) and a required resource that is an absolute path or climbs with `..`.
 
 - **The removal of old work folders on a remote build host takes only folders this tool made:** the listing of old folders is limited to the account that builds and every entry must be exactly the work directory plus a name of the form that `mktemp` gives this tool, so a folder with a line break in its name can no longer make `sudo rm -rf` reach a path relative to the session. `tests/test_chroot_and_remote.py` covers it.

@@ -19,7 +19,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from .profile_signing import ProfileSigningError, _ed25519, _read_hex_key
+from .profile_signing import ProfileSigningError, _ed25519, _read_hex_key, _read_private_key
 from .release_channel import file_sha256
 
 FORMAT = "hydra-image-golden/1"
@@ -32,8 +32,8 @@ class GoldenError(ValueError):
     """A golden image that cannot be registered or does not verify."""
 
 
-def _message(record: Path) -> bytes:
-    return _DOMAIN + hashlib.sha256(record.read_bytes()).hexdigest().encode("ascii")
+def _message(record: Path, raw: bytes | None = None) -> bytes:
+    return _DOMAIN + hashlib.sha256(record.read_bytes() if raw is None else raw).hexdigest().encode("ascii")
 
 
 def _version_key(version: str) -> tuple[int, ...]:
@@ -43,9 +43,9 @@ def _version_key(version: str) -> tuple[int, ...]:
     return tuple(int(part) for part in parts)
 
 
-def _read_record(store: Path) -> dict[str, Any]:
+def _read_record(store: Path, raw: bytes | None = None) -> dict[str, Any]:
     try:
-        data = json.loads((store / RECORD).read_text(encoding="utf-8"))
+        data = json.loads((store / RECORD).read_bytes().decode("utf-8") if raw is None else raw.decode("utf-8"))
     except (OSError, ValueError) as error:
         raise GoldenError(f"cannot read the golden record in {store}: {error}") from error
     if data.get("format") != FORMAT:
@@ -69,7 +69,7 @@ def register(image: Path, store: Path, version: str, commit: str, private_key: s
         if new <= _version_key(str(previous["version"])):
             raise GoldenError(f"the golden image does not go back: {version} is not newer than {previous['version']}")
     ed25519, _ = _ed25519()
-    key = ed25519.Ed25519PrivateKey.from_private_bytes(_read_hex_key(private_key, "private key"))  # fails before anything is written
+    key = ed25519.Ed25519PrivateKey.from_private_bytes(_read_private_key(private_key))  # fails before anything is written
     store.mkdir(parents=True, exist_ok=True)
     target = store / image.name
     if image.resolve() != target.resolve():
@@ -88,15 +88,19 @@ def verify(store: Path, trusted_public_key: str, *, minimum_version: str = "") -
     """The signature of the record and the hash of the image both hold; returns the record with the image path."""
     if not trusted_public_key:
         raise GoldenError("a trusted public key is required to use the golden image")
-    data = _read_record(store)
     record = store / RECORD
+    try:
+        raw = record.read_bytes()  # the bytes that are verified are the bytes that are used
+    except OSError as error:
+        raise GoldenError(f"cannot read the golden record in {store}: {error}") from error
+    data = _read_record(store, raw)
     sig = store / (RECORD + ".sig")
     if not sig.is_file():
         raise GoldenError(f"{RECORD} has no signature file ({sig.name})")
     ed25519, invalid = _ed25519()
     try:
         signature = bytes.fromhex(sig.read_text(encoding="utf-8").strip())
-        ed25519.Ed25519PublicKey.from_public_bytes(_read_hex_key(trusted_public_key, "trusted public key")).verify(signature, _message(record))
+        ed25519.Ed25519PublicKey.from_public_bytes(_read_hex_key(trusted_public_key, "trusted public key")).verify(signature, _message(record, raw))
     except (ValueError, ProfileSigningError, invalid) as error:
         raise GoldenError(f"the signature of {RECORD} does not verify against the trusted key: {error}") from error
     name = str(data.get("image", ""))

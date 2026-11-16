@@ -20,7 +20,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from .profile_signing import ProfileSigningError, _ed25519, _read_hex_key
+from .profile_signing import ProfileSigningError, _ed25519, _read_hex_key, _read_private_key
 
 FORMAT = "hydra-image-release/1"
 _DOMAIN = b"hydra-umc-os-rebuilder-release/1\n"
@@ -43,8 +43,8 @@ def signature_path(manifest: Path) -> Path:
     return manifest.with_name(manifest.name + ".sig")
 
 
-def _message(manifest: Path) -> bytes:
-    return _DOMAIN + hashlib.sha256(manifest.read_bytes()).hexdigest().encode("ascii")
+def _message(manifest: Path, raw: bytes | None = None) -> bytes:
+    return _DOMAIN + hashlib.sha256(manifest.read_bytes() if raw is None else raw).hexdigest().encode("ascii")
 
 
 def tag_name(version: str, config: dict[str, Any]) -> str:
@@ -76,13 +76,13 @@ def make_manifest(image: Path, version: str, commit: str, output: Path, config: 
 
 def sign_release(manifest: Path, private_key: str) -> Path:
     ed25519, _ = _ed25519()
-    key = ed25519.Ed25519PrivateKey.from_private_bytes(_read_hex_key(private_key, "private key"))
+    key = ed25519.Ed25519PrivateKey.from_private_bytes(_read_private_key(private_key))
     target = signature_path(manifest)
     target.write_text(key.sign(_message(manifest)).hex() + "\n", encoding="utf-8")
     return target
 
 
-def verify_signature(manifest: Path, trusted_public_key: str) -> None:
+def verify_signature(manifest: Path, trusted_public_key: str, raw: bytes | None = None) -> None:
     ed25519, invalid = _ed25519()
     sig = signature_path(manifest)
     if not sig.is_file():
@@ -90,7 +90,7 @@ def verify_signature(manifest: Path, trusted_public_key: str) -> None:
     try:
         signature = bytes.fromhex(sig.read_text(encoding="utf-8").strip())
         key = ed25519.Ed25519PublicKey.from_public_bytes(_read_hex_key(trusted_public_key, "trusted public key"))
-        key.verify(signature, _message(manifest))
+        key.verify(signature, _message(manifest, raw))
     except (ValueError, ProfileSigningError, invalid) as error:
         raise ReleaseError(f"the signature of {manifest.name} does not verify against the trusted key: {error}") from error
 
@@ -116,7 +116,8 @@ def verify_release(manifest: Path, image: Path, config: dict[str, Any], *, trust
     """Check the release. The signature of the manifest and of the tag are checked when the options ask for them or when given."""
     options = config["release_channel"]
     try:
-        data = json.loads(manifest.read_text(encoding="utf-8"))
+        raw = manifest.read_bytes()  # the bytes that are verified are the bytes that are used
+        data = json.loads(raw.decode("utf-8"))
     except (OSError, ValueError) as error:
         raise ReleaseError(f"cannot read {manifest}: {error}") from error
     if data.get("format") != FORMAT:
@@ -128,7 +129,7 @@ def verify_release(manifest: Path, image: Path, config: dict[str, Any], *, trust
     if options["require_signed_manifest"] or key:
         if not key:
             raise ReleaseError("a signed release is required but no trusted public key is given")
-        verify_signature(manifest, key)
+        verify_signature(manifest, key, raw)
         checked.append("signature")
     if options["require_signed_tag"]:
         if repo is None:

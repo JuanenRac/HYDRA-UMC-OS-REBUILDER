@@ -7,6 +7,7 @@
 Skipped where the `cryptography` package is not installed."""
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ pytest.importorskip("cryptography")
 
 from hydra_umc_os_rebuilder import main as main_module  # noqa: E402
 from hydra_umc_os_rebuilder import profile_signing  # noqa: E402
+from hydra_umc_os_rebuilder.profile_manifest import parse_profile_manifest  # noqa: E402
 from hydra_umc_os_rebuilder.profile_signing import ProfileSigningError  # noqa: E402
 
 
@@ -101,3 +103,32 @@ def test_a_build_that_requires_a_signature_stops_before_anything_else(
     assert "no trusted public key" in capsys.readouterr().err
     assert main_module.main([*base, "--trusted-key", public_hex]) == 1
     assert "no signature file" in capsys.readouterr().err
+
+
+def test_a_private_key_given_as_text_is_refused(keys, manifest: Path) -> None:
+    private, _public, _hex = keys
+    text = private.read_text(encoding="utf-8").strip()
+    with pytest.raises(ProfileSigningError, match="not accepted as text"):
+        profile_signing.sign_manifest(manifest, text)
+    with pytest.raises(ProfileSigningError, match="not an existing file"):
+        profile_signing.sign_manifest(manifest, str(manifest.parent / "nowhere.key"))
+
+
+@pytest.mark.skipif(os.name != "posix", reason="file modes")
+def test_a_private_key_file_that_others_can_read_is_refused(keys, manifest: Path) -> None:
+    private, _public, _hex = keys
+    private.chmod(0o644)
+    with pytest.raises(ProfileSigningError, match="can be read by other accounts"):
+        profile_signing.sign_manifest(manifest, str(private))
+    private.chmod(0o600)
+    profile_signing.sign_manifest(manifest, str(private))
+
+
+def test_the_verification_hands_back_the_bytes_that_were_verified(keys, manifest: Path) -> None:
+    private, _public, public_hex = keys
+    profile_signing.sign_manifest(manifest, str(private))
+    verified = profile_signing.verify_manifest(manifest, public_hex)
+    assert verified == manifest.read_bytes()
+    # a file changed after the check does not change what the build parses from the verified bytes
+    manifest.write_text('{"profile_name": "evil", "entries": []}', encoding="utf-8")
+    assert parse_profile_manifest(verified, manifest).profile_name == "p"

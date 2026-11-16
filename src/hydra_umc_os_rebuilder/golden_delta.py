@@ -17,7 +17,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-from .profile_signing import ProfileSigningError, _ed25519, _read_hex_key
+from .profile_signing import ProfileSigningError, _ed25519, _read_hex_key, _read_private_key
 from .release_channel import file_sha256
 
 FORMAT = "hydra-image-delta/1"
@@ -33,8 +33,8 @@ class DeltaError(ValueError):
     """A delta that cannot be made, does not verify or does not apply."""
 
 
-def _message(record: Path) -> bytes:
-    return _DOMAIN + hashlib.sha256(record.read_bytes()).hexdigest().encode("ascii")
+def _message(record: Path, raw: bytes | None = None) -> bytes:
+    return _DOMAIN + hashlib.sha256(record.read_bytes() if raw is None else raw).hexdigest().encode("ascii")
 
 
 def _blocks(path: Path, block: int) -> Iterator[bytes]:
@@ -54,7 +54,7 @@ def create(base: Path, target: Path, store: Path, private_key: str, *, block_siz
     if not MIN_BLOCK <= block_size <= MAX_BLOCK:
         raise DeltaError(f"the block size must be between {MIN_BLOCK} and {MAX_BLOCK} bytes")
     ed25519, _ = _ed25519()
-    key = ed25519.Ed25519PrivateKey.from_private_bytes(_read_hex_key(private_key, "private key"))
+    key = ed25519.Ed25519PrivateKey.from_private_bytes(_read_private_key(private_key))
     base_index: dict[str, int] = {}
     for index, chunk in enumerate(_blocks(base, block_size)):
         base_index.setdefault(hashlib.sha256(chunk).hexdigest(), index)
@@ -96,13 +96,14 @@ def _load(store: Path, trusted_public_key: str) -> dict[str, Any]:
     if not record.is_file() or not sig.is_file():
         raise DeltaError(f"{store} does not hold {RECORD} and its signature")
     ed25519, invalid = _ed25519()
+    raw = record.read_bytes()  # the bytes that are verified are the bytes that are used
     try:
         signature = bytes.fromhex(sig.read_text(encoding="utf-8").strip())
-        ed25519.Ed25519PublicKey.from_public_bytes(_read_hex_key(trusted_public_key, "trusted public key")).verify(signature, _message(record))
+        ed25519.Ed25519PublicKey.from_public_bytes(_read_hex_key(trusted_public_key, "trusted public key")).verify(signature, _message(record, raw))
     except (ValueError, ProfileSigningError, invalid) as error:
         raise DeltaError(f"the signature of {RECORD} does not verify against the trusted key: {error}") from error
     try:
-        data = json.loads(record.read_text(encoding="utf-8"))
+        data = json.loads(raw.decode("utf-8"))
     except ValueError as error:
         raise DeltaError(f"cannot read {RECORD}: {error}") from error
     if not isinstance(data, dict) or data.get("format") != FORMAT:

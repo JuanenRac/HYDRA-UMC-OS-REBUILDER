@@ -44,8 +44,9 @@ def signature_path(manifest_path: Path) -> Path:
     return manifest_path.with_name(manifest_path.name + ".sig")
 
 
-def _message(manifest_path: Path) -> bytes:
-    return _DOMAIN + hashlib.sha256(manifest_path.read_bytes()).hexdigest().encode("ascii")
+def _message(manifest_path: Path, raw: bytes | None = None) -> bytes:
+    """The signed message of a manifest: `raw` when the caller already holds the bytes it is going to use, the file otherwise."""
+    return _DOMAIN + hashlib.sha256(manifest_path.read_bytes() if raw is None else raw).hexdigest().encode("ascii")
 
 
 def _read_hex_key(source: str, what: str) -> bytes:
@@ -59,6 +60,19 @@ def _read_hex_key(source: str, what: str) -> bytes:
     if not _HEX_KEY.match(text):
         raise ProfileSigningError(f"the {what} must be 64 hexadecimal characters (a raw 32-byte Ed25519 key)")
     return bytes.fromhex(text)
+
+
+def _read_private_key(source: str, what: str = "private key") -> bytes:
+    """A private key is only read from a file of its own: the hexadecimal text is refused (it would sit in the process list and in the shell
+    history) and, where the system has file modes, so is a file that anybody but its owner can read."""
+    if _HEX_KEY.match(source.strip()):
+        raise ProfileSigningError(f"the {what} is not accepted as text on a command line: put it in a file and give the path of the file")
+    path = Path(source)
+    if not path.is_file():
+        raise ProfileSigningError(f"the {what} is not an existing file: {source!r}")
+    if os.name == "posix" and path.stat().st_mode & 0o077:
+        raise ProfileSigningError(f"the file of the {what} can be read by other accounts: chmod 600 it")
+    return _read_hex_key(source, what)
 
 
 def generate_keypair(private_path: Path, public_path: Path) -> str:
@@ -84,14 +98,15 @@ def generate_keypair(private_path: Path, public_path: Path) -> str:
 def sign_manifest(manifest_path: Path, private_key: str) -> Path:
     """Write `<manifest>.sig` for the manifest as it is now. `private_key` is the key file (or its 64 hex characters)."""
     ed25519, _ = _ed25519()
-    key = ed25519.Ed25519PrivateKey.from_private_bytes(_read_hex_key(private_key, "private key"))
+    key = ed25519.Ed25519PrivateKey.from_private_bytes(_read_private_key(private_key))
     target = signature_path(manifest_path)
     target.write_text(key.sign(_message(manifest_path)).hex() + "\n", encoding="utf-8")
     return target
 
 
-def verify_manifest(manifest_path: Path, trusted_public_key: str) -> None:
-    """Raise ProfileSigningError unless `<manifest>.sig` is a valid signature of this manifest by the trusted key."""
+def verify_manifest(manifest_path: Path, trusted_public_key: str) -> bytes:
+    """Raise ProfileSigningError unless `<manifest>.sig` is a valid signature of this manifest by the trusted key.
+    Returns the bytes that were verified: whoever uses the manifest afterwards must read these and not the file again."""
     ed25519, invalid_signature = _ed25519()
     sig_file = signature_path(manifest_path)
     if not sig_file.is_file():
@@ -101,12 +116,14 @@ def verify_manifest(manifest_path: Path, trusted_public_key: str) -> None:
     except ValueError as error:
         raise ProfileSigningError(f"{sig_file.name} is not a hexadecimal signature") from error
     key = ed25519.Ed25519PublicKey.from_public_bytes(_read_hex_key(trusted_public_key, "trusted public key"))
+    raw = manifest_path.read_bytes()
     try:
-        key.verify(signature, _message(manifest_path))
+        key.verify(signature, _message(manifest_path, raw))
     except invalid_signature as error:
         raise ProfileSigningError(
             f"the signature of {manifest_path.name} does not match its content and the trusted key: the profile was changed or signed by someone else"
         ) from error
+    return raw
 
 
 def signature_required(flag: bool = False) -> bool:
