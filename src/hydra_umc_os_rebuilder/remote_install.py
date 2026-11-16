@@ -48,3 +48,22 @@ def remote_ref(version: str, override: str | None = None) -> str:
 def remote_install_requirement(version: str, override: str | None = None) -> str:
     """The pip requirement for the rebuilder on the remote host, pinned to a reference."""
     return f"hydra-umc-os-rebuilder @ git+{REPO_URL}@{remote_ref(version, override)}"
+
+
+_STALE_NAME = re.compile(r"^hydra-umc-os-rebuilder-build\.[A-Za-z0-9]{1,32}$")
+
+
+def stale_work_dirs(listing: str, work_base: str) -> list[str]:
+    """The old work folders of this tool named by the listing of `find`, and nothing else.
+
+    The listing is split by lines, so a folder somebody made on purpose with a line break in its name would come back as two entries, and the second
+    one could be a name that `rm -rf` reads against the working directory of the session. Only an entry that is exactly `work_base` followed by a
+    name that `mktemp` makes for this tool is returned; everything else is dropped.
+    """
+    base = work_base.rstrip("/")
+    found: list[str] = []
+    for line in listing.splitlines():
+        directory, _, name = line.rpartition("/")
+        if directory == base and _STALE_NAME.match(name):
+            found.append(line)
+    return found
