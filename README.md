@@ -52,7 +52,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Area | State | What it means here |
 |---|---|---|
 | Software | 🟡 | Works for its main purpose; the honesty check of this README lists what is still missing |
-| Tests | 🟢 | 373 automated tests, run on every change |
+| Tests | 🟡 | 373 automated tests recorded; the exact count, or a workflow that runs them on every change, is not confirmed yet |
 | Real hardware | 🟠 | Simulated only: tested against emulators, fakes or simulators; no run on real hardware is recorded for this version |
 | Deployment | 🟠 | Published as a release; installing it on a clean machine is documented but not recorded |
 | Documentation | 🟢 | README in eight languages, checked against the manifest on every change |

@@ -52,7 +52,7 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 | Área | Estado | Qué significa aquí |
 |---|---|---|
 | Software | 🟡 | Funciona para su propósito principal; la comprobación de honestidad de este README lista lo que aún falta |
-| Pruebas | 🟢 | 373 pruebas automáticas, ejecutadas en cada cambio |
+| Pruebas | 🟡 | 373 pruebas automáticas registradas; aún no se ha confirmado el número exacto ni un flujo de trabajo que las ejecute en cada cambio |
 | Hardware real | 🟠 | Solo simulado: probado con emuladores, dobles de prueba o simuladores; no consta ninguna ejecución en hardware real para esta versión |
 | Despliegue | 🟠 | Publicado como release; instalarlo en un equipo limpio está documentado pero no consta |
 | Documentación | 🟢 | README en ocho idiomas, comprobado contra el manifiesto en cada cambio |
