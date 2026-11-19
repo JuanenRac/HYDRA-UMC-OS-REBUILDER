@@ -34,7 +34,7 @@ DEFAULTS: dict[str, Any] = {
             "locale": "en_GB.UTF-8", "timezone": "Europe/Madrid",
         },
     },
-    "platform": {"name": "cm5", "extra_packages": [], "extra_units": []},
+    "platform": {"name": "cm5", "extra_packages": [], "extra_units": [], "partitions": {"boot": 1, "root": 2}},
     "artifact_cache": {"enabled": False, "directory": "", "max_gb": 4},
     "secrets": {"allow_password_argument": False},
     "release_channel": {
@@ -88,6 +88,9 @@ def check_platform(config: dict[str, Any]) -> None:
     for key, pattern in (("extra_packages", _PACKAGE), ("extra_units", _UNIT)):
         if not all(isinstance(item, str) and pattern.fullmatch(item) for item in options[key]) or len(set(options[key])) != len(options[key]):
             raise BuildConfigError(f"platform.{key} must be a list of distinct plain names")
+    boot, root = options["partitions"]["boot"], options["partitions"]["root"]
+    if isinstance(boot, bool) or isinstance(root, bool) or not isinstance(boot, int) or not isinstance(root, int) or root < 1 or boot < 0 or boot == root:
+        raise BuildConfigError("platform.partitions.root must be a partition number from 1 and platform.partitions.boot another one (0 when the image has no boot partition)")
     try:
         platforms.check_backend(platforms.get(options["name"]), config["build_backend"]["name"])
     except platforms.PlatformError as error:

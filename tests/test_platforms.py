@@ -26,7 +26,7 @@ def config_for(**platform: object) -> dict:
 
 def test_the_default_is_cm5_and_adds_nothing() -> None:
     config = build_config.load_config()
-    assert config["platform"] == {"name": "cm5", "extra_packages": [], "extra_units": []}
+    assert config["platform"] == {"name": "cm5", "extra_packages": [], "extra_units": [], "partitions": {"boot": 1, "root": 2}}
     declaration = platforms.selected(config)
     assert declaration["packages"] == [] and declaration["units"] == []
     assert platforms.platform_plan(config)["commands"] == []
@@ -85,6 +85,28 @@ def test_a_bad_platform_option_is_refused(tmp_path: Path, platform: dict) -> Non
     file.write_text(json.dumps({"platform": platform}), encoding="utf-8")
     with pytest.raises(build_config.BuildConfigError):
         build_config.load_config(file)
+
+
+@pytest.mark.parametrize(
+    "partitions",
+    [{"boot": 2, "root": 2}, {"boot": 1, "root": 0}, {"boot": -1, "root": 2}, {"boot": 1, "root": True}, {"boot": 1.5, "root": 2}, {"boot": "1", "root": 2}],
+)
+def test_a_bad_partition_layout_is_refused(tmp_path: Path, partitions: dict) -> None:
+    file = tmp_path / "c.json"
+    file.write_text(json.dumps({"platform": {"name": "rk3588", "partitions": partitions}}), encoding="utf-8")
+    with pytest.raises(build_config.BuildConfigError):
+        build_config.load_config(file)
+
+
+def test_the_partition_layout_of_the_configuration_reaches_the_build(tmp_path: Path) -> None:
+    import argparse
+
+    file = tmp_path / "c.json"
+    file.write_text(json.dumps({"platform": {"name": "rk3588", "partitions": {"boot": 0, "root": 3}}}), encoding="utf-8")
+    layout = main_module._partition_layout(argparse.Namespace(config=str(file)))
+    assert (layout.boot, layout.root, layout.numbers()) == (0, 3, (3,))
+    default = main_module._partition_layout(argparse.Namespace(config=None))
+    assert (default.boot, default.root, default.numbers()) == (1, 2, (1, 2))
 
 
 def test_pigen_builds_raspberry_pi_images_only(tmp_path: Path) -> None:

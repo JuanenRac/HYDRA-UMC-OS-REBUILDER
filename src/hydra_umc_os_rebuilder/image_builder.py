@@ -387,21 +387,41 @@ def extend_image_file(raw_image: Path, grow_mb: int) -> None:
         handle.truncate(new_size)
 
 
-def grow_root_partition(loop_dev: str) -> None:
-    """Grow partition 2 of the attached image to the end of the (extended) file and its ext4 file system with it:
-    `parted resizepart`, a forced `e2fsck` (required by `resize2fs`; exit code 1 only means that it repaired
-    something) and `resize2fs`."""
-    _run("parted", "--script", loop_dev, "resizepart", "2", "100%")
-    _wait_for_partitions(loop_dev)
-    check = subprocess.run(["e2fsck", "-f", "-y", f"{loop_dev}p2"], check=False, stdin=subprocess.DEVNULL)
+@dataclass(frozen=True)
+class PartitionLayout:
+    """Which partitions of the base image hold the boot files and the root file system (numbered from 1 as the partition table lists them).
+    The Raspberry Pi OS image of the default platform is `boot=1, root=2`; `boot=0` is an image with no separate boot partition (the boot files
+    are inside the root file system), in which case a first-boot configuration, which is written on the boot partition, cannot be carried."""
+
+    boot: int = 1
+    root: int = 2
+
+    def __post_init__(self) -> None:
+        if self.root < 1 or self.boot < 0 or self.boot == self.root:
+            raise ImageBuildError(f"the partition layout is not valid (boot={self.boot}, root={self.root}): root is a partition number from 1 and boot is another one, or 0 for none")
+
+    def numbers(self) -> tuple[int, ...]:
+        """The partition numbers that must exist as device nodes before anything is mounted."""
+        return (self.boot, self.root) if self.boot else (self.root,)
+
+
+DEFAULT_LAYOUT = PartitionLayout()
+
+
+def grow_root_partition(loop_dev: str, layout: PartitionLayout = DEFAULT_LAYOUT) -> None:
+    """Grow the root partition (partition 2 of the Raspberry Pi OS image) of the attached image to the end of the (extended) file and its ext4 file
+    system with it: `parted resizepart`, a forced `e2fsck` (required by `resize2fs`; exit code 1 only means that it repaired something) and `resize2fs`."""
+    _run("parted", "--script", loop_dev, "resizepart", str(layout.root), "100%")
+    _wait_for_partitions(loop_dev, partitions=layout.numbers())
+    check = subprocess.run(["e2fsck", "-f", "-y", f"{loop_dev}p{layout.root}"], check=False, stdin=subprocess.DEVNULL)
     if check.returncode not in (0, 1):
         raise ImageBuildError(f"e2fsck of the root partition failed (exit {check.returncode}); the image was not grown")
-    _run("resize2fs", f"{loop_dev}p2")
+    _run("resize2fs", f"{loop_dev}p{layout.root}")
 
 
-def _wait_for_partitions(loop_device: str, *, timeout_seconds: float = 15.0, sleep=None, exists=None) -> None:
+def _wait_for_partitions(loop_device: str, *, partitions: tuple[int, ...] = (1, 2), timeout_seconds: float = 15.0, sleep=None, exists=None) -> None:
     """losetup --partscan returns before udev has created /dev/loopNp1 and p2; mounting at once
-    fails now and then with "special device does not exist". Waits (bounded) for both nodes."""
+    fails now and then with "special device does not exist". Waits (bounded) for the nodes of the partitions that will be used."""
     import time
 
     sleep = sleep or time.sleep
@@ -409,7 +429,7 @@ def _wait_for_partitions(loop_device: str, *, timeout_seconds: float = 15.0, sle
     if shutil.which("udevadm"):
         subprocess.run(["udevadm", "settle", "--timeout=10"], check=False, stdin=subprocess.DEVNULL)
     waited = 0.0
-    wanted = (f"{loop_device}p1", f"{loop_device}p2")
+    wanted = tuple(f"{loop_device}p{number}" for number in partitions)
     while not all(exists(path) for path in wanted):
         if waited >= timeout_seconds:
             missing = [path for path in wanted if not exists(path)]
@@ -534,6 +554,7 @@ def build_image(
     corpus_bundle: Path | None = None,
     corpus_public_key: str | None = None,
     platform_commands: tuple[tuple[str, ...], ...] = (),
+    layout: PartitionLayout = DEFAULT_LAYOUT,
 ) -> BuildResult:
     """The real end-to-end pipeline. `progress`, if given, is called with a
     BuildProgress at each real phase transition - never a fake percentage,
@@ -552,6 +573,8 @@ def build_image(
     version tag/commit and built by running ITS OWN build.sh with the
     target rootfs's own real interpreter (chrooted) - this function never
     reimplements a single project's own build steps."""
+    if layout.boot == 0 and firstboot is not None:
+        return BuildResult(ok=False, error="this image has no boot partition (platform.partitions.boot is 0), and the first-boot configuration is written on it: build it without one")
     if public_image and firstboot is not None:
         # A first-boot script carries the Wi-Fi password and the account hash in clear on the boot partition.
         return BuildResult(
@@ -609,7 +632,8 @@ def build_image(
         mount_root = work_dir / "mnt"
         boot_mount = mount_root / "boot"
         rootfs_mount = mount_root / "rootfs"
-        boot_mount.mkdir(parents=True, exist_ok=True)
+        if layout.boot:
+            boot_mount.mkdir(parents=True, exist_ok=True)
         rootfs_mount.mkdir(parents=True, exist_ok=True)
 
         if grow_mb > 0:
@@ -620,8 +644,8 @@ def build_image(
         loop_dev = _run("losetup", "--find", "--show", "--partscan", str(raw_image), capture_output=True, text=True).stdout.strip()
         if grow_mb > 0:
             try:
-                _wait_for_partitions(loop_dev)
-                grow_root_partition(loop_dev)
+                _wait_for_partitions(loop_dev, partitions=layout.numbers())
+                grow_root_partition(loop_dev, layout)
             except BaseException:
                 subprocess.run(["losetup", "-d", loop_dev], check=False)
                 raise
@@ -637,10 +661,11 @@ def build_image(
         mounted_partitions: list[tuple[str, Path]] = []
         chroot_env = ChrootEnvironment(rootfs_mount)
         try:
-            _wait_for_partitions(loop_dev)
-            _run("mount", f"{loop_dev}p1", str(boot_mount))
-            mounted_partitions.append(("umount boot", boot_mount))
-            _run("mount", f"{loop_dev}p2", str(rootfs_mount))
+            _wait_for_partitions(loop_dev, partitions=layout.numbers())
+            if layout.boot:
+                _run("mount", f"{loop_dev}p{layout.boot}", str(boot_mount))
+                mounted_partitions.append(("umount boot", boot_mount))
+            _run("mount", f"{loop_dev}p{layout.root}", str(rootfs_mount))
             mounted_partitions.append(("umount rootfs", rootfs_mount))
         except (ImageBuildError, subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
             # a partition that never appears or does not mount is a failed build, reported as one, never an exception out of this function
@@ -732,7 +757,7 @@ def build_image(
 
             report("secret-scan")
             secret_findings = scan_for_leaked_secrets(
-                rootfs_mount, boot_mount=boot_mount if public_image else None, public_image=public_image
+                rootfs_mount, boot_mount=boot_mount if public_image and layout.boot else None, public_image=public_image
             )
 
         report("unmount")
