@@ -104,6 +104,7 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
 
     try:
         source, platform_commands = _platform_base(args)
+        layout = _partition_layout(args)
     except (build_config.BuildConfigError, platforms.PlatformError) as error:
         print(f"BUILD_BLOCKED reason={error}", file=sys.stderr)
         return 1
@@ -153,12 +154,22 @@ def _cmd_build_image(args: argparse.Namespace) -> int:
         corpus_bundle=Path(args.corpus_bundle) if args.corpus_bundle else None,
         corpus_public_key=args.corpus_public_key or os.environ.get(CORPUS_PUBKEY_ENV) or None,
         platform_commands=platform_commands,
+        layout=layout,
     )
     if not result.ok:
         print(f"BUILD_FAILED error={result.error}", file=sys.stderr)
         return 1
     print(f"BUILD_OK output={result.output_path} installed={','.join(result.installed)}")
     return 0
+
+
+def _partition_layout(args: argparse.Namespace):
+    """The partitions of the base image that hold the boot files and the root file system (`platform.partitions` of the configuration; Raspberry Pi OS is boot 1, root 2)."""
+    from .image_builder import PartitionLayout
+
+    config = build_config.load_config(getattr(args, "config", None))
+    build_config.check_platform(config)
+    return PartitionLayout(boot=config["platform"]["partitions"]["boot"], root=config["platform"]["partitions"]["root"])
 
 
 def _platform_base(args: argparse.Namespace) -> tuple[BaseImageSource, tuple[tuple[str, ...], ...]]:
