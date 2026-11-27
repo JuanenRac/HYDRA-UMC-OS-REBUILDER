@@ -114,9 +114,6 @@ All notable changes to this project are documented here.
 
 - The official base image is now Raspberry Pi OS Lite 64-bit on Debian trixie (the pinned download URL and its `.sha256` sidecar check were updated); the docs and READMEs in the eight languages say trixie instead of bookworm.
 - The button that copies the log is a small icon (two sheets) instead of words, and turns green for a moment when it has copied.
-
-## [0.3.0]
-
 - Build version synchronized with `hydra-umc.project.json` and the repository-native version source.
 
 ## [0.2.9] - The pipeline stops waiting for a person, checks its host and its input first
