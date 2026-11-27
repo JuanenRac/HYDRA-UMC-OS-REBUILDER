@@ -132,6 +132,9 @@ def verify_release(manifest: Path, image: Path, config: dict[str, Any], *, trust
         verify_signature(manifest, key, raw)
         checked.append("signature")
     if options["require_signed_tag"]:
+        # a signed tag says nothing about the image: without a signed manifest, whoever changes the image writes any tag and commit next to it
+        if "signature" not in checked:
+            raise ReleaseError("a signed tag is required: it only counts with a signed release manifest (give the trusted public key)")
         if repo is None:
             raise ReleaseError("a signed tag is required but no repository is given to check it in")
         verify_tag(repo, str(data["tag"]), str(data["commit"]), run)

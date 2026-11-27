@@ -1060,8 +1060,13 @@ def _ensure_sdk_importable(target: Path, rootfs_mount: Path, *, timeout_seconds:
     if not sdk_checkout.is_dir():
         from .ecosystem_plan import _git_url
 
+        if not sdk_commit_sha and os.environ.get("HYDRA_UMC_REBUILDER_ALLOW_UNPINNED_SDK", "").strip() != "1":
+            raise ImageBuildError(
+                "the SDK has no commit to be installed at: the image would hold whatever its default branch holds. Resolve it (or freeze a profile again); "
+                "HYDRA_UMC_REBUILDER_ALLOW_UNPINNED_SDK=1 builds from the default branch on purpose."
+            )
         if sdk_commit_sha:
-            # Pinned by the frozen profile: a full clone so that exact commit is reachable.
+            # Pinned by the plan or the frozen profile: a full clone so that exact commit is reachable.
             _run("git", "clone", _git_url("JuanenRac", "HYDRA-UMC-SDK"), str(sdk_checkout), timeout=timeout_seconds)
             _run("git", "-C", str(sdk_checkout), "checkout", sdk_commit_sha, timeout=timeout_seconds)
         else:

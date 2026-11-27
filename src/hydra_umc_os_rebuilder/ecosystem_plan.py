@@ -268,7 +268,17 @@ def fetch_ecosystem_plan(*, owner: str = "JuanenRac", token: str | None = None) 
     resolved_token = token if token is not None else os.environ.get("GITHUB_TOKEN") or None
     discovery = discover_remote_projects(owner=owner, token=resolved_token)
     plan = build_plan(discovery, owner=owner)
-    return resolve_commit_shas(plan, owner=owner, token=resolved_token, verify_manifest_at_sha=True)
+    plan = resolve_commit_shas(plan, owner=owner, token=resolved_token, verify_manifest_at_sha=True)
+    if not plan.entries:
+        return plan
+    # The SDK goes into the image like any project: at one commit, resolved now, never at whatever its branch holds when the build reaches it.
+    try:
+        sha = _fetch_commit_sha(owner, "HYDRA-UMC-SDK", "main", token=resolved_token)
+        problem = None if sha else "HYDRA-UMC-SDK: could not resolve a real commit SHA - a project that needs the SDK will not build"
+    except GitHubRateLimitedError as exc:
+        sha, problem = None, f"HYDRA-UMC-SDK: commit not resolved - {exc}"
+    errors = plan.discovery_errors if problem is None else (*plan.discovery_errors, problem)
+    return replace(plan, sdk_commit_sha=sha, discovery_errors=tuple(errors))
 
 
 def plan_summary_lines(plan: EcosystemPlan) -> list[str]:

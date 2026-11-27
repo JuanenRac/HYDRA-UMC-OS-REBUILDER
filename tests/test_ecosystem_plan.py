@@ -443,3 +443,23 @@ def test_an_unreadable_manifest_at_the_commit_is_a_mismatch_not_a_pass(fake_gith
     fake_github_commits.shas = {"JuanenRac/HYDRA-UMC-SERVER/main": "d" * 40}
     resolved = resolve_commit_shas(_plan(_one()), verify_manifest_at_sha=True)
     assert resolved.entries == ()
+
+
+def test_the_plan_resolves_the_commit_of_the_sdk_too(monkeypatch: pytest.MonkeyPatch) -> None:
+    entry = object()
+    plan = EcosystemPlan(entries=(entry,), discovery_errors=())
+    monkeypatch.setattr(ecosystem_plan_module, "discover_remote_projects", lambda owner, *, token=None: RemoteDiscovery(projects=(), errors=()))
+    monkeypatch.setattr(ecosystem_plan_module, "resolve_commit_shas", lambda plan_, **_kwargs: plan)
+    asked: list[tuple] = []
+
+    def sha(owner, name, branch, *, token):
+        asked.append((owner, name, branch))
+        return "b" * 40
+
+    monkeypatch.setattr(ecosystem_plan_module, "_fetch_commit_sha", sha)
+    resolved = fetch_ecosystem_plan(token="t")
+    assert asked == [("JuanenRac", "HYDRA-UMC-SDK", "main")]
+    assert resolved.sdk_commit_sha == "b" * 40 and resolved.discovery_errors == ()
+    monkeypatch.setattr(ecosystem_plan_module, "_fetch_commit_sha", lambda *a, **k: None)
+    unresolved = fetch_ecosystem_plan(token="t")
+    assert unresolved.sdk_commit_sha is None and "HYDRA-UMC-SDK" in unresolved.discovery_errors[0]

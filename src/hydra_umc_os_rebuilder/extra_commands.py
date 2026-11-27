@@ -124,7 +124,9 @@ def _cmd_release_verify(args: argparse.Namespace) -> int:
     result = release_channel.verify_release(
         Path(args.manifest), Path(args.image), config, trusted_key=args.trusted_key, repo=Path(args.repo) if args.repo else None
     )
-    print("RELEASE_VERIFIED " + json.dumps(result, sort_keys=True))
+    # without a signature the image only agrees with the file next to it, which anyone can write: it is consistent, not verified
+    word = "RELEASE_VERIFIED" if "signature" in result["checked"] else "RELEASE_CONSISTENT"
+    print(f"{word} " + json.dumps(result, sort_keys=True))
     return 0
 
 

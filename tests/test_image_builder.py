@@ -898,10 +898,26 @@ def test_sdk_is_provisioned_for_a_project_that_declares_it(tmp_path: Path, monke
     rootfs = tmp_path / "rootfs"
     target = rootfs / "opt" / "hydra-umc" / "hydra-umc-bridge-amr"
     _write(target / "pyproject.toml", 'dependencies = ["hydra-umc-sdk @ git+https://example/sdk.git"]')
-    assert _ensure_sdk_importable(target, rootfs) is True
+    assert _ensure_sdk_importable(target, rootfs, sdk_commit_sha="a" * 40) is True
     assert calls and calls[0][:2] == ("git", "clone") and "HYDRA-UMC-SDK" in calls[0][-2]
+    assert calls[1][-2:] == ("checkout", "a" * 40)
     pth = (rootfs / "usr" / "lib" / "python3" / "dist-packages" / "hydra_umc_sdk.pth").read_text(encoding="utf-8")
     assert pth.strip() == "/opt/hydra-umc/hydra-umc-sdk/clients/python/src"
+
+
+def test_an_sdk_without_a_commit_is_refused_unless_asked_for(tmp_path: Path, monkeypatch) -> None:
+    calls: list[tuple] = []
+    monkeypatch.setattr("hydra_umc_os_rebuilder.image_builder._run", lambda *command, **kwargs: calls.append(command))
+    monkeypatch.delenv("HYDRA_UMC_REBUILDER_ALLOW_UNPINNED_SDK", raising=False)
+    rootfs = tmp_path / "rootfs"
+    target = rootfs / "opt" / "hydra-umc" / "p"
+    _write(target / "pyproject.toml", 'dependencies = ["hydra-umc-sdk"]')
+    with pytest.raises(ImageBuildError, match="no commit"):
+        _ensure_sdk_importable(target, rootfs)
+    assert calls == [] and not (rootfs / "usr").exists()
+    monkeypatch.setenv("HYDRA_UMC_REBUILDER_ALLOW_UNPINNED_SDK", "1")
+    assert _ensure_sdk_importable(target, rootfs) is True
+    assert calls[0][:4] == ("git", "clone", "--depth", "1")
 
 
 def test_sdk_is_not_cloned_twice_for_two_projects(tmp_path: Path, monkeypatch) -> None:
