@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- **A release is only called verified when its manifest is signed:** `release-verify` answers `RELEASE_CONSISTENT` when the image only agrees with the manifest next to it; `require_signed_tag` without a signed manifest is refused, because a signed tag says nothing about the image.
+- **The SDK goes into an image at one commit:** the plan resolves the commit of HYDRA-UMC-SDK with those of the projects, and a build that would clone its default branch is refused (`HYDRA_UMC_REBUILDER_ALLOW_UNPINNED_SDK=1` does it on purpose). Tests.
 - **The partitions of the base image are an option, not a fixed pair (`platform.partitions` of the configuration, `PartitionLayout` of `image_builder.py`):** `build-image` always grew, checked and mounted partition 2 as the root and partition 1 as the boot partition, which is right for Raspberry Pi OS and wrong for an image of another platform. `platform.partitions` (`{"boot": 1, "root": 2}` by default, so the images of today do not change) names the root partition and the boot partition, and `boot` 0 means an image with no boot partition: only the root is mounted and a first-boot configuration, which is written on the boot partition, is refused with a clear message. The option is checked when the configuration is read (whole numbers, root from 1, boot another one or 0). Made in simulation with fake commands; no image of another platform was built. Tests: the layout, the growth of partition 3, the wait for its node, the refusal of a first-boot configuration, the mounts of a layout with no boot partition and the bad values of the option.
 
 ## [0.3.9]

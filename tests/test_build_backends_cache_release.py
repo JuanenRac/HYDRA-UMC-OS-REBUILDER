@@ -6,6 +6,7 @@
 """Build backends, the artifact cache, the signed release channel and the boot test: planned and checked with stand-ins, nothing is run."""
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
 from pathlib import Path
@@ -165,3 +166,13 @@ def test_cli_commands(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> Non
     assert "skipped" in capsys.readouterr().out
     assert main_module.main(["--cli", "release-manifest", "--image", str(tmp_path / "none"), "--version", "1", "--commit", COMMIT, "--output", str(tmp_path / "r.json")]) == 1
     assert extra_commands.HANDLERS
+
+
+def test_a_signed_tag_alone_verifies_nothing_and_an_unsigned_release_is_only_consistent(tmp_path, capsys) -> None:
+    image = tmp_path / "image.img"
+    image.write_bytes(b"image bytes")
+    manifest = release_channel.make_manifest(image, "0.4.0", COMMIT, tmp_path / "release.json", _config())
+    with pytest.raises(release_channel.ReleaseError, match="signed release manifest"):
+        release_channel.verify_release(manifest, image, _config(release_channel={"require_signed_tag": True}), repo=tmp_path, run=_Git(True, COMMIT))
+    extra_commands._cmd_release_verify(argparse.Namespace(config=None, manifest=str(manifest), image=str(image), trusted_key="", repo=None))
+    assert capsys.readouterr().out.startswith("RELEASE_CONSISTENT ")
